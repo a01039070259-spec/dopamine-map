@@ -1,0 +1,10 @@
+# Render 무료 플랜 — YOUR-APP.onrender.com (0원)
+services:
+  - type: web
+    name: dopamine-map
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false

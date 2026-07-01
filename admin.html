@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>도파민 지도 — 관리자 (액티비티 등록)</title>
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+    :root{
+      --neon:#39ff14;--red:#ff4444;--bg:#0a0a0a;--bg2:#111;--bg3:#161616;
+      --border:#1e1e1e;--border2:#2a2a2a;--text-dim:#888;--text-muted:#555;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;background:#0a0a0a;color:#f0f0f0;font-family:'Noto Sans KR',sans-serif}
+    .wrap{max-width:760px;margin:0 auto;padding:24px 20px 80px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+    .top h1{font-size:1.25rem;font-weight:900}
+    .top h1 em{color:var(--neon);font-style:normal}
+    .link-btn,.ghost-btn,.primary-btn{
+      border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;
+      font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s;text-decoration:none;
+    }
+    .link-btn{background:transparent;border:1px solid var(--border2);color:var(--text-dim)}
+    .link-btn:hover{border-color:var(--neon);color:var(--neon)}
+    .ghost-btn{background:transparent;border:1px solid var(--border2);color:#ccc}
+    .primary-btn{background:var(--neon);border:none;color:#0a0a0a}
+    .login-card,.panel{
+      background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;
+    }
+    .login-card{max-width:420px;margin:60px auto 0;text-align:center}
+    .login-card h2{font-size:1.1rem;margin-bottom:8px}
+    .login-card p{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:18px}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;text-align:left}
+    .field label{font-size:12px;color:var(--text-dim);font-weight:600}
+    .field input,.field select,.field textarea{
+      width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;
+      padding:11px 13px;color:#f0f0f0;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;
+    }
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--neon)}
+    .field textarea{min-height:88px;resize:vertical;line-height:1.5}
+    .hint{font-size:11px;color:#555;margin-top:4px}
+    .sec-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+    .sec{margin-bottom:22px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+    .notice{
+      font-size:13px;color:#fbbf24;background:#1f1a0a;border:1px solid #4a3a0a;
+      border-radius:10px;padding:12px 14px;margin-bottom:20px;line-height:1.6;
+    }
+    .item{
+      background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;
+      margin-bottom:8px;display:flex;align-items:center;gap:12px;
+    }
+    .item-main{flex:1;min-width:0}
+    .item-name{font-size:14px;font-weight:700}
+    .item-addr{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .del{background:rgba(255,68,68,.12);border:1px solid #4a1a1a;color:#f87171;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+    .edit{background:rgba(57,255,20,.1);border:1px solid #1a4a1a;color:var(--neon);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+    .item-actions{display:flex;gap:6px;flex-shrink:0}
+    .form-mode{font-size:13px;font-weight:700;margin-bottom:14px;padding:10px 12px;border-radius:10px;background:#0d2a06;border:1px solid #1a4a1a;color:var(--neon)}
+    .form-mode.edit-mode{background:#1a1a0a;border-color:#4a3a0a;color:#fbbf24}
+    .empty{text-align:center;color:var(--text-muted);padding:24px;font-size:13px}
+    .toast{
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+      background:var(--neon);color:#0a0a0a;font-size:13px;font-weight:700;padding:10px 18px;
+      border-radius:20px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .hidden{display:none !important}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .geocode{background:transparent;border:1px solid var(--border2);color:var(--text-dim);border-radius:8px;padding:8px 12px;font-size:12px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:6px}
+    .geocode:hover{border-color:var(--neon);color:var(--neon)}
+    .addr-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .addr-row input{flex:1;min-width:180px}
+    .addr-readonly{background:#121212 !important;color:#ccc;cursor:default}
+    .addr-detail{margin-top:8px}
+    .file-warn{
+      background:#2a0a0a;border:1px solid #7f1d1d;color:#fecaca;border-radius:12px;
+      padding:14px 16px;margin-bottom:16px;line-height:1.65;font-size:13px;
+    }
+    .file-warn code{background:#1a1a1a;padding:2px 6px;border-radius:6px;color:#fca5a5}
+    .file-warn strong{color:#fff}
+    .tag-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;max-height:220px;overflow-y:auto;padding:2px}
+    .tag-chip{
+      background:var(--bg3);border:1px solid var(--border2);color:#888;font-size:12px;
+      padding:6px 11px;border-radius:6px;cursor:pointer;transition:all .15s;user-select:none;
+      font-family:'Noto Sans KR',sans-serif;font-weight:500;
+    }
+    .tag-chip:hover{border-color:#444;color:#ccc}
+    .tag-chip.sel{background:#0d2a06;border-color:var(--neon);color:var(--neon);font-weight:700}
+    .tag-preview{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.5}
+    .tag-preview b{color:var(--neon);font-weight:600}
+    .emoji-picker{display:flex;gap:8px;margin-top:6px}
+    .emoji-btn{
+      width:46px;height:46px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);
+      font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+      transition:all .15s;padding:0;
+    }
+    .emoji-btn:hover{border-color:#444}
+    .emoji-btn.sel{border-color:var(--neon);background:#0d2a06;box-shadow:0 0 0 1px var(--neon)}
+    .photo-box{
+      margin-top:6px;border:1px dashed var(--border2);border-radius:12px;overflow:hidden;
+      background:var(--bg3);min-height:140px;display:flex;align-items:center;justify-content:center;
+      position:relative;
+    }
+    .photo-box img{width:100%;height:180px;object-fit:cover;display:block}
+    .photo-placeholder{color:var(--text-muted);font-size:13px;text-align:center;padding:24px;line-height:1.6}
+    .photo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .photo-actions label.primary-btn{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0}
+    .photo-actions input[type=file]{display:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="fileProtocolWarn" class="file-warn hidden"></div>
+    <div id="loginView" class="login-card">
+      <h2>🔒 관리자 전용</h2>
+      <p>액티비티 등록은 운영자만 접근할 수 있습니다.<br>일반 사용자용 지도와 URL이 분리되어 있습니다.</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="adminPass">관리자 비밀번호</label>
+          <input id="adminPass" type="password" required autocomplete="current-password" placeholder="비밀번호 입력" />
+        </div>
+        <button type="submit" class="primary-btn" style="width:100%">로그인</button>
+      </form>
+      <p class="hint" style="margin-top:14px;text-align:center">
+        최초 기본 비밀번호: <code>1111</code> (로그인 후 변경 권장)
+      </p>
+      <button type="button" class="ghost-btn" id="resetPassLoginBtn" style="margin-top:12px;width:100%">
+        비밀번호 1111로 초기화
+      </button>
+      <a href="index.html" class="link-btn" style="display:inline-block;margin-top:16px" target="_blank" rel="noopener noreferrer">← 사용자 지도로</a>
+    </div>
+
+    <div id="adminView" class="hidden">
+      <div class="top">
+        <h1>관리자 · <em>액티비티 등록</em></h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a href="index.html" class="link-btn" target="_blank" rel="noopener noreferrer">사용자 지도</a>
+          <button type="button" class="ghost-btn" id="logoutBtn">로그아웃</button>
+        </div>
+      </div>
+
+      <div class="notice">
+        ⚠️ 이 페이지 URL(<code>/admin.html</code>)은 사용자에게 공유하지 마세요.
+        등록된 스팟은 <strong>서버 DB</strong>에 저장되며 모든 사용자 지도에 표시됩니다.
+      </div>
+
+      <div class="panel">
+        <form id="registerForm">
+          <p class="form-mode" id="formMode">➕ 새 스팟 등록</p>
+          <div class="sec">
+            <p class="sec-label">기본 정보</p>
+            <div class="field">
+              <label for="regName">장소명 *</label>
+              <input id="regName" type="text" required maxlength="80" />
+            </div>
+            <div class="field">
+              <label for="regAddr">주소 *</label>
+              <div class="addr-row">
+                <input id="regAddr" class="addr-readonly" type="text" required maxlength="200" placeholder="아래 버튼으로 주소 검색" />
+                <button type="button" class="geocode" id="addrSearchBtn">🔍 주소 검색</button>
+              </div>
+              <input id="regAddrDetail" class="addr-detail" type="text" maxlength="80" placeholder="상세주소 (건물명·층 등) — 선택" />
+              <span class="hint">주소 검색 팝업에서 선택하면 좌표가 자동 입력됩니다</span>
+            </div>
+            <div class="grid2">
+              <div class="field"><label for="regLat">위도 *</label><input id="regLat" type="number" step="any" required /></div>
+              <div class="field"><label for="regLng">경도 *</label><input id="regLng" type="number" step="any" required /></div>
+            </div>
+            <div class="grid2">
+              <div class="field">
+                <label for="regType">종류 *</label>
+                <input id="regType" type="text" required maxlength="30" placeholder="예: 롤러코스터, 바이킹, 번지점프" />
+                <span class="hint">직접 입력 · 검색에 사용됩니다 (같은 종류끼리 묶여 검색됨)</span>
+              </div>
+              <div class="field">
+                <label>이모지</label>
+                <div class="emoji-picker" id="emojiPicker"></div>
+                <input id="regEm" type="hidden" value="🔥" />
+              </div>
+            </div>
+            <div class="field"><label for="regRank">랭크 뱃지</label><input id="regRank" type="text" value="NEW SPOT" /></div>
+            <div class="field">
+              <label>대표 사진</label>
+              <div class="photo-box" id="photoPreview">
+                <p class="photo-placeholder">사진 없음 · 사용자 지도 카드/상세에 표시됩니다<br>없으면 아래 이모지가 보입니다</p>
+              </div>
+              <div class="photo-actions">
+                <label class="primary-btn" for="regPhoto">📷 사진 선택</label>
+                <input id="regPhoto" type="file" accept="image/jpeg,image/png,image/webp" />
+                <button type="button" class="ghost-btn" id="clearPhotoBtn">사진 제거</button>
+              </div>
+              <span class="hint">JPG/PNG/WEBP · 자동 리사이즈 · 최대 8MB</span>
+              <input id="regImg" type="hidden" />
+            </div>
+          </div>
+
+          <div class="sec">
+            <p class="sec-label">스릴 지수</p>
+            <div class="grid2">
+              <div class="field"><label for="regTh">종합 스릴 (1~5)</label><input id="regTh" type="number" min="1" max="5" value="4" /></div>
+              <div class="field"><label for="regSp">최고 속도 km/h</label><input id="regSp" type="number" min="0" value="0" /></div>
+            </div>
+            <div class="grid3">
+              <div class="field"><label for="regFp">공포도 %</label><input id="regFp" type="number" min="0" max="100" value="70" /></div>
+              <div class="field"><label for="regSp2">체감속도 %</label><input id="regSp2" type="number" min="0" max="100" value="70" /></div>
+              <div class="field"><label for="regAp">아드레날린 %</label><input id="regAp" type="number" min="0" max="100" value="80" /></div>
+            </div>
+          </div>
+
+          <div class="sec">
+            <p class="sec-label">소개 · 태그 · 주의사항</p>
+            <div class="field"><label for="regBr">한 줄 생존평</label><input id="regBr" type="text" maxlength="120" /></div>
+            <div class="field">
+              <label>태그 선택 <span class="hint" style="display:inline;margin:0">(복수 · 최대 6개)</span></label>
+              <div class="tag-grid" id="tagPicker"></div>
+              <p class="tag-preview">선택됨: <b id="tagSelectedText">없음</b></p>
+              <input id="regTags" type="hidden" />
+            </div>
+            <div class="field"><label for="regWarns">생존 가이드</label><textarea id="regWarns" placeholder="⚠️ 심장질환자 탑승 금지"></textarea></div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="primary-btn" id="submitBtn">🔥 지도에 등록</button>
+            <button type="button" class="ghost-btn hidden" id="cancelEditBtn">수정 취소</button>
+            <button type="button" class="ghost-btn" id="resetBtn">초기화</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <p class="sec-label">등록된 스팟 관리</p>
+        <span class="hint" style="display:block;margin-bottom:12px">수정 · 삭제는 아래 목록에서 할 수 있습니다.</span>
+        <div id="customList"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <p class="sec-label">비밀번호 변경</p>
+        <div class="field">
+          <label for="newPass">새 관리자 비밀번호</label>
+          <input id="newPass" type="password" minlength="4" placeholder="4자 이상" />
+        </div>
+        <button type="button" class="ghost-btn" id="changePassBtn">비밀번호 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/spots-store.js"></script>
+  <script>
+    const ADMIN_PASS_KEY = "dopamine_admin_pass";
+    const ADMIN_SESSION_KEY = "dopamine_admin_session";
+    const KAKAO_REST_API_KEY = "2edaa06be7bef407fe54cb1e5e30e22f";
+    const DEFAULT_ADMIN_PASS = "1111";
+    const SESSION_MS = 8 * 60 * 60 * 1000;
+    const IS_FILE_PROTOCOL = location.protocol === "file:";
+    const MAX_TAGS = 6;
+    let editingSpotId = null;
+    let selectedAdminTags = new Set();
+    let spotsCache = [];
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function normalizeTag(tag) {
+      const t = String(tag || "").trim();
+      if (!t) return "";
+      return t.startsWith("#") ? t : `#${t}`;
+    }
+
+    function syncRegTagsField() {
+      document.getElementById("regTags").value = [...selectedAdminTags].join(", ");
+    }
+
+    function updateTagPreview() {
+      const el = document.getElementById("tagSelectedText");
+      if (!el) return;
+      el.textContent = selectedAdminTags.size ? [...selectedAdminTags].join(" ") : "없음";
+    }
+
+    function renderTagPicker() {
+      const grid = document.getElementById("tagPicker");
+      if (!grid) return;
+      const preset = new Set(DopamineStore.PRESET_TAGS);
+      const extras = [...selectedAdminTags].filter((t) => !preset.has(t));
+      const allTags = [...DopamineStore.PRESET_TAGS, ...extras];
+      grid.innerHTML = allTags
+        .map((tag) => {
+          const safe = escapeHtml(tag);
+          const sel = selectedAdminTags.has(tag) ? " sel" : "";
+          return `<button type="button" class="tag-chip${sel}" data-tag="${safe}" onclick="toggleAdminTag(this)">${safe}</button>`;
+        })
+        .join("");
+      updateTagPreview();
+      syncRegTagsField();
+    }
+
+    function setSelectedTags(tags) {
+      selectedAdminTags = new Set();
+      (tags || []).forEach((tag) => {
+        const norm = normalizeTag(tag);
+        if (norm) selectedAdminTags.add(norm);
+      });
+      renderTagPicker();
+    }
+
+    function toggleAdminTag(el) {
+      const tag = el.getAttribute("data-tag");
+      if (!tag) return;
+      if (selectedAdminTags.has(tag)) {
+        selectedAdminTags.delete(tag);
+        el.classList.remove("sel");
+      } else {
+        if (selectedAdminTags.size >= MAX_TAGS) {
+          showToast(`태그는 최대 ${MAX_TAGS}개까지 선택할 수 있습니다`, 2000);
+          return;
+        }
+        selectedAdminTags.add(tag);
+        el.classList.add("sel");
+      }
+      syncRegTagsField();
+      updateTagPreview();
+    }
+
+    function renderEmojiPicker() {
+      const picker = document.getElementById("emojiPicker");
+      const current = document.getElementById("regEm").value || "🔥";
+      if (!picker) return;
+      picker.innerHTML = DopamineStore.PRESET_EMOJIS.map(
+        (em) =>
+          `<button type="button" class="emoji-btn${em === current ? " sel" : ""}" data-em="${em}" onclick="selectAdminEmoji(this)" aria-label="${em}">${em}</button>`
+      ).join("");
+    }
+
+    function setSelectedEmoji(em) {
+      const value = DopamineStore.PRESET_EMOJIS.includes(em) ? em : "🔥";
+      document.getElementById("regEm").value = value;
+      renderEmojiPicker();
+    }
+
+    function selectAdminEmoji(el) {
+      const em = el.getAttribute("data-em");
+      if (!em) return;
+      setSelectedEmoji(em);
+    }
+
+    function getFormData() {
+      return {
+        name: document.getElementById("regName").value.trim(),
+        addr: getFullAddress(),
+        lat: parseFloat(document.getElementById("regLat").value),
+        lng: parseFloat(document.getElementById("regLng").value),
+        type: document.getElementById("regType").value.trim(),
+        em: document.getElementById("regEm").value.trim(),
+        rank: document.getElementById("regRank").value.trim(),
+        th: document.getElementById("regTh").value,
+        sp: document.getElementById("regSp").value,
+        fp: document.getElementById("regFp").value,
+        sp2: document.getElementById("regSp2").value,
+        ap: document.getElementById("regAp").value,
+        br: document.getElementById("regBr").value.trim(),
+        tags: document.getElementById("regTags").value,
+        warns: document.getElementById("regWarns").value,
+        img: document.getElementById("regImg").value,
+      };
+    }
+
+    function setSpotPhoto(dataUrl) {
+      const value = dataUrl || "";
+      document.getElementById("regImg").value = value;
+      const box = document.getElementById("photoPreview");
+      if (!box) return;
+      if (value) {
+        box.innerHTML = `<img src="${value}" alt="미리보기" />`;
+      } else {
+        box.innerHTML =
+          '<p class="photo-placeholder">사진 없음 · 사용자 지도 카드/상세에 표시됩니다<br>없으면 아래 이모지가 보입니다</p>';
+      }
+    }
+
+    async function handlePhotoSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      try {
+        const dataUrl = await DopamineStore.compressImageFile(file);
+        setSpotPhoto(dataUrl);
+        showToast("사진이 등록되었습니다", 1800);
+      } catch (err) {
+        const msg =
+          err && err.message === "TOO_LARGE"
+            ? "8MB 이하 사진만 가능합니다"
+            : "사진을 불러올 수 없습니다";
+        showToast(msg, 2600);
+      }
+    }
+
+    function setFormMode(isEdit, spotName) {
+      const mode = document.getElementById("formMode");
+      const submitBtn = document.getElementById("submitBtn");
+      const cancelBtn = document.getElementById("cancelEditBtn");
+      if (isEdit) {
+        mode.textContent = `✏️ 수정 중: ${spotName || "스팟"}`;
+        mode.classList.add("edit-mode");
+        submitBtn.textContent = "💾 수정 저장";
+        cancelBtn.classList.remove("hidden");
+      } else {
+        mode.textContent = "➕ 새 스팟 등록";
+        mode.classList.remove("edit-mode");
+        submitBtn.textContent = "🔥 지도에 등록";
+        cancelBtn.classList.add("hidden");
+      }
+    }
+
+    function resetForm() {
+      editingSpotId = null;
+      document.getElementById("registerForm").reset();
+      setSelectedEmoji("🔥");
+      document.getElementById("regRank").value = "NEW SPOT";
+      document.getElementById("regTh").value = "4";
+      document.getElementById("regFp").value = "70";
+      document.getElementById("regSp2").value = "70";
+      document.getElementById("regAp").value = "80";
+      document.getElementById("regSp").value = "0";
+      document.getElementById("regAddr").value = "";
+      document.getElementById("regAddrDetail").value = "";
+      document.getElementById("regLat").value = "";
+      document.getElementById("regLng").value = "";
+      setSelectedTags([]);
+      setSpotPhoto("");
+      setFormMode(false);
+    }
+
+    function loadSpotIntoForm(spot) {
+      if (!spot) return;
+      editingSpotId = spot.id;
+      document.getElementById("regName").value = spot.name || "";
+      document.getElementById("regAddr").value = spot.addr || "";
+      document.getElementById("regAddrDetail").value = "";
+      document.getElementById("regLat").value = spot.lat != null ? Number(spot.lat).toFixed(7) : "";
+      document.getElementById("regLng").value = spot.lng != null ? Number(spot.lng).toFixed(7) : "";
+      document.getElementById("regType").value =
+        spot.tl || (DopamineStore.TYPE_META[spot.type] && DopamineStore.TYPE_META[spot.type].tl) || spot.type || "";
+      setSelectedEmoji(spot.em || "🔥");
+      document.getElementById("regRank").value = spot.rank || "NEW SPOT";
+      document.getElementById("regTh").value = spot.th != null ? spot.th : 4;
+      document.getElementById("regSp").value = spot.sp != null ? spot.sp : 0;
+      document.getElementById("regFp").value = spot.fp != null ? spot.fp : 70;
+      document.getElementById("regSp2").value = spot.sp2 != null ? spot.sp2 : 70;
+      document.getElementById("regAp").value = spot.ap != null ? spot.ap : 80;
+      document.getElementById("regBr").value = spot.br || "";
+      setSelectedTags(spot.tags || []);
+      setSpotPhoto(spot.img || "");
+      document.getElementById("regWarns").value = DopamineStore.formatWarnsForInput(spot.warns);
+      setFormMode(true, spot.name);
+      document.getElementById("registerForm").scrollIntoView({ behavior: "smooth", block: "start" });
+      showToast(`「${spot.name}」 불러옴 — 수정 후 저장`, 2200);
+    }
+
+    function getSpotFromCache(id) {
+      return spotsCache.find((s) => s.id === Number(id)) || null;
+    }
+
+    async function startEditSpot(id) {
+      let spot = getSpotFromCache(id);
+      if (!spot) {
+        try {
+          spot = await DopamineStore.fetchSpotById(id);
+        } catch (_) {
+          showToast("스팟을 찾을 수 없습니다");
+          await renderCustomList();
+          return;
+        }
+      }
+      loadSpotIntoForm(spot);
+    }
+
+    function showFileProtocolWarning() {
+      if (!IS_FILE_PROTOCOL) return;
+      const box = document.getElementById("fileProtocolWarn");
+      if (!box) return;
+      box.classList.remove("hidden");
+      box.innerHTML =
+        "<strong>⚠️ 파일로 직접 열면 주소 검색·지도 API가 동작하지 않습니다.</strong><br>" +
+        "브라우저 보안 정책상 <code>file://</code> 주소는 팝업/iframe과 데이터를 주고받을 수 없습니다.<br>" +
+        "터미널에서 <code>run.bat</code> 실행 후, 이 사이트와 같은 주소의 <code>/admin.html</code> 로 접속하세요.<br>" +
+        "<code>cd C:\\Users\\user\\Desktop\\dopamine-map</code><br>" +
+        "<code>run.bat</code>";
+    }
+
+    function resetAdminPasswordToDefault() {
+      localStorage.removeItem(ADMIN_PASS_KEY);
+      showToast("비밀번호가 1111로 초기화되었습니다");
+    }
+
+    function showToast(msg, ms = 2200) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), ms);
+    }
+
+    function getAdminPass() {
+      return localStorage.getItem(ADMIN_PASS_KEY) || DEFAULT_ADMIN_PASS;
+    }
+
+    function isAuthed() {
+      const ts = sessionStorage.getItem(ADMIN_SESSION_KEY);
+      return ts && Date.now() - Number(ts) < SESSION_MS;
+    }
+
+    function setAuthed() {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, String(Date.now()));
+    }
+
+    function clearAuthed() {
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    }
+
+    async function showAdmin() {
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("adminView").classList.remove("hidden");
+      await renderCustomList();
+    }
+
+    function getKakaoRestKey() {
+      return KAKAO_REST_API_KEY;
+    }
+
+    function showLogin() {
+      document.getElementById("adminView").classList.add("hidden");
+      document.getElementById("loginView").classList.remove("hidden");
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pass = document.getElementById("adminPass").value.trim();
+      try {
+        await DopamineStore.verifyAdminPassword(pass);
+        localStorage.setItem(ADMIN_PASS_KEY, pass);
+        setAuthed();
+        await showAdmin();
+        showToast("관리자 로그인 ✓");
+      } catch (_) {
+        showToast("비밀번호가 올바르지 않습니다 (서버 ADMIN_PASSWORD와 동일해야 합니다)");
+      }
+    });
+
+    document.getElementById("resetPassLoginBtn").addEventListener("click", resetAdminPasswordToDefault);
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      clearAuthed();
+      showLogin();
+      document.getElementById("adminPass").value = "";
+    });
+
+    document.getElementById("changePassBtn").addEventListener("click", () => {
+      const next = document.getElementById("newPass").value.trim();
+      if (next.length < 4) {
+        showToast("비밀번호는 4자 이상");
+        return;
+      }
+      localStorage.setItem(ADMIN_PASS_KEY, next);
+      document.getElementById("newPass").value = "";
+      showToast("브라우저에 저장됨 — 서버(ADMIN_PASSWORD)도 호스팅 설정에서 같이 바꿔야 API가 동작합니다", 4500);
+    });
+
+    function buildAddressFromPostcode(data) {
+      let addr = "";
+      let extra = "";
+
+      if (data.userSelectedType === "R") {
+        addr =
+          data.roadAddress ||
+          data.autoRoadAddress ||
+          data.address ||
+          "";
+      } else {
+        addr =
+          data.jibunAddress ||
+          data.autoJibunAddress ||
+          data.address ||
+          "";
+      }
+
+      if (!addr) {
+        addr =
+          data.address ||
+          data.roadAddress ||
+          data.jibunAddress ||
+          data.autoRoadAddress ||
+          data.autoJibunAddress ||
+          "";
+      }
+
+      if (data.userSelectedType === "R") {
+        if (data.bname && /[동로가]$/.test(data.bname)) {
+          extra += data.bname;
+        }
+        if (data.buildingName && data.apartment === "Y") {
+          extra += extra !== "" ? ", " + data.buildingName : data.buildingName;
+        }
+        if (extra !== "") {
+          extra = " (" + extra + ")";
+        }
+      }
+
+      return (addr + extra).trim();
+    }
+
+    function applySelectedAddress(addr, postcodeData) {
+      const addrInput = document.getElementById("regAddr");
+      addrInput.value = addr;
+      addrInput.dispatchEvent(new Event("input", { bubbles: true }));
+      document.getElementById("regAddrDetail").focus();
+      fillCoordsFromAddress(addr, postcodeData);
+    }
+
+    function getFullAddress() {
+      const base = document.getElementById("regAddr").value.trim();
+      const detail = document.getElementById("regAddrDetail").value.trim();
+      if (!base) return "";
+      return detail ? base + " " + detail : base;
+    }
+
+    function openAddressSearch() {
+      if (IS_FILE_PROTOCOL) {
+        showToast("file:// 로는 주소 검색 불가 — http://127.0.0.1:8080/admin.html 로 열어주세요", 4000);
+        showFileProtocolWarning();
+        return;
+      }
+
+      const Postcode =
+        (window.daum && window.daum.Postcode) ||
+        (window.kakao && window.kakao.Postcode);
+
+      if (!Postcode) {
+        showToast("주소 검색 스크립트를 불러오지 못했습니다");
+        return;
+      }
+
+      new Postcode({
+        oncomplete: function (data) {
+          const addr = buildAddressFromPostcode(data);
+          if (!addr) {
+            showToast("주소 정보를 가져오지 못했습니다");
+            return;
+          }
+          // 팝업 닫힌 직후 DOM 반영 타이밍 이슈 방지
+          setTimeout(function () {
+            applySelectedAddress(addr, data);
+            showToast("주소가 입력되었습니다 · 좌표 변환 중…", 1800);
+          }, 50);
+        },
+      }).open();
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", resetForm);
+    document.getElementById("cancelEditBtn").addEventListener("click", resetForm);
+    document.getElementById("regPhoto").addEventListener("change", handlePhotoSelect);
+    document.getElementById("clearPhotoBtn").addEventListener("click", () => {
+      setSpotPhoto("");
+      showToast("사진이 제거되었습니다", 1600);
+    });
+
+    async function renderCustomList() {
+      const box = document.getElementById("customList");
+      try {
+        spotsCache = await DopamineStore.fetchAllSpots();
+      } catch (err) {
+        spotsCache = [];
+        box.innerHTML =
+          '<p class="empty">서버에 연결할 수 없습니다.<br><code>python -m uvicorn server.main:app --port 8080</code> 실행 후 새로고침하세요.</p>';
+        return;
+      }
+      if (!spotsCache.length) {
+        box.innerHTML = '<p class="empty">등록된 스팟이 없습니다. 위 폼에서 새로 추가하세요.</p>';
+        return;
+      }
+      box.innerHTML = spotsCache
+        .slice()
+        .reverse()
+        .map(
+          (s) => `
+        <div class="item${editingSpotId === s.id ? " edit-mode" : ""}" style="${editingSpotId === s.id ? "border-color:#4a3a0a" : ""}">
+          ${
+            DopamineStore.hasSpotImage(s)
+              ? `<img src="${s.img}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0" />`
+              : `<span style="font-size:22px">${escapeHtml(s.em || "🔥")}</span>`
+          }
+          <div class="item-main">
+            <div class="item-name">${escapeHtml(s.name)}</div>
+            <div class="item-addr">${escapeHtml(s.addr)}</div>
+            <div class="hint" style="margin-top:4px">스릴 ${s.th || "-"} · ${escapeHtml(s.tl || s.type || "")}</div>
+          </div>
+          <div class="item-actions">
+            <button type="button" class="edit" data-action="edit" data-id="${s.id}">수정</button>
+            <button type="button" class="del" data-action="delete" data-id="${s.id}">삭제</button>
+          </div>
+        </div>`
+        )
+        .join("");
+
+      box.querySelectorAll("[data-action]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = Number(btn.dataset.id);
+          if (btn.dataset.action === "edit") {
+            await startEditSpot(id);
+            return;
+          }
+          if (!confirm(`「${getSpotFromCache(id)?.name || "스팟"}」을(를) 삭제할까요?`)) return;
+          if (editingSpotId === id) resetForm();
+          try {
+            await DopamineStore.deleteSpotFromApi(id, getAdminPass());
+            showToast("삭제되었습니다");
+          } catch (err) {
+            showToast(err.status === 401 ? "서버 인증 실패 — 다시 로그인" : "삭제 실패", 2800);
+            return;
+          }
+          await renderCustomList();
+        });
+      });
+    }
+
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = getFormData();
+      if (!data.name || !data.addr || !data.type || Number.isNaN(data.lat) || Number.isNaN(data.lng)) {
+        showToast("필수 항목(종류 포함)을 입력해 주세요");
+        return;
+      }
+
+      const existing = editingSpotId ? getSpotFromCache(editingSpotId) : null;
+      const spot = DopamineStore.buildSpotFromForm(data, spotsCache, existing);
+
+      try {
+        await DopamineStore.saveSpotToApi(spot, getAdminPass());
+      } catch (err) {
+        if (err.status === 401) {
+          showToast("서버 인증 실패 — 다시 로그인해 주세요", 2800);
+        } else if (err.status === 413) {
+          showToast("저장 실패 — 사진 용량이 너무 큽니다", 3500);
+        } else {
+          showToast("저장 실패 — 서버가 실행 중인지 확인하세요", 3200);
+        }
+        return;
+      }
+      await renderCustomList();
+      resetForm();
+      showToast(
+        existing ? `「${spot.name}」 수정 완료` : `「${spot.name}」 DB 등록 완료`,
+        2600
+      );
+    });
+
+    function setLatLng(lat, lng, label) {
+      document.getElementById("regLat").value = Number(lat).toFixed(7);
+      document.getElementById("regLng").value = Number(lng).toFixed(7);
+      showToast(label || "좌표를 찾았습니다 ✓");
+    }
+
+    function normalizeKoreanAddress(addr) {
+      let a = String(addr || "").trim();
+      const sidoRules = [
+        [/^서울\s/, "서울특별시 "],
+        [/^부산\s/, "부산광역시 "],
+        [/^대구\s/, "대구광역시 "],
+        [/^인천\s/, "인천광역시 "],
+        [/^광주\s/, "광주광역시 "],
+        [/^대전\s/, "대전광역시 "],
+        [/^울산\s/, "울산광역시 "],
+        [/^세종\s/, "세종특별자치시 "],
+        [/^경기\s/, "경기도 "],
+        [/^강원\s/, "강원특별자치도 "],
+        [/^충북\s/, "충청북도 "],
+        [/^충남\s/, "충청남도 "],
+        [/^전북\s/, "전북특별자치도 "],
+        [/^전남\s/, "전라남도 "],
+        [/^경북\s/, "경상북도 "],
+        [/^경남\s/, "경상남도 "],
+        [/^제주\s/, "제주특별자치도 "],
+      ];
+      for (const [re, rep] of sidoRules) {
+        if (re.test(a)) {
+          a = a.replace(re, rep);
+          break;
+        }
+      }
+      a = a.replace(/([가-힣]+(?:로|길))(\d+)/g, "$1 $2");
+      return a.replace(/\s+/g, " ").trim();
+    }
+
+    function expandGeocodeCandidates(candidates) {
+      const out = [];
+      candidates.forEach((addr) => {
+        if (!addr) return;
+        out.push(addr);
+        const normalized = normalizeKoreanAddress(addr);
+        if (normalized && normalized !== addr) out.push(normalized);
+        const plain = addr.replace(/\s*\([^)]*\)/g, "").trim();
+        if (plain && plain !== addr) {
+          out.push(plain);
+          const plainNorm = normalizeKoreanAddress(plain);
+          if (plainNorm && plainNorm !== plain) out.push(plainNorm);
+        }
+      });
+      return [...new Set(out.filter(Boolean))];
+    }
+
+    function getGeocodeCandidates(postcodeData, displayAddr) {
+      const list = [];
+      if (postcodeData) {
+        [
+          postcodeData.roadAddress,
+          postcodeData.address,
+          postcodeData.jibunAddress,
+          postcodeData.autoRoadAddress,
+          postcodeData.autoJibunAddress,
+        ].forEach((v) => {
+          if (v) list.push(v.trim());
+        });
+      }
+      if (displayAddr) list.push(displayAddr.trim());
+      return expandGeocodeCandidates(list);
+    }
+
+    async function kakaoRestFetch(path, params) {
+      const key = getKakaoRestKey();
+      if (!key) throw new Error("NO_REST_KEY");
+      const url =
+        "https://dapi.kakao.com/v2/local/" +
+        path +
+        "?" +
+        new URLSearchParams(params);
+      const res = await fetch(url, {
+        headers: { Authorization: "KakaoAK " + key },
+      });
+      if (res.status === 401) throw new Error("REST_UNAUTHORIZED");
+      if (!res.ok) throw new Error("REST_HTTP_" + res.status);
+      return res.json();
+    }
+
+    async function geocodeWithKakaoRest(addr) {
+      const data = await kakaoRestFetch("search/address.json", { query: addr });
+      if (data.documents && data.documents[0]) {
+        return {
+          lat: data.documents[0].y,
+          lng: data.documents[0].x,
+          source: "rest-address",
+        };
+      }
+      throw new Error("REST_ZERO_RESULT");
+    }
+
+    async function geocodeWithKakaoRestKeyword(keyword) {
+      const data = await kakaoRestFetch("search/keyword.json", {
+        query: keyword,
+        size: "1",
+      });
+      if (data.documents && data.documents[0]) {
+        return {
+          lat: data.documents[0].y,
+          lng: data.documents[0].x,
+          source: "rest-keyword",
+        };
+      }
+      throw new Error("REST_KEYWORD_ZERO");
+    }
+
+    async function geocodeWithKakaoRestCandidates(candidates) {
+      for (const addr of candidates) {
+        try {
+          return await geocodeWithKakaoRest(addr);
+        } catch (err) {
+          console.warn("Kakao REST address miss:", addr, err.message);
+        }
+      }
+      for (const keyword of candidates) {
+        try {
+          return await geocodeWithKakaoRestKeyword(keyword);
+        } catch (err) {
+          console.warn("Kakao REST keyword miss:", keyword, err.message);
+        }
+      }
+      throw new Error("REST_ALL_FAILED");
+    }
+
+    async function geocodeFromCandidates(candidates) {
+      return geocodeWithKakaoRestCandidates(candidates);
+    }
+
+    async function fillCoordsFromAddress(displayAddr, postcodeData) {
+      if (!displayAddr && !postcodeData) return;
+
+      const candidates = getGeocodeCandidates(postcodeData, displayAddr);
+      if (!candidates.length) return;
+
+      document.getElementById("regLat").value = "";
+      document.getElementById("regLng").value = "";
+      showToast("좌표 변환 중…", 1200);
+
+      try {
+        const hit = await geocodeFromCandidates(candidates);
+        setLatLng(hit.lat, hit.lng, "주소 · 좌표 입력 완료 ✓");
+      } catch (err) {
+        console.error(err);
+        if (err.message === "REST_UNAUTHORIZED") {
+          showToast("REST API 키가 올바르지 않습니다", 3200);
+        } else {
+          showToast("좌표 변환 실패 — 주소 확인 또는 카카오 콘솔 지도/로컬 API 확인", 3600);
+        }
+      }
+    }
+
+    document.getElementById("addrSearchBtn").addEventListener("click", openAddressSearch);
+
+    if (isAuthed()) showAdmin().catch(() => showLogin());
+    showFileProtocolWarning();
+    renderTagPicker();
+    renderEmojiPicker();
+  </script>
+</body>
+</html>

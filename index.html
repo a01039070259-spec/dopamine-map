@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>도파민 지도 ⚡ — 찐 매니아를 위한 하드코어 액티비티</title>
+
+<!-- ============================================================
+  🔑 카카오맵 API 키 설정
+  1. https://developers.kakao.com 에서 앱 생성
+  2. '앱 키' 탭에서 'JavaScript 키'를 복사
+  3. 아래 YOUR_KAKAO_API_KEY_HERE 를 복사한 키로 교체
+  4. 플랫폼 설정 > Web에서 본인 도메인(또는 localhost) 등록 필수
+============================================================ -->
+<!-- 카카오 SDK는 아래 JS에서 동적 로드 (404/onerror 오탐 방지) -->
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-serif;color:#f0f0f0}
+
+/* ── APP SHELL (웹 전체 너비) ── */
+.app{width:100%;min-height:100vh;position:relative;overflow:hidden;background:#0a0a0a;color:#f0f0f0}
+.screen{position:fixed;inset:0;background:#0a0a0a;transition:opacity .35s ease,transform .35s cubic-bezier(.4,0,.2,1);z-index:1}
+.screen.hidden{opacity:0;transform:translateX(100%);pointer-events:none;z-index:0}
+.screen.slide-left{opacity:0;transform:translateX(-100%);pointer-events:none;z-index:0}
+.screen.active{opacity:1;transform:translateX(0);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;z-index:2}
+.screen.fade-out{opacity:0;transition:opacity .6s ease;pointer-events:none}
+.ob-skip.skip-hidden{display:none !important}
+
+/* ── TOKENS ── */
+:root{
+  --neon:#39ff14;
+  --red:#ff4444;
+  --orange:#ff8800;
+  --purple:#cc44ff;
+  --bg:#0a0a0a;
+  --bg2:#111;
+  --bg3:#161616;
+  --border:#1e1e1e;
+  --border2:#2a2a2a;
+  --text-muted:#555;
+  --text-dim:#888;
+}
+
+/* ── SHARED ── */
+.topbar{background:rgba(10,10,10,.94);padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:space-between}
+.back-btn{background:transparent;border:1px solid var(--border2);color:var(--text-dim);font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.back-btn:hover{border-color:var(--neon);color:var(--neon)}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.action-btn{
+  background:transparent;border:1px solid var(--border2);color:var(--text-dim);
+  font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;
+  padding:7px 11px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  transition:all .15s;
+}
+.action-btn:hover{border-color:var(--neon);color:var(--neon)}
+.action-btn.primary{border-color:rgba(57,255,20,.35);color:var(--neon)}
+.icon-btn{background:transparent;border:1px solid var(--border2);color:var(--text-dim);width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s}
+.icon-btn:hover{border-color:var(--neon);color:var(--neon)}
+.sec-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px}
+.t-roller{background:#1f0a30;color:#c084fc;border:1px solid #3b1a5c}
+.t-zipline{background:#0a1f10;color:#4ade80;border:1px solid #1a4a2a}
+.t-luge{background:#1f1a0a;color:#fbbf24;border:1px solid #4a3a0a}
+.t-swing{background:#1f0a0a;color:#f87171;border:1px solid #4a1a1a}
+.t-bungee{background:#0a0a1f;color:#60a5fa;border:1px solid #1a1a4a}
+.t-sky{background:#1f0a1f;color:#f0abfc;border:1px solid #3b1a3b}
+.t-coaster{background:#0a1f1a;color:#2dd4bf;border:1px solid #1a4a3f}
+.t-custom{background:#1a1a1a;color:#ccc;border:1px solid #333}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--neon);color:#0a0a0a;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;padding:10px 18px;border-radius:20px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:9999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.btn-primary{background:var(--neon);color:#0a0a0a;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary:active{transform:scale(.97)}
+.btn-secondary{background:transparent;color:#f0f0f0;border:1px solid var(--border2);border-radius:10px;padding:13px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-secondary:hover{border-color:var(--neon);color:var(--neon)}
+
+/* ══════════════════════════════
+   ① ONBOARDING
+══════════════════════════════ */
+#onboardScreen{background:#000;z-index:100;overflow:hidden}
+.ob-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(57,255,20,.07) 0%,transparent 70%)}
+.ob-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);pointer-events:none;opacity:.35}
+.ob-corner{position:absolute;width:28px;height:28px;border-color:var(--neon);border-style:solid;opacity:.35}
+.ob-corner.tl{top:16px;left:16px;border-width:2px 0 0 2px}
+.ob-corner.tr{top:16px;right:16px;border-width:2px 2px 0 0}
+.ob-corner.bl{bottom:80px;left:16px;border-width:0 0 2px 2px}
+.ob-corner.br{bottom:80px;right:16px;border-width:0 2px 2px 0}
+#introPhase{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;max-width:720px;margin:0 auto;left:0;right:0}
+.ob-warn-bar{background:var(--neon);color:#000;font-size:11px;font-weight:900;letter-spacing:2px;padding:5px 14px;border-radius:3px;margin-bottom:32px;opacity:0;animation:obIn .4s forwards}
+.ob-line{font-size:17px;font-weight:700;color:#fff;line-height:1.5;text-align:center;margin-bottom:10px;opacity:0;min-height:26px;letter-spacing:-.3px}
+.ob-line.neon{color:var(--neon)}
+.ob-logo-big{font-size:34px;font-weight:900;color:var(--neon);letter-spacing:-1px;margin-top:24px;opacity:0}
+.ob-logo-sub{font-size:12px;color:#444;letter-spacing:2px;text-transform:uppercase;margin-top:4px;opacity:0}
+.ob-skip{
+  position:fixed;
+  bottom:24px;
+  right:clamp(16px,4vw,48px);
+  z-index:120;
+  background:rgba(10,10,10,.82);
+  border:1px solid var(--border2);
+  color:var(--text-dim);
+  font-size:13px;
+  font-family:'Noto Sans KR',sans-serif;
+  cursor:pointer;
+  padding:8px 14px;
+  border-radius:8px;
+  backdrop-filter:blur(6px);
+  transition:color .2s,border-color .2s,background .2s;
+}
+.ob-skip:hover{color:var(--neon);border-color:var(--neon);background:rgba(13,42,6,.85)}
+@keyframes obIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* QUIZ */
+#quizPhase{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s;max-width:640px;margin:0 auto;left:0;right:0}
+#quizPhase.active{opacity:1;pointer-events:all}
+.qz-header{padding:20px 20px 16px;border-bottom:1px solid var(--border);background:#050505}
+.qz-steps{display:flex;gap:6px;margin-bottom:12px}
+.qz-dot{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s}
+.qz-dot.done{background:var(--neon)}
+.qz-dot.active{background:rgba(57,255,20,.4)}
+.qz-tag{font-size:10px;color:var(--neon);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.qz-q{font-size:17px;font-weight:900;color:#fff;line-height:1.4;letter-spacing:-.3px}
+.qz-body{flex:1;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.qz-opt{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:15px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:13px}
+.qz-opt:hover{border-color:var(--neon)}
+.qz-opt.selected{border-color:var(--neon);background:#0d2a06}
+.qz-opt-ico{font-size:22px;flex-shrink:0}
+.qz-opt-txt{font-size:14px;color:#ccc;font-weight:500;line-height:1.4}
+.qz-opt.selected .qz-opt-txt{color:var(--neon);font-weight:700}
+.qz-footer{padding:14px 20px 18px;background:#050505;border-top:1px solid var(--border)}
+.qz-next{width:100%;background:var(--neon);color:#0a0a0a;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;opacity:.3;transition:all .2s;pointer-events:none}
+.qz-next.on{opacity:1;pointer-events:all}
+.qz-next.on:active{transform:scale(.97)}
+
+/* RESULT */
+#resultPhase{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s;overflow-y:auto;max-width:720px;margin:0 auto;left:0;right:0}
+#resultPhase.active{opacity:1;pointer-events:all}
+.rs-wrap{padding:26px 20px 0;text-align:center}
+.rs-badge-label{font-size:10px;color:var(--neon);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.rs-grade{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.25;margin-bottom:6px}
+.rs-emoji{font-size:52px;margin:14px 0}
+.rs-desc{font-size:13px;color:var(--text-dim);line-height:1.7;padding:0 4px}
+.rs-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:18px 20px 0}
+.rs-stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center}
+.rs-stat-val{font-size:18px;font-weight:900;margin-bottom:3px}
+.rs-stat-lbl{font-size:10px;color:var(--text-muted);letter-spacing:.3px}
+.rs-badges{display:flex;flex-wrap:wrap;gap:6px;padding:0 20px;margin-top:12px;justify-content:center}
+.rs-badge{font-size:11px;padding:4px 10px;border-radius:4px;font-weight:600}
+.rs-divider{height:1px;background:var(--border);margin:16px 20px 0}
+.rs-enter-btn{margin:18px 20px 24px;background:var(--neon);color:#0a0a0a;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:calc(100% - 40px);display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:-.3px;transition:all .15s;box-shadow:0 0 30px rgba(57,255,20,.2)}
+.rs-enter-btn:active{transform:scale(.97)}
+
+/* ══════════════════════════════
+   ② MAIN
+══════════════════════════════ */
+.m-header{background:var(--bg);padding:20px clamp(16px,4vw,48px) 14px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.m-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px}
+.m-header-top .m-logo-row{flex:1;min-width:0}
+.m-logo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.m-badge{background:var(--neon);color:#0a0a0a;font-size:10px;font-weight:900;padding:3px 7px;border-radius:4px;letter-spacing:.5px}
+.m-title{font-size:clamp(1.4rem,3vw,1.75rem);font-weight:900;color:#fff;letter-spacing:-.5px}
+.m-title em{color:var(--neon);font-style:normal}
+.m-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.m-search-wrap{position:relative;margin-top:10px;max-width:480px}
+.m-si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--neon);font-size:14px}
+.m-search{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px 12px 10px 34px;color:#f0f0f0;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s}
+.m-search::placeholder{color:var(--text-muted)}
+.m-search:focus{border-color:var(--neon)}
+.m-filter-sec{padding:10px clamp(16px,4vw,48px);border-bottom:1px solid var(--border)}
+.m-filter-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.m-filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.m-filter-row::-webkit-scrollbar{display:none}
+.mfb{flex-shrink:0;background:var(--bg3);border:1px solid var(--border2);color:var(--text-dim);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:6px 13px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .15s;font-weight:500}
+.mfb.active{background:var(--neon);border-color:var(--neon);color:#0a0a0a;font-weight:700}
+.mfb:hover:not(.active){border-color:var(--neon);color:var(--neon)}
+.m-rh{padding:12px clamp(16px,4vw,48px) 5px;display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;width:100%}
+.m-rc{font-size:12px;color:var(--text-muted)}
+.m-rc b{color:var(--neon)}
+.m-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:0 clamp(16px,4vw,48px) 48px;max-width:1200px;margin:0 auto;width:100%}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s}
+.mc:active{transform:scale(.98)}
+.mc:hover{border-color:#2a2a2a}
+.mc-img{width:100%;height:135px;display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;overflow:hidden}
+.spot-cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.spot-emoji{font-size:42px;z-index:1;position:relative}
+.mc-ov{position:absolute;inset:0;background:linear-gradient(to top,var(--bg2) 0%,transparent 55%);z-index:1}
+.mc-rb{position:absolute;top:8px;left:8px;background:var(--neon);color:#0a0a0a;font-size:9px;font-weight:900;padding:3px 7px;border-radius:3px;z-index:2}
+.mc-tb{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.75);border:1px solid #333;border-radius:5px;padding:3px 7px;font-size:11px;z-index:2}
+.mc-body{padding:11px 13px 13px}
+.mc-name{font-size:15px;font-weight:700;color:#fff;margin:5px 0 2px}
+.mc-addr{font-size:11px;color:var(--text-muted)}
+.mc-tags{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.mc-tag{background:#1a1a1a;border:1px solid #252525;color:var(--neon);font-size:10px;padding:3px 7px;border-radius:3px;font-weight:500}
+.mc-div{height:1px;background:var(--border);margin:8px 0}
+.mc-review{font-size:12px;color:var(--text-dim);line-height:1.5;padding-left:13px;position:relative}
+.mc-review::before{content:'"';position:absolute;left:0;top:-2px;color:var(--neon);font-size:17px;font-weight:900;line-height:1}
+.mc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+.mc-tl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.mc-dbtn{background:transparent;border:1px solid var(--border2);color:var(--text-dim);font-size:11px;font-family:'Noto Sans KR',sans-serif;padding:5px 11px;border-radius:6px;cursor:pointer;transition:all .15s}
+.mc-dbtn:hover{border-color:var(--neon);color:var(--neon)}
+.m-fab{
+  position:relative;flex-shrink:0;margin-top:2px;
+  background:var(--neon);color:#0a0a0a;border:none;border-radius:50px;
+  padding:9px 16px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+  box-shadow:0 4px 16px rgba(57,255,20,.3);white-space:nowrap;transition:all .15s;
+}
+.m-fab:active{transform:scale(.96)}
+@media(max-width:520px){
+  .m-fab{padding:8px 12px;font-size:12px}
+  .m-fab span.fab-label{display:none}
+}
+
+.d-hero{position:relative;height:195px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.d-hero-ov{position:absolute;inset:0;background:linear-gradient(to top,var(--bg) 0%,rgba(10,10,10,.3) 55%,transparent 100%);z-index:1}
+.spot-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.d-hero-em{font-size:62px;z-index:2;position:relative}
+.d-hero-ct{position:absolute;bottom:0;left:0;right:0;padding:13px;z-index:2}
+.d-title{font-size:20px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:3px}
+.d-addr{font-size:11px;color:#777}
+.d-body{padding:0 clamp(16px,4vw,48px) 130px;max-width:900px;margin:0 auto}
+.d-sec{padding:14px 0;border-bottom:1px solid var(--border)}
+.gauge-row{margin-bottom:8px}
+.gauge-lbl{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.gauge-name{font-size:13px;color:#ccc;font-weight:500}
+.gauge-val{font-size:13px;font-weight:700}
+.gauge-track{background:var(--border);border-radius:4px;height:7px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.stars-row{display:flex;align-items:center;gap:10px;margin-top:11px;padding:11px;background:var(--bg2);border:1px solid var(--border);border-radius:10px}
+.stars-lbl{font-size:12px;color:#777}
+.stars-num{font-size:21px;font-weight:900;color:var(--neon);margin-left:auto}
+.warn-item{background:#130000;border:1px solid #2a0808;border-radius:10px;padding:10px 12px;margin-bottom:7px;display:flex;gap:9px;align-items:flex-start}
+.warn-txt{font-size:12px;color:#ffaaaa;line-height:1.5;font-weight:500}
+.warn-item.y{background:#131000;border-color:#2a2000}
+.warn-item.y .warn-txt{color:#ffe066}
+.warn-item.g{background:#001310;border-color:#002a20}
+.warn-item.g .warn-txt{color:#66ffcc}
+.rv-card{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:8px}
+.rv-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.rv-nick{font-size:13px;font-weight:700;color:var(--neon)}
+.rv-meta{font-size:11px;color:#444}
+.rv-text{font-size:12px;color:#aaa;line-height:1.6}
+.rv-tag{display:inline-block;background:#1a1a1a;color:#666;font-size:10px;padding:2px 6px;border-radius:3px;margin-top:6px;margin-right:3px}
+.d-sticky{position:sticky;bottom:0;background:rgba(10,10,10,.96);border-top:1px solid var(--border);padding:11px 16px;display:flex;gap:9px;z-index:50;backdrop-filter:blur(8px)}
+
+/* ══════════════════════════════
+   ④ REVIEW
+══════════════════════════════ */
+.rw-body{padding:14px clamp(16px,4vw,48px) 120px;max-width:720px;margin:0 auto}
+.rw-target-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:18px;display:flex;align-items:center;gap:11px}
+.rw-sec{margin-bottom:18px}
+.rw-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:11px 13px;color:#f0f0f0;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s}
+.rw-input::placeholder{color:#444}
+.rw-input:focus{border-color:var(--neon)}
+.slider-wrap{margin-bottom:12px}
+.slider-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.slider-name{font-size:13px;color:#ccc;font-weight:500}
+.slider-val{font-size:14px;font-weight:700;min-width:40px;text-align:right}
+.slider-track{position:relative;height:10px;background:var(--border);border-radius:5px}
+.slider-fill{position:absolute;left:0;top:0;height:100%;border-radius:5px;pointer-events:none}
+.rw-range{width:100%;appearance:none;-webkit-appearance:none;background:transparent;outline:none;height:10px;position:absolute;left:0;top:0;margin:0;cursor:pointer}
+.rw-range::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid #333;margin-top:-5px;cursor:pointer}
+.rw-range::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid #333;cursor:pointer}
+.tag-grid{display:flex;flex-wrap:wrap;gap:7px}
+.rw-tag{background:var(--bg3);border:1px solid var(--border2);color:#666;font-size:12px;padding:6px 11px;border-radius:6px;cursor:pointer;transition:all .15s;user-select:none;font-family:'Noto Sans KR',sans-serif;font-weight:500}
+.rw-tag.sel{background:#0d2a06;border-color:var(--neon);color:var(--neon);font-weight:700}
+.rw-tag:active{transform:scale(.96)}
+.rw-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:13px;color:#f0f0f0;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;resize:none;line-height:1.6;transition:border-color .2s;min-height:95px}
+.rw-textarea::placeholder{color:#3a3a3a}
+.rw-textarea:focus{border-color:var(--neon)}
+.rw-char{font-size:11px;color:#444;text-align:right;margin-top:4px}
+.rw-hint{font-size:11px;color:#444;line-height:1.5;padding:9px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:13px}
+.rw-hint span{color:var(--neon);font-weight:700}
+.rw-sticky{position:sticky;bottom:0;background:rgba(10,10,10,.96);border-top:1px solid var(--border);padding:11px 16px;z-index:50;backdrop-filter:blur(8px)}
+.rw-submit{width:100%;background:var(--neon);color:#0a0a0a;border:none;border-radius:11px;padding:14px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.rw-submit:active{transform:scale(.97)}
+
+/* ══════════════════════════════
+   ⑤ MAP
+══════════════════════════════ */
+#mapScreen{
+  overflow:hidden !important;
+  height:100vh;
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+}
+#mapScreen.active{overflow:hidden !important}
+#mapScreen.active > .map-chrome{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:99999;
+  pointer-events:auto;
+  background:#0a0a0a;
+  border-bottom:1px solid var(--border);
+}
+#mapScreen.active > .map-stage{
+  padding-top:112px;
+  height:100%;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.map-chrome{
+  flex-shrink:0;
+  position:relative;
+  z-index:500;
+  background:#0a0a0a;
+  border-bottom:1px solid var(--border);
+}
+.map-topbar{
+  position:relative;
+  z-index:501;
+  padding:13px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:rgba(10,10,10,.96);
+  backdrop-filter:blur(8px);
+}
+.map-back-btn{
+  flex-shrink:0;
+  min-width:84px;
+  background:rgba(10,10,10,.9) !important;
+  touch-action:manipulation;
+  cursor:pointer;
+  position:relative;
+  z-index:100000;
+}
+.map-title{font-size:15px;font-weight:900;color:#fff}
+.map-title em{color:var(--neon);font-style:normal}
+.map-stage{
+  flex:1;
+  position:relative;
+  min-height:0;
+  width:100%;
+}
+#kakaoMap{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  background:#1a1a1a;
+  z-index:1;
+}
+
+/* 카카오맵 UI 정리 (타일 필터 제거 — 지도가 안 보이는 원인 방지) */
+#kakaoMap .custom_typecontrol,
+#kakaoMap .roughmap_btnZ,
+#kakaoMap a[href*="kakao"]{display:none !important}
+/* 줌 컨트롤이 상단 UI에 가리지 않도록 여백 */
+#kakaoMap .custom_zoomcontrol,
+#kakaoMap .wrap_controllers{top:12px !important;right:12px !important}
+
+.radius-bar{position:relative;top:auto;left:auto;right:auto;z-index:200;padding:0 16px 12px;display:flex;gap:8px;justify-content:center}
+.rbtn{background:rgba(10,10,10,.88);border:1px solid var(--border2);color:var(--text-dim);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:6px 15px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .15s;font-weight:500;backdrop-filter:blur(6px)}
+.rbtn.active{background:var(--neon);border-color:var(--neon);color:#0a0a0a;font-weight:700}
+.rbtn:hover:not(.active){border-color:var(--neon);color:var(--neon)}
+.map-counter{position:absolute;bottom:14px;right:14px;z-index:200;background:rgba(10,10,10,.88);border:1px solid var(--border2);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--text-muted);backdrop-filter:blur(6px);text-align:right}
+.map-counter b{color:var(--neon);font-size:13px}
+
+/* 카카오맵 API 없을 때 fallback */
+.map-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center;z-index:15;background:rgba(10,10,10,.95)}
+.map-fallback-icon{font-size:48px}
+.map-fallback-title{font-size:18px;font-weight:900;color:#fff}
+.map-fallback-desc{font-size:13px;color:var(--text-dim);line-height:1.7}
+.map-fallback-code{background:#111;border:1px solid var(--border2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--neon);font-family:monospace;letter-spacing:.3px;word-break:break-all}
+
+/* CUSTOM MARKER */
+.dopamine-marker{position:relative;cursor:pointer;transform:translateX(-50%) translateY(-100%)}
+.dm-bubble{background:#0a0a0a;border:2px solid var(--neon);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:5px;white-space:nowrap;box-shadow:0 0 12px rgba(57,255,20,.3);transition:all .2s}
+.dm-bubble:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(57,255,20,.5)}
+.dm-bubble.skull{border-color:var(--red);box-shadow:0 0 12px rgba(255,68,68,.3)}
+.dm-bubble.skull:hover{box-shadow:0 0 20px rgba(255,68,68,.5)}
+.dm-bubble::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--neon)}
+.dm-bubble.skull::after{border-top-color:var(--red)}
+.dm-ico{font-size:14px}
+.dm-name{font-size:11px;color:#fff;font-weight:700;font-family:'Noto Sans KR',sans-serif;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+
+/* BOTTOM SHEET */
+.bottom-sheet{position:absolute;bottom:0;left:0;right:0;z-index:300;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.bottom-sheet.open{transform:translateY(0);pointer-events:auto}
+.bs-handle-area{padding:10px 0 0;display:flex;justify-content:center;background:#141414;border-radius:14px 14px 0 0;border-top:1px solid var(--border2)}
+.bs-handle{width:34px;height:4px;background:#333;border-radius:2px;margin-bottom:10px}
+.bs-body{background:#141414;padding:0 15px 20px;position:relative}
+.bs-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:10px}
+.bs-em{font-size:32px;flex-shrink:0;margin-top:2px}
+.spot-thumb-img{flex-shrink:0;object-fit:cover;border-radius:8px;border:1px solid var(--border2)}
+.bs-name{font-size:16px;font-weight:900;color:#fff;margin-bottom:3px;line-height:1.2}
+.bs-addr{font-size:11px;color:var(--text-muted)}
+.bs-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+.bs-tag{background:#1a1a1a;border:1px solid #252525;color:var(--neon);font-size:10px;padding:3px 7px;border-radius:3px;font-weight:500}
+.bs-gauges{margin-bottom:13px}
+.bs-g-row{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.bs-g-lbl{font-size:11px;color:var(--text-dim);width:76px;flex-shrink:0}
+.bs-g-track{flex:1;background:var(--border);border-radius:3px;height:5px;overflow:hidden}
+.bs-g-fill{height:100%;border-radius:3px}
+.bs-g-val{font-size:11px;font-weight:700;width:30px;text-align:right}
+.bs-actions{display:flex;gap:9px}
+.bs-btn-detail{flex:2;background:var(--neon);color:#0a0a0a;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px}
+.bs-btn-detail:active{transform:scale(.97)}
+.bs-btn-add{flex:1;background:transparent;color:var(--text-dim);border:1px solid var(--border2);border-radius:9px;padding:11px;font-size:12px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s}
+.bs-btn-add:hover{border-color:var(--neon);color:var(--neon)}
+.bs-close{position:absolute;top:12px;right:14px;background:transparent;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;line-height:1;padding:2px 5px;transition:color .15s}
+.bs-close:hover{color:#f0f0f0}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ════════════ ① ONBOARDING ════════════ -->
+<div class="screen active" id="onboardScreen">
+  <div class="ob-bg"></div>
+  <div class="ob-scanlines"></div>
+  <div class="ob-corner tl"></div><div class="ob-corner tr"></div>
+  <div class="ob-corner bl"></div><div class="ob-corner br"></div>
+
+  <div id="introPhase">
+    <div class="ob-warn-bar" id="obWarn">⚠ WARNING SYSTEM INITIALIZING ⚠</div>
+    <div class="ob-line" id="obL1"></div>
+    <div class="ob-line neon" id="obL2"></div>
+    <div class="ob-line" id="obL3"></div>
+    <div class="ob-line neon" style="font-size:14px" id="obL4"></div>
+    <div class="ob-logo-big" id="obLogo">도파민 지도 ⚡</div>
+    <div class="ob-logo-sub" id="obLogoSub">DOPAMINE MAP — BETA</div>
+  </div>
+  <button class="ob-skip" id="obSkipIntro" onclick="startQuiz()">건너뛰기 →</button>
+  <button class="ob-skip skip-hidden" id="obSkipMain" onclick="enterMain()">건너뛰기 →</button>
+
+  <div id="quizPhase">
+    <div class="qz-header">
+      <div class="qz-steps" id="qzSteps">
+        <div class="qz-dot active"></div>
+        <div class="qz-dot"></div>
+        <div class="qz-dot"></div>
+      </div>
+      <div class="qz-tag">도파민 자가진단</div>
+      <div class="qz-q" id="qzQ"></div>
+    </div>
+    <div class="qz-body" id="qzOpts"></div>
+    <div class="qz-footer">
+      <button class="qz-next" id="qzNext" onclick="nextQ()">다음 →</button>
+    </div>
+  </div>
+
+  <div id="resultPhase">
+    <div class="rs-wrap">
+      <div class="rs-badge-label">진단 완료 · 당신의 도파민 등급</div>
+      <div class="rs-grade" id="rsGrade"></div>
+      <div class="rs-emoji" id="rsEmoji"></div>
+      <div class="rs-desc" id="rsDesc"></div>
+    </div>
+    <div class="rs-divider"></div>
+    <div class="rs-stats" id="rsStats"></div>
+    <div class="rs-badges" id="rsBadges"></div>
+    <div class="rs-divider"></div>
+    <button class="rs-enter-btn" onclick="enterMain()">🔥 도파민 지도 입장하기</button>
+  </div>
+</div>
+
+<!-- ════════════ ② MAIN ════════════ -->
+<div class="screen hidden" id="mainScreen">
+  <header class="m-header">
+    <div class="m-header-top">
+      <div class="m-logo-row">
+        <span class="m-badge">BETA</span>
+        <span style="font-size:11px;color:#444;letter-spacing:1px">DOPAMINE MAP</span>
+      </div>
+      <button class="m-fab" onclick="goMap()">🗺️ <span class="fab-label">지도로 보기</span></button>
+    </div>
+    <p class="m-title">도파민 지도 <em>⚡</em></p>
+    <p class="m-sub">찐 매니아를 위한 하드코어 액티비티 정보</p>
+    <div class="m-search-wrap">
+      <span class="m-si">🔍</span>
+      <input class="m-search" type="text" id="searchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 롤러코스터, 인천)"/>
+    </div>
+  </header>
+  <section class="m-filter-sec">
+    <p class="m-filter-lbl">정렬 기준</p>
+    <div class="m-filter-row" id="filterRow">
+      <button class="mfb active" data-f="thrill">🔥 스릴 지수순</button>
+      <button class="mfb" data-f="fear">💀 공포도순</button>
+      <button class="mfb" data-f="speed">⚡ 속도순</button>
+    </div>
+  </section>
+  <div class="m-rh">
+    <p class="m-rc"><b id="resultCount">0</b>개의 매운맛 장소</p>
+    <p style="font-size:11px;color:#444" id="sortInfo">스릴 지수 높은 순</p>
+  </div>
+  <div class="m-cards" id="cardList"></div>
+</div>
+
+<!-- ════════════ ③ DETAIL ════════════ -->
+<div class="screen hidden" id="detailScreen">
+  <div id="detailContent"></div>
+</div>
+
+<!-- ════════════ ④ REVIEW ════════════ -->
+<div class="screen hidden" id="reviewScreen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goDetail(currentId,true)">← 상세로</button>
+    <div style="display:flex;gap:5px;align-items:center">
+      <div style="width:6px;height:6px;border-radius:50%;background:#2a2a2a"></div>
+      <div style="width:6px;height:6px;border-radius:50%;background:#2a2a2a"></div>
+      <div style="width:18px;height:6px;border-radius:3px;background:var(--neon)"></div>
+    </div>
+  </div>
+  <div class="rw-body">
+    <div class="rw-sec">
+      <p class="sec-label">리뷰 작성 대상</p>
+      <div class="rw-target-card" id="rwTargetCard"></div>
+    </div>
+    <div class="rw-sec">
+      <p class="sec-label">① 닉네임 설정</p>
+      <input class="rw-input" id="rwNick" type="text" maxlength="16"
+        placeholder="예: 도파민중독자, 척추3번탈출, 안전바불신자" autocomplete="off"/>
+      <p style="font-size:11px;color:#444;margin-top:5px">익명 또는 컨셉 닉네임 자유 입력</p>
+    </div>
+    <div class="rw-sec">
+      <p class="sec-label">② 3대 매운맛 지수 직접 측정</p>
+      <div class="rw-hint"><span>직접 경험한 수치</span>로 설정하세요. 별점 따위는 없습니다.</div>
+      <div class="slider-wrap">
+        <div class="slider-top"><span class="slider-name">🔴 공포도</span><span class="slider-val" id="valFear" style="color:var(--red)">50%</span></div>
+        <div class="slider-track"><div class="slider-fill" id="fillFear" style="width:50%;background:var(--red)"></div><input class="rw-range" type="range" id="slFear" min="0" max="100" value="50"/></div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-top"><span class="slider-name">🟢 체감 속도</span><span class="slider-val" id="valSpeed" style="color:var(--neon)">50%</span></div>
+        <div class="slider-track"><div class="slider-fill" id="fillSpeed" style="width:50%;background:var(--neon)"></div><input class="rw-range" type="range" id="slSpeed" min="0" max="100" value="50"/></div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-top"><span class="slider-name">🟣 아드레날린</span><span class="slider-val" id="valAdr" style="color:var(--purple)">50%</span></div>
+        <div class="slider-track"><div class="slider-fill" id="fillAdr" style="width:50%;background:var(--purple)"></div><input class="rw-range" type="range" id="slAdr" min="0" max="100" value="50"/></div>
+      </div>
+    </div>
+    <div class="rw-sec">
+      <p class="sec-label">③ 매운맛 태그 선택 (복수 가능)</p>
+      <div class="tag-grid" id="tagGrid"></div>
+    </div>
+    <div class="rw-sec">
+      <p class="sec-label">④ 생존 한 줄 평</p>
+      <textarea class="rw-textarea" id="rwText" maxlength="200"
+        placeholder="리얼한 생존 후기를 남겨주세요.&#10;(광고 / 친절도 / 청결도 언급 금지)&#10;오직 스릴만 평가합니다. 🔥"></textarea>
+      <p class="rw-char"><span id="charCount">0</span> / 200자</p>
+    </div>
+  </div>
+  <div class="rw-sticky">
+    <button class="rw-submit" onclick="submitReview()">🔥 생존 인증 완료</button>
+  </div>
+</div>
+
+<!-- ════════════ ⑤ MAP ════════════ -->
+<div class="screen hidden" id="mapScreen" style="overflow:hidden!important">
+  <div class="map-chrome">
+    <div class="map-topbar">
+      <button type="button" class="back-btn map-back-btn" id="mapBackBtn">← 뒤로</button>
+      <span class="map-title">도파민 <em>지도</em></span>
+      <div style="width:84px;flex-shrink:0"></div>
+    </div>
+    <div class="radius-bar">
+      <button class="rbtn active" onclick="setRadius(this,'all')">🗺️ 전체</button>
+      <button class="rbtn" onclick="setRadius(this,'thrill5')">💀 극한만</button>
+      <button class="rbtn" onclick="setRadius(this,'thrill4')">🔥 스릴 4+</button>
+    </div>
+  </div>
+
+  <div class="map-stage">
+    <div id="kakaoMap"></div>
+
+    <!-- API 키 미설정 시 Fallback UI -->
+    <div class="map-fallback" id="mapFallback" style="display:none">
+      <div class="map-fallback-icon">🗺️</div>
+      <div class="map-fallback-title" id="mapFallbackTitle">지도를 불러올 수 없습니다</div>
+      <div class="map-fallback-desc" id="mapFallbackDesc">
+        카카오 개발자 콘솔에서 아래 설정을 확인해 주세요.
+      </div>
+      <div class="map-fallback-code" id="mapFallbackDetail">OPEN_MAP_AND_LOCAL 서비스 활성화 필요</div>
+      <div style="font-size:12px;color:#888;margin-top:14px;line-height:1.7;text-align:left;max-width:420px">
+        1. <a href="https://developers.kakao.com/console/app" target="_blank" rel="noopener" style="color:var(--neon)">developers.kakao.com</a> → 내 애플리케이션 → <strong>도파민지도</strong><br>
+        2. <strong>제품 설정</strong> → <strong>지도/로컬</strong> → <strong>활성화 ON</strong><br>
+        3. <strong>플랫폼</strong> → Web → <code>http://127.0.0.1:8080</code> 등록<br>
+        4. 저장 후 이 페이지 <strong>Ctrl+F5</strong> 새로고침
+      </div>
+    </div>
+
+    <div class="map-counter" id="mapCounter"><b>0</b> 스팟</div>
+
+    <div class="bottom-sheet" id="bottomSheet">
+      <div class="bs-handle-area"><div class="bs-handle"></div></div>
+      <div class="bs-body">
+        <button class="bs-close" onclick="closeSheet()">✕</button>
+        <div id="bsContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div><!-- /app -->
+
+<script src="js/spots-store.js"></script>
+<script>
+/* ═══════════════════════════════════════
+   📍 장소 데이터 (관리자 등록 → SQLite DB /api/spots)
+═══════════════════════════════════════ */
+const DEFAULT_SPOTS = [];
+
+let SPOTS = [];
+
+function reloadSpots() {
+  return DopamineStore.fetchAllSpots()
+    .then((list) => {
+      SPOTS = list;
+    })
+    .catch((e) => {
+      console.warn("스팟 API 로드 실패", e);
+      SPOTS = [];
+    });
+}
+
+function getSpot(id) {
+  const num = Number(id);
+  return SPOTS.find((s) => s.id === num);
+}
+
+/* ═══════════════════════════════════════
+   퀴즈 & 결과 데이터
+═══════════════════════════════════════ */
+const QUIZ = [
+  {
+    q: "놀이공원 가면 가장 먼저 타는 것은?",
+    opts: [
+      {i:"💀", t:"T-익스프레스 맨 뒷자리. 묻지도 따지지도 않고 직행.", score:3},
+      {i:"🎠", t:"회전목마. 경치 보면서 여유롭게.", score:1},
+      {i:"🏠", t:"집에 있는 게 제일 편함. 왜 왔지?", score:0}
+    ]
+  },
+  {
+    q: "안전바가 살짝 덜렁거리는 느낌을 받았다면?",
+    opts: [
+      {i:"🔥", t:"오히려 좋아. 도파민이 폭발하는 구간임.", score:3},
+      {i:"😱", t:"당장 내리겠다고 직원 소리질러 부름.", score:0},
+      {i:"🤔", t:"한 번 더 확인하고... 그냥 탐.", score:1}
+    ]
+  },
+  {
+    q: "스릴 액티비티 직후 나의 모습은?",
+    opts: [
+      {i:"💪", t:"'한 번 더!' 외치며 재탑승 줄 서기.", score:3},
+      {i:"🫀", t:"심박수 돌아올 때까지 벤치에서 회복 중.", score:1},
+      {i:"🚑", t:"이게 마지막이라고 다짐하며 귀가.", score:0}
+    ]
+  }
+];
+
+const GRADES = [
+  {
+    min:7, grade:"하드코어 상급자", emoji:"💀", color:"#ff4444",
+    desc:"당신은 이미 도파민의 노예입니다. 안전바가 흔들릴수록 기뻐하는 진정한 하드코어 매니아. 이 앱은 당신 같은 사람을 위해 만들었습니다.",
+    stats:[{v:"MAX",l:"도파민 내성"},{v:"극한",l:"스릴 추구"},{v:"0%",l:"포기 확률"}],
+    badges:["#뒷자리전문가","#안전바불신자","#재탑승왕","#찐매니아인증","#도파민각성완료"]
+  },
+  {
+    min:4, grade:"잠재적 도파민 중독자", emoji:"🔥", color:"#ff8800",
+    desc:"겉으론 평범한 척하지만 속은 이미 불타오르고 있습니다. 조금만 더 경험을 쌓으면 상급자 등급으로 올라설 재목입니다.",
+    stats:[{v:"HIGH",l:"도파민 수치"},{v:"성장중",l:"스릴 레벨"},{v:"30%",l:"포기 확률"}],
+    badges:["#잠재적매니아","#각성직전","#도파민예비군","#다음엔맨뒷자리"]
+  },
+  {
+    min:0, grade:"도파민 입문자", emoji:"🌱", color:"#39ff14",
+    desc:"아직 진짜 스릴을 모르시는군요. 괜찮습니다. 모든 하드코어 매니아는 회전목마에서 시작했습니다. 이 앱이 당신의 각성을 도와드리겠습니다.",
+    stats:[{v:"LOW",l:"현재 도파민"},{v:"무한대",l:"성장 가능성"},{v:"100%",l:"각성 필요"}],
+    badges:["#입문자환영","#성장잠재력무한","#첫스릴준비완료"]
+  }
+];
+
+const RTAGS = [
+  '#목꺾임주의','#안전바덜렁','#기저귀필수','#심장마비급',
+  '#대기지옥','#지포스최강','#척추각도이상','#비명금지불가',
+  '#소화불량보장','#재탑승각','#같이간친구잃음','#다음날파스',
+  '#첫드롭지옥','#눈못뜸','#도파민폭발'
+];
+
+const TCM = {roller:'t-roller',zipline:'t-zipline',luge:'t-luge',swing:'t-swing',bungee:'t-bungee',sky:'t-sky',coaster:'t-coaster'};
+
+function chipClass(a) {
+  return DopamineStore.chipClassForSpot(a);
+}
+
+function getDisplayedSpots() {
+  const f = document.querySelector('.mfb.active')?.dataset.f || 'thrill';
+  const q = document.getElementById('searchInput').value.trim();
+  let list = sortSpots(f);
+  if (q) list = list.filter((a) => DopamineStore.matchSpotSearch(a, q));
+  return list;
+}
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let currentId = 0;
+let prevScreen = 'mainScreen';
+let mapReturnScreen = 'mainScreen';
+let detailReturnScreen = 'mainScreen';
+let selectedTags = new Set();
+let quizStep = 0;
+let scores = [0, 0, 0];
+let kakaoMap = null;
+let kakaoMarkers = [];
+let currentFilter = 'all';
+
+/* ═══════════════════════════════════════
+   UTILS
+═══════════════════════════════════════ */
+function showToast(msg, dur=2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function slide(fromId, toId) {
+  const order = ['onboardScreen','mainScreen','detailScreen','reviewScreen','mapScreen'];
+  const fi = order.indexOf(fromId), ti = order.indexOf(toId);
+  const from = document.getElementById(fromId);
+  const to = document.getElementById(toId);
+  if (!from || !to) return;
+  from.classList.remove('active');
+  from.classList.add(ti >= fi ? 'slide-left' : 'hidden');
+  to.classList.remove('hidden','slide-left');
+  to.classList.add('active');
+  to.scrollTop = 0;
+}
+
+function fireStars(n) {
+  return '🔥'.repeat(n) + '<span style="opacity:.2">🔥</span>'.repeat(5-n);
+}
+
+function spotHasImg(a) {
+  return DopamineStore.hasSpotImage(a);
+}
+
+function escAttr(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+}
+
+function spotCardMedia(a) {
+  if (spotHasImg(a)) {
+    return `<img class="spot-cover-img" src="${a.img}" alt="${escAttr(a.name)}"/>`;
+  }
+  return `<span class="spot-emoji">${a.em}</span>`;
+}
+
+function spotHeroMedia(a) {
+  if (spotHasImg(a)) {
+    return `<img class="spot-hero-img" src="${a.img}" alt="${escAttr(a.name)}"/>`;
+  }
+  return `<span class="d-hero-em">${a.em}</span>`;
+}
+
+function spotThumbMedia(a, size) {
+  const px = size || 44;
+  if (spotHasImg(a)) {
+    return `<img class="spot-thumb-img" src="${a.img}" alt="" width="${px}" height="${px}"/>`;
+  }
+  return `<span class="bs-em" style="font-size:${Math.round(px * 0.65)}px">${a.em}</span>`;
+}
+
+/* ═══════════════════════════════════════
+   ① ONBOARDING
+═══════════════════════════════════════ */
+function typeText(el, text, cb) {
+  let i = 0;
+  el.style.opacity = '1';
+  function tick() {
+    if (i <= text.length) {
+      el.textContent = text.slice(0, i) + (i < text.length ? '|' : '');
+      i++;
+      setTimeout(tick, i < text.length ? 38 : 0);
+    } else {
+      el.textContent = text;
+      if (cb) cb();
+    }
+  }
+  tick();
+}
+
+const INTRO_LINES = [
+  {id:'obL1', text:"뻔하고 지루한 여행에 지쳤습니까?", delay:800},
+  {id:'obL2', text:"안전바가 흔들려야 진짜 액티비티다.", delay:2000},
+  {id:'obL3', text:"찐 매니아들을 위한 하드코어 도파민 지도.", delay:3200},
+  {id:'obL4', text:"지금 시작합니다.", delay:4200},
+];
+
+function runIntro() {
+  showOnboardSkip('intro');
+  INTRO_LINES.forEach(({id,text,delay}) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) typeText(el, text);
+    }, delay);
+  });
+  setTimeout(() => {
+    const logo = document.getElementById('obLogo');
+    const sub = document.getElementById('obLogoSub');
+    if (logo) { logo.style.opacity='1'; logo.style.transition='opacity .6s'; }
+    if (sub) { sub.style.opacity='1'; sub.style.transition='opacity .8s .2s'; }
+  }, 5200);
+  setTimeout(() => startQuiz(), 6600);
+}
+
+function showOnboardSkip(mode) {
+  const introSkip = document.getElementById('obSkipIntro');
+  const mainSkip = document.getElementById('obSkipMain');
+  if (introSkip) introSkip.classList.toggle('skip-hidden', mode !== 'intro');
+  if (mainSkip) mainSkip.classList.toggle('skip-hidden', mode !== 'quiz');
+}
+
+function startQuiz() {
+  document.getElementById('introPhase').style.display = 'none';
+  showOnboardSkip('quiz');
+  const qp = document.getElementById('quizPhase');
+  qp.classList.add('active');
+  quizStep = 0; scores = [-1,-1,-1];
+  renderQ(0);
+}
+
+function renderQ(idx) {
+  const q = QUIZ[idx];
+  document.getElementById('qzQ').textContent = q.q;
+  document.getElementById('qzOpts').innerHTML = q.opts.map((o,i) => `
+    <div class="qz-opt" onclick="selectOpt(this,${idx},${i},${o.score})">
+      <span class="qz-opt-ico">${o.i}</span>
+      <span class="qz-opt-txt">${o.t}</span>
+    </div>`).join('');
+  document.querySelectorAll('.qz-dot').forEach((d,i) => {
+    d.classList.remove('done','active');
+    if (i < idx) d.classList.add('done');
+    else if (i === idx) d.classList.add('active');
+  });
+  const btn = document.getElementById('qzNext');
+  btn.textContent = idx === QUIZ.length-1 ? '결과 보기 →' : '다음 →';
+  btn.classList.remove('on');
+  scores[idx] = -1;
+}
+
+function selectOpt(el, qIdx, oIdx, score) {
+  document.querySelectorAll('.qz-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  scores[qIdx] = score;
+  document.getElementById('qzNext').classList.add('on');
+}
+
+function nextQ() {
+  if (scores[quizStep] === -1) return;
+  if (quizStep < QUIZ.length - 1) { quizStep++; renderQ(quizStep); }
+  else showResult();
+}
+
+function showResult() {
+  const total = scores.reduce((a,b) => a + (b < 0 ? 0 : b), 0);
+  const grade = GRADES.find(g => total >= g.min);
+  document.getElementById('quizPhase').classList.remove('active');
+  showOnboardSkip('none');
+  const rp = document.getElementById('resultPhase');
+  rp.classList.add('active');
+  document.getElementById('rsGrade').innerHTML =
+    `당신의 등급<br><span style="color:${grade.color}">${grade.grade}</span>`;
+  document.getElementById('rsEmoji').textContent = grade.emoji;
+  document.getElementById('rsDesc').textContent = grade.desc;
+  document.getElementById('rsStats').innerHTML = grade.stats.map(s =>
+    `<div class="rs-stat">
+       <div class="rs-stat-val" style="color:${grade.color}">${s.v}</div>
+       <div class="rs-stat-lbl">${s.l}</div>
+     </div>`).join('');
+  document.getElementById('rsBadges').innerHTML = grade.badges.map(b =>
+    `<span class="rs-badge" style="color:${grade.color};border:1px solid ${grade.color}33;background:${grade.color}11">${b}</span>`
+  ).join('');
+}
+
+function enterMain(skipFade) {
+  if (!skipFade) sessionStorage.setItem('dopamine_map_intro_done', '1');
+  showOnboardSkip('none');
+  reloadSpots().then(() => {
+    const ob = document.getElementById('onboardScreen');
+    if (skipFade) {
+      ob.classList.remove('active');
+      ob.classList.add('hidden');
+      const main = document.getElementById('mainScreen');
+      main.classList.remove('hidden','slide-left');
+      main.classList.add('active');
+      prevScreen = 'mainScreen';
+      renderCards(getDisplayedSpots());
+      return;
+    }
+    ob.classList.add('fade-out');
+    setTimeout(() => {
+      ob.classList.remove('active','fade-out');
+      ob.classList.add('hidden');
+      const main = document.getElementById('mainScreen');
+      main.classList.remove('hidden','slide-left');
+      main.classList.add('active');
+      prevScreen = 'mainScreen';
+      renderCards(getDisplayedSpots());
+    }, 600);
+  });
+}
+
+/* ═══════════════════════════════════════
+   ② MAIN
+═══════════════════════════════════════ */
+function renderCards(data) {
+  if (!data.length) {
+    document.getElementById('cardList').innerHTML =
+      '<div class="m-empty" style="grid-column:1/-1;text-align:center;padding:56px 20px;color:var(--text-muted)">' +
+      '<p style="font-size:16px;font-weight:700;color:#888;margin-bottom:8px">등록된 스팟이 없습니다</p>' +
+      '<p style="font-size:13px;line-height:1.6">관리자 페이지에서 액티비티를 등록하면<br>여기와 지도에 표시됩니다.</p></div>';
+    document.getElementById('resultCount').textContent = 0;
+    return;
+  }
+  document.getElementById('cardList').innerHTML = data.map(a => `
+    <div class="mc" onclick="goDetail(${a.id})">
+      <div class="mc-img" style="background:${a.bg}">
+        ${spotCardMedia(a)}
+        <div class="mc-ov"></div>
+        <div class="mc-rb">${a.rank}</div>
+        <div class="mc-tb">${a.ts}</div>
+      </div>
+      <div class="mc-body">
+        <span class="chip ${chipClass(a)}">${a.tl}</span>
+        <p class="mc-name">${a.name}</p>
+        <p class="mc-addr">📍 ${a.addr}</p>
+        <div class="mc-tags">${a.tags.map(t=>`<span class="mc-tag">${t}</span>`).join('')}</div>
+        <div class="mc-div"></div>
+        <p class="mc-review">${a.br}</p>
+        <div class="mc-footer">
+          <div>
+            <p class="mc-tl">스릴 지수</p>
+            <p style="font-size:13px">${fireStars(a.th)}</p>
+          </div>
+          <button class="mc-dbtn">상세 보기 →</button>
+        </div>
+      </div>
+    </div>`).join('');
+  document.getElementById('resultCount').textContent = data.length;
+}
+
+function sortSpots(f) {
+  const d = [...SPOTS];
+  if (f === 'thrill') d.sort((a,b) => b.th - a.th);
+  else if (f === 'fear') d.sort((a,b) => b.fe - a.fe);
+  else if (f === 'speed') d.sort((a,b) => b.sp - a.sp);
+  return d;
+}
+
+document.getElementById('filterRow').addEventListener('click', e => {
+  const btn = e.target.closest('.mfb');
+  if (!btn) return;
+  document.querySelectorAll('.mfb').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const f = btn.dataset.f;
+  const labels = {thrill:'스릴 지수 높은 순', fear:'공포도 높은 순', speed:'최고 속도 높은 순'};
+  document.getElementById('sortInfo').textContent = labels[f];
+  renderCards(getDisplayedSpots());
+});
+
+document.getElementById('searchInput').addEventListener('input', () => {
+  renderCards(getDisplayedSpots());
+});
+
+/* ═══════════════════════════════════════
+   ③ DETAIL
+═══════════════════════════════════════ */
+function goDetail(id, fromReview=false) {
+  currentId = id;
+  const a = getSpot(id);
+  if (!a) { showToast('스팟 정보를 찾을 수 없습니다'); return; }
+  const wHTML = a.warns.map(w =>
+    `<div class="warn-item ${w.t==='y'?'y':w.t==='g'?'g':''}">
+       <span style="font-size:14px;flex-shrink:0;margin-top:1px">${w.i}</span>
+       <span class="warn-txt">${w.tx}</span>
+     </div>`).join('');
+  const rHTML = a.reviews.map(r =>
+    `<div class="rv-card">
+       <div class="rv-top"><span class="rv-nick">@${r.nick}</span><span class="rv-meta">${r.date}</span></div>
+       <div style="font-size:11px;margin-bottom:5px">${r.stars}</div>
+       <p class="rv-text">${r.text}</p>
+       <div>${r.tags.map(t=>`<span class="rv-tag">${t}</span>`).join('')}</div>
+     </div>`).join('');
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="topbar">
+      <button class="back-btn" onclick="goFromDetail()">← 뒤로</button>
+      <div class="topbar-actions">
+        <button type="button" class="action-btn primary" onclick="goMap()">지도로 보기</button>
+        <button type="button" class="action-btn" onclick="showToast('링크가 복사되었습니다 ✓')">공유하기</button>
+      </div>
+    </div>
+    <div class="d-hero" style="background:${a.bg}">
+      <div class="d-hero-ov"></div>
+      ${spotHeroMedia(a)}
+      <div class="d-hero-ct">
+        <span class="chip ${chipClass(a)}" style="margin-bottom:6px;display:inline-flex">${a.tl}</span>
+        <p class="d-title">${a.name}</p>
+        <p class="d-addr">📍 ${a.addr}</p>
+      </div>
+    </div>
+    <div class="d-body">
+      <div class="d-sec">
+        <p class="sec-label">스릴 지수 분석</p>
+        <div class="gauge-row">
+          <div class="gauge-lbl"><span class="gauge-name">🔴 공포도</span><span class="gauge-val" style="color:var(--red)">${a.fp}%</span></div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:${a.fp}%;background:var(--red)"></div></div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-lbl"><span class="gauge-name">⚡ 체감 속도</span><span class="gauge-val" style="color:var(--neon)">${a.sp2}%</span></div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:${a.sp2}%;background:var(--neon)"></div></div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-lbl"><span class="gauge-name">💜 아드레날린</span><span class="gauge-val" style="color:var(--purple)">${a.ap}%</span></div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:${a.ap}%;background:var(--purple)"></div></div>
+        </div>
+        <div class="stars-row">
+          <span class="stars-lbl">종합 스릴 지수</span>
+          <span style="font-size:17px;letter-spacing:1px">${fireStars(a.th)}</span>
+          <span class="stars-num">${a.th}.0</span>
+        </div>
+      </div>
+      <div class="d-sec">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+          <span style="font-size:13px;font-weight:700;color:var(--red)">💀 생존 가이드</span>
+          <span style="background:#2a0000;color:#ff6666;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #4a0000">MUST READ</span>
+        </div>
+        ${wHTML}
+      </div>
+      <div class="d-sec" style="border-bottom:none">
+        <p class="sec-label" style="margin-bottom:11px">생존 리뷰 ${a.reviews.length}개</p>
+        ${rHTML}
+      </div>
+    </div>
+    <div class="d-sticky">
+      <button class="btn-secondary" style="flex:1" onclick="showToast('동선에 추가되었습니다 ✓')">＋ 동선 추가</button>
+      <button class="btn-primary" style="flex:1" onclick="goReview(${id})">✍️ 리뷰 쓰기</button>
+    </div>`;
+
+  const from = fromReview ? 'reviewScreen' : (document.querySelector('.screen.active')?.id || 'mainScreen');
+  if (from !== 'detailScreen') detailReturnScreen = from;
+  prevScreen = detailReturnScreen;
+  slide(from, 'detailScreen');
+}
+
+function goFromDetail() {
+  let toId = detailReturnScreen || 'mainScreen';
+  if (toId === 'detailScreen') toId = 'mainScreen';
+
+  const detail = document.getElementById('detailScreen');
+  if (detail) {
+    detail.classList.remove('active');
+    detail.classList.add('hidden');
+  }
+
+  const to = document.getElementById(toId);
+  if (!to) {
+    goMain();
+    return;
+  }
+  to.classList.remove('hidden', 'slide-left');
+  to.classList.add('active');
+  to.scrollTop = 0;
+}
+
+function goMain() {
+  const active = document.querySelector('.screen.active');
+  if (active) { active.classList.remove('active'); active.classList.add('hidden'); }
+  const main = document.getElementById('mainScreen');
+  main.classList.remove('hidden','slide-left');
+  main.classList.add('active');
+  prevScreen = 'mainScreen';
+}
+
+function goFromMap() {
+  closeSheet();
+  let toId = mapReturnScreen || prevScreen || 'mainScreen';
+  if (toId === 'mapScreen') toId = 'mainScreen';
+
+  const map = document.getElementById('mapScreen');
+  if (map) {
+    map.classList.remove('active');
+    map.classList.add('hidden');
+  }
+
+  const to = document.getElementById(toId);
+  if (!to) {
+    goMain();
+    return;
+  }
+  to.classList.remove('hidden', 'slide-left');
+  to.classList.add('active');
+  to.scrollTop = 0;
+}
+
+/* ═══════════════════════════════════════
+   ④ REVIEW
+═══════════════════════════════════════ */
+function goReview(id) {
+  currentId = id;
+  const a = getSpot(id);
+  if (!a) return;
+  selectedTags = new Set();
+
+  document.getElementById('rwTargetCard').innerHTML =
+    `${spotThumbMedia(a, 52)}
+     <div>
+       <p style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">${a.name}</p>
+       <span class="chip ${chipClass(a)}">${a.tl}</span>
+     </div>`;
+
+  document.getElementById('tagGrid').innerHTML = RTAGS.map(t =>
+    `<button class="rw-tag" onclick="toggleTag(this,'${t}')">${t}</button>`).join('');
+
+  [['Fear','var(--red)'],['Speed','var(--neon)'],['Adr','var(--purple)']].forEach(([k,color]) => {
+    const sl = document.getElementById('sl'+k);
+    const fi = document.getElementById('fill'+k);
+    const va = document.getElementById('val'+k);
+    sl.value = 50; fi.style.width = '50%'; va.textContent = '50%';
+    sl.oninput = function() { fi.style.width = this.value+'%'; va.textContent = this.value+'%'; };
+  });
+
+  document.getElementById('rwNick').value = '';
+  document.getElementById('rwText').value = '';
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('rwText').oninput = function() {
+    document.getElementById('charCount').textContent = this.value.length;
+  };
+
+  slide('detailScreen', 'reviewScreen');
+}
+
+function toggleTag(el, tag) {
+  if (selectedTags.has(tag)) { selectedTags.delete(tag); el.classList.remove('sel'); }
+  else { selectedTags.add(tag); el.classList.add('sel'); }
+}
+
+function submitReview() {
+  const nick = document.getElementById('rwNick').value.trim();
+  const text = document.getElementById('rwText').value.trim();
+  if (!nick) { showToast('닉네임을 입력해주세요 👤'); return; }
+  if (!text || text.length < 10) { showToast('생존 후기를 더 써주세요 🔥'); return; }
+
+  getSpot(currentId).reviews.unshift({
+    nick, date: '2026.06',
+    stars: '🔥'.repeat(Math.max(1, Math.round(parseInt(document.getElementById('slFear').value) / 20))),
+    text, tags: [...selectedTags].slice(0, 4)
+  });
+
+  showToast('성공적으로 박제되었습니다! 🔥', 2500);
+  setTimeout(() => goDetail(currentId, true), 800);
+}
+
+/* ═══════════════════════════════════════
+   ⑤ MAP — 카카오맵 API 연동
+═══════════════════════════════════════ */
+
+const KAKAO_JS_KEY = 'f2d0d00fcfc9ce46cc34a35de98c1c2f';
+const KAKAO_SDK_URL =
+  'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' +
+  KAKAO_JS_KEY +
+  '&autoload=false';
+
+function waitForKakaoMapsReady(timeoutMs) {
+  const deadline = Date.now() + (timeoutMs || 15000);
+  return new Promise((resolve, reject) => {
+    (function tick() {
+      if (typeof kakao !== 'undefined' && kakao.maps && typeof kakao.maps.load === 'function') {
+        kakao.maps.load(() => {
+          if (typeof kakao !== 'undefined' && kakao.maps && typeof kakao.maps.Map === 'function') {
+            resolve();
+          } else {
+            reject(new Error('KAKAO_MAPS_UNAVAILABLE'));
+          }
+        });
+        return;
+      }
+      if (Date.now() > deadline) {
+        reject(new Error('KAKAO_SDK_TIMEOUT'));
+        return;
+      }
+      setTimeout(tick, 50);
+    })();
+  });
+}
+
+function ensureKakaoSdkScript() {
+  if (document.querySelector('script[data-kakao-sdk]')) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.charset = 'UTF-8';
+    s.async = true;
+    s.src = KAKAO_SDK_URL;
+    s.setAttribute('data-kakao-sdk', '1');
+    s.onload = () => resolve();
+    // onerror는 브라우저에서 오탐이 있어, 로드 후 폴링으로 확인
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+}
+
+function loadKakaoMapsSdk() {
+  if (window.__kakaoSdkReadyPromise) return window.__kakaoSdkReadyPromise;
+
+  window.__kakaoSdkReadyPromise = (async () => {
+    if (location.protocol === 'file:') throw new Error('FILE_PROTOCOL');
+    await ensureKakaoSdkScript();
+    await waitForKakaoMapsReady(15000);
+  })().catch((err) => {
+    window.__kakaoSdkReadyPromise = null;
+    throw err;
+  });
+
+  return window.__kakaoSdkReadyPromise;
+}
+
+function getMappableSpots(spots) {
+  return (spots || []).filter((a) => {
+    const lat = Number(a.lat);
+    const lng = Number(a.lng);
+    return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+  });
+}
+
+// 커스텀 마커 HTML 생성
+function makeMarkerHTML(a) {
+  const isSkull = a.markerType === 'skull';
+  return `
+    <div class="dopamine-marker" onclick="openSheet(${a.id})">
+      <div class="dm-bubble ${isSkull ? 'skull' : ''}">
+        <span class="dm-ico">${isSkull ? '💀' : '🔥'}</span>
+        <span class="dm-name">${a.name.split(' ')[0]}</span>
+      </div>
+    </div>`;
+}
+
+function showMapFallback(reason, detail) {
+  const fb = document.getElementById('mapFallback');
+  const title = document.getElementById('mapFallbackTitle');
+  const desc = document.getElementById('mapFallbackDesc');
+  const code = document.getElementById('mapFallbackDetail');
+  if (title) title.textContent = reason || '지도를 불러올 수 없습니다';
+  if (desc) {
+    if (String(detail).includes('FILE_PROTOCOL')) {
+      desc.textContent = 'file:// 로는 지도 API가 동작하지 않습니다. http://127.0.0.1:8080/index.html 로 접속해 주세요.';
+    } else {
+      desc.textContent = '카카오 개발자 콘솔에서 지도/로컬 API와 Web 도메인을 확인해 주세요.';
+    }
+  }
+  if (code) code.textContent = detail || 'OPEN_MAP_AND_LOCAL 서비스 활성화 필요';
+  if (fb) fb.style.display = 'flex';
+}
+
+function ensureKakaoMapsReady(onReady, onFail) {
+  loadKakaoMapsSdk().then(onReady).catch((err) => {
+    onFail(err && err.message ? err.message : String(err));
+  });
+}
+
+function initKakaoMap() {
+  ensureKakaoMapsReady(() => {
+    try {
+      document.getElementById('mapFallback').style.display = 'none';
+      const container = document.getElementById('kakaoMap');
+      const options = {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 10,
+      };
+      kakaoMap = new kakao.maps.Map(container, options);
+
+      const zoomControl = new kakao.maps.ZoomControl();
+      kakaoMap.addControl(zoomControl, kakao.maps.ControlPosition.TOPRIGHT);
+
+      renderKakaoMarkers('all');
+      fitMapToBounds(SPOTS);
+
+      setTimeout(() => {
+        if (kakaoMap) kakaoMap.relayout();
+        fitMapToBounds(SPOTS);
+      }, 200);
+    } catch (e) {
+      console.error('카카오맵 초기화 오류:', e);
+      showMapFallback('지도 초기화 실패', String(e.message || e));
+    }
+  }, (err) => {
+    console.error('카카오 SDK 로드 실패:', err);
+    let detail = String(err);
+    if (detail.includes('FILE_PROTOCOL')) {
+      detail = 'FILE_PROTOCOL — http://127.0.0.1:8080/index.html 로 접속';
+    } else if (detail.includes('KAKAO_SDK_TIMEOUT')) {
+      detail = 'SDK 로드 시간 초과 — Ctrl+F5 새로고침 후 재시도';
+    } else if (detail.includes('SDK_SCRIPT') || detail.includes('KAKAO_SDK') || detail.includes('KAKAO_MAPS')) {
+      detail = 'SDK 로드 실패 — 콘솔 Web 도메인(http://127.0.0.1:8080) + 지도/로컬 API ON';
+    } else if (detail.includes('OPEN_MAP') || detail.includes('NotAuthorized')) {
+      detail = 'OPEN_MAP_AND_LOCAL 서비스가 비활성화됨 → 콘솔에서 지도/로컬 ON';
+    }
+    showMapFallback('카카오 지도 SDK 로드 실패', detail);
+  });
+}
+
+function renderKakaoMarkers(filter) {
+  if (!kakaoMap) return;
+
+  // 기존 마커 제거
+  kakaoMarkers.forEach(m => m.setMap(null));
+  kakaoMarkers = [];
+
+  const visible = SPOTS.filter(a => {
+    if (filter === 'all') return true;
+    if (filter === 'thrill5') return a.th === 5;
+    if (filter === 'thrill4') return a.th >= 4;
+    return true;
+  });
+
+  document.getElementById('mapCounter').innerHTML = `<b>${visible.length}</b> 스팟`;
+
+  visible.forEach(a => {
+    const lat = Number(a.lat);
+    const lng = Number(a.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const pos = new kakao.maps.LatLng(lat, lng);
+
+    // CustomOverlay로 커스텀 마커 생성
+    const overlay = new kakao.maps.CustomOverlay({
+      position: pos,
+      content: makeMarkerHTML(a),
+      yAnchor: 1.1
+    });
+    overlay.setMap(kakaoMap);
+    kakaoMarkers.push(overlay);
+  });
+}
+
+function fitMapToBounds(spots) {
+  const valid = getMappableSpots(spots);
+  if (!kakaoMap || valid.length === 0) return;
+  try {
+    const bounds = new kakao.maps.LatLngBounds();
+    valid.forEach((a) => bounds.extend(new kakao.maps.LatLng(Number(a.lat), Number(a.lng))));
+    kakaoMap.setBounds(bounds, 80);
+  } catch (e) {
+    console.warn('fitMapToBounds:', e);
+  }
+}
+
+function setRadius(btn, filter) {
+  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = filter;
+
+  if (typeof kakao !== 'undefined' && kakao.maps) {
+    renderKakaoMarkers(filter);
+    const visible = SPOTS.filter(a => {
+      if (filter === 'all') return true;
+      if (filter === 'thrill5') return a.th === 5;
+      if (filter === 'thrill4') return a.th >= 4;
+      return true;
+    });
+    if (visible.length > 0) fitMapToBounds(visible);
+  }
+}
+
+function goMap() {
+  if (location.protocol === 'file:') {
+    showToast('file:// 로는 지도 불가 — http://127.0.0.1:8080/index.html 로 접속하세요', 4500);
+    return;
+  }
+
+  const active = document.querySelector('.screen.active');
+  mapReturnScreen = active && active.id !== 'mapScreen' ? active.id : 'mainScreen';
+  slide(mapReturnScreen, 'mapScreen');
+
+  const bootMap = () => {
+    if (!kakaoMap) {
+      initKakaoMap();
+    } else if (kakaoMap.relayout) {
+      kakaoMap.relayout();
+      fitMapToBounds(SPOTS);
+    }
+  };
+
+  requestAnimationFrame(() => {
+    setTimeout(bootMap, 150);
+  });
+}
+
+function openSheet(id) {
+  currentId = id;
+  const a = getSpot(id);
+  if (!a) return;
+
+  // 지도 중심 이동
+  if (kakaoMap) {
+    kakaoMap.panTo(new kakao.maps.LatLng(a.lat, a.lng));
+  }
+
+  document.getElementById('bsContent').innerHTML = `
+    <div class="bs-top">
+      ${spotThumbMedia(a, 48)}
+      <div style="flex:1">
+        <p class="bs-name">${a.name}</p>
+        <p class="bs-addr">📍 ${a.addr.split(' ').slice(0,3).join(' ')}</p>
+      </div>
+      <span class="chip ${chipClass(a)}">${a.tl}</span>
+    </div>
+    <div class="bs-tags">${a.tags.slice(0,3).map(t=>`<span class="bs-tag">${t}</span>`).join('')}</div>
+    <div class="bs-gauges">
+      <div class="bs-g-row">
+        <span class="bs-g-lbl">🔴 공포도</span>
+        <div class="bs-g-track"><div class="bs-g-fill" style="width:${a.fp}%;background:var(--red)"></div></div>
+        <span class="bs-g-val" style="color:var(--red)">${a.fp}%</span>
+      </div>
+      <div class="bs-g-row">
+        <span class="bs-g-lbl">⚡ 체감속도</span>
+        <div class="bs-g-track"><div class="bs-g-fill" style="width:${a.sp2}%;background:var(--neon)"></div></div>
+        <span class="bs-g-val" style="color:var(--neon)">${a.sp2}%</span>
+      </div>
+      <div class="bs-g-row">
+        <span class="bs-g-lbl">💜 아드레날린</span>
+        <div class="bs-g-track"><div class="bs-g-fill" style="width:${a.ap}%;background:var(--purple)"></div></div>
+        <span class="bs-g-val" style="color:var(--purple)">${a.ap}%</span>
+      </div>
+    </div>
+    <div class="bs-actions">
+      <button class="bs-btn-add" onclick="showToast('동선에 추가되었습니다 ✓')">＋ 동선</button>
+      <button class="bs-btn-detail" onclick="goDetailFromMap(${id})">상세 보기 →</button>
+    </div>`;
+
+  document.getElementById('bottomSheet').classList.add('open');
+}
+
+function closeSheet() {
+  document.getElementById('bottomSheet').classList.remove('open');
+}
+
+function goDetailFromMap(id) {
+  closeSheet();
+  detailReturnScreen = 'mapScreen';
+  setTimeout(() => goDetail(id), 150);
+}
+
+/* ═══════════════════════════════════════
+   BOOT
+═══════════════════════════════════════ */
+reloadSpots().then(() => {
+  renderCards(getDisplayedSpots());
+  if (location.protocol !== 'file:') {
+    ensureKakaoSdkScript().catch(() => {});
+  }
+  const mapBackBtn = document.getElementById('mapBackBtn');
+  if (mapBackBtn) {
+    const onMapBack = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goFromMap();
+    };
+    mapBackBtn.addEventListener('click', onMapBack);
+  }
+  if (!sessionStorage.getItem('dopamine_map_intro_done')) {
+    runIntro();
+  } else {
+    enterMain(true);
+  }
+});
+</script>
+</body>
+</html>
