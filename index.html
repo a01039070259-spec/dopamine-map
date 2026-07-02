@@ -168,8 +168,8 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .m-header-top .m-fab,.m-header-top .m-auth-btn,.m-header-top .m-diag-btn{flex-shrink:0}
 .m-diag-btn{background:transparent;border:1px solid var(--neon);color:var(--neon);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:700;transition:all .15s;white-space:nowrap}
 .m-diag-btn:hover{background:#0d2a06}
-.m-diag-chip{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:#111;font-size:12px;color:var(--text-dim)}
-.m-diag-chip b{color:var(--neon)}
+.m-diag-chip{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:#111;font-size:12px;color:var(--text-dim);transition:border-color .2s,background .2s}
+.m-diag-chip b{font-weight:900;transition:color .2s}
 .m-diag-chip-prompt{color:var(--neon);cursor:pointer;font-weight:700;transition:opacity .15s}
 .m-diag-chip-prompt:hover{opacity:.85}
 .m-login-nudge{margin-top:12px;padding:14px 16px;border-radius:12px;border:1px solid #2a4a1a;background:linear-gradient(135deg,#0d2a06,#111);display:flex;flex-direction:column;gap:10px}
@@ -1238,17 +1238,34 @@ function updateDiagnosisChip(result) {
   const prompt = document.getElementById('diagChipPrompt');
   const resultWrap = document.getElementById('diagChipResult');
   const text = document.getElementById('diagChipText');
+  const link = document.getElementById('diagChipLink');
   if (!chip) return;
 
   chip.classList.remove('is-hidden');
   if (result) {
+    const grade = findGradeByName(result);
+    const color = grade?.color || '#39ff14';
     prompt?.classList.add('is-hidden');
     resultWrap?.classList.remove('is-hidden');
-    if (text) text.textContent = result;
+    if (text) {
+      text.textContent = grade?.emoji ? `${grade.emoji} ${result}` : result;
+      text.style.color = color;
+    }
+    if (link) link.style.color = color;
+    chip.style.borderColor = color + '66';
+    chip.style.background = color + '14';
+    chip.style.boxShadow = `0 0 16px ${color}22`;
   } else {
     prompt?.classList.remove('is-hidden');
     resultWrap?.classList.add('is-hidden');
-    if (text) text.textContent = '-';
+    if (text) {
+      text.textContent = '-';
+      text.style.color = '';
+    }
+    if (link) link.style.color = '';
+    chip.style.borderColor = '';
+    chip.style.background = '';
+    chip.style.boxShadow = '';
   }
 }
 
