@@ -94,7 +94,7 @@ foreach ($item in $items) {
       sp2 = [int]$item.sp2
       ap = [int]$item.ap
       rank = [string]$item.rank
-      markerType = if ($th -ge 4) { "skull" } else { "fire" }
+      markerType = if ($th -ge 5) { "skull" } else { "fire" }
       tags = @($item.tags | ForEach-Object { [string]$_ })
       br = [string]$item.br
       ts = [string]$item.ts

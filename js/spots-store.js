@@ -338,7 +338,7 @@
       sp2,
       ap,
       rank: data.rank || "NEW SPOT",
-      markerType: th >= 4 ? "skull" : "fire",
+      markerType: th >= 5 ? "skull" : "fire",
       tags: tags.length ? tags : ["#직접등록", "#NEW"],
       br: data.br || "직접 등록한 매운맛 스팟. 생존 후기를 남겨주세요.",
       ts: thrillStars(th),
