@@ -37,7 +37,18 @@ h1{font-size:22px;font-weight:900;margin-bottom:8px}
 </div>
 <script src="js/spots-store.js"></script>
 <script>
-const LOCAL_KEY = "dopamine_diagnosis_result";
+const LS_ONBOARDING_DONE = "dopamine_onboarding_done";
+const LS_RESULT_TYPE = "dopamine_result_type";
+const LEGACY_RESULT_KEY = "dopamine_diagnosis_result";
+
+function normalizeResultType(name) {
+  const legacy = {
+    "하드코어 상급자": "극한의 무서움",
+    "잠재적 도파민 중독자": "도파민 각성 직전",
+    "도파민 입문자": "스릴 입문자",
+  };
+  return legacy[name] || name || "";
+}
 
 function renderResult(text, source) {
   document.getElementById("resultBox").innerHTML =
@@ -47,6 +58,13 @@ function renderResult(text, source) {
 
 async function boot() {
   DopamineStore.recordVisit().catch(() => {});
+  const legacy = localStorage.getItem(LEGACY_RESULT_KEY);
+  if (legacy && !localStorage.getItem(LS_RESULT_TYPE)) {
+    localStorage.setItem(LS_RESULT_TYPE, normalizeResultType(legacy));
+    localStorage.setItem(LS_ONBOARDING_DONE, "true");
+    localStorage.removeItem(LEGACY_RESULT_KEY);
+  }
+
   try {
     const auth = await DopamineStore.fetchAuthMe();
     if (auth.loggedIn) {
@@ -58,6 +76,8 @@ async function boot() {
       try {
         const data = await DopamineStore.fetchDiagnosis();
         if (data.result) {
+          localStorage.setItem(LS_RESULT_TYPE, data.result);
+          localStorage.setItem(LS_ONBOARDING_DONE, "true");
           renderResult(data.result, "서버에 저장된 결과");
           return;
         }
@@ -65,9 +85,9 @@ async function boot() {
     }
   } catch (_) {}
 
-  const local = localStorage.getItem(LOCAL_KEY);
+  const local = localStorage.getItem(LS_RESULT_TYPE);
   if (local) {
-    renderResult(local, "브라우저(localStorage)에 저장된 결과");
+    renderResult(local, "브라우저에 저장된 결과");
     return;
   }
   document.getElementById("resultBox").innerHTML =

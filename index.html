@@ -152,8 +152,12 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .rs-badges{display:flex;flex-wrap:wrap;gap:6px;padding:0 20px;margin-top:12px;justify-content:center}
 .rs-badge{font-size:11px;padding:4px 10px;border-radius:4px;font-weight:600}
 .rs-divider{height:1px;background:var(--border);margin:16px 20px 0}
-.rs-enter-btn{margin:18px 20px 24px;background:var(--neon);color:#0a0a0a;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:calc(100% - 40px);display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:-.3px;transition:all .15s;box-shadow:0 0 30px rgba(57,255,20,.2)}
-.rs-enter-btn:active{transform:scale(.97)}
+.rs-actions{display:grid;gap:10px;padding:18px 20px 24px}
+.rs-kakao-btn{background:#fee500;color:#191919;border:none;border-radius:12px;padding:15px;font-size:14px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:100%;transition:all .15s}
+.rs-kakao-btn:active{transform:scale(.97)}
+.rs-skip-btn{background:transparent;color:var(--text-dim);border:1px solid var(--border2);border-radius:12px;padding:13px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:100%;transition:all .15s}
+.rs-skip-btn:hover{border-color:#444;color:#aaa}
+.rs-back-btn{background:var(--neon);color:#0a0a0a;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:100%;box-shadow:0 0 30px rgba(57,255,20,.2)}
 
 /* ══════════════════════════════
    ② MAIN
@@ -167,6 +171,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .m-diag-chip{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:#111;font-size:12px;color:var(--text-dim)}
 .m-diag-chip b{color:var(--neon)}
 .m-diag-chip.is-hidden{display:none!important}
+.is-hidden{display:none!important}
 .m-logo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .m-badge{background:var(--neon);color:#0a0a0a;font-size:10px;font-weight:900;padding:3px 7px;border-radius:4px;letter-spacing:.5px}
 .m-title{font-size:clamp(1.4rem,3vw,1.75rem);font-weight:900;color:#fff;letter-spacing:-.5px}
@@ -475,7 +480,11 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     <div class="rs-stats" id="rsStats"></div>
     <div class="rs-badges" id="rsBadges"></div>
     <div class="rs-divider"></div>
-    <button class="rs-enter-btn" onclick="enterMain()">🔥 도파민 지도 입장하기</button>
+    <div class="rs-actions" id="rsActions">
+      <button class="rs-kakao-btn" id="rsKakaoBtn" type="button">카카오로 로그인하고 결과 저장하기</button>
+      <button class="rs-skip-btn" id="rsSkipBtn" type="button">나중에 하기</button>
+      <button class="rs-back-btn is-hidden" id="rsBackBtn" type="button">← 지도로 돌아가기</button>
+    </div>
   </div>
 </div>
 
@@ -493,7 +502,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     </div>
     <p class="m-title">도파민 지도 <em>⚡</em></p>
     <p class="m-sub">찐 매니아를 위한 하드코어 액티비티 정보</p>
-    <div class="m-diag-chip is-hidden" id="diagChip">내 등급: <b id="diagChipText">-</b> · <a href="/diagnosis.html" style="color:var(--neon);text-decoration:none">상세 보기</a></div>
+    <div class="m-diag-chip is-hidden" id="diagChip">내 등급: <b id="diagChipText">-</b> · <a href="#" id="diagChipLink" style="color:var(--neon);text-decoration:none">상세 보기</a></div>
     <div class="m-search-wrap">
       <span class="m-si">🔍</span>
       <input class="m-search" type="text" id="searchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 롤러코스터, 인천)"/>
@@ -623,7 +632,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 <div class="login-modal hidden" id="loginModal">
   <div class="login-modal-box">
     <p class="login-modal-title">로그인이 필요합니다</p>
-    <p class="login-modal-desc">스팟 상세·리뷰 작성은 카카오 로그인 후 이용할 수 있습니다.</p>
+    <p class="login-modal-desc">스팟 상세 정보와 리뷰 작성은 카카오 로그인 후 이용할 수 있습니다.</p>
     <button type="button" class="login-modal-btn" onclick="startKakaoLogin()">카카오로 로그인</button>
     <button type="button" class="login-modal-cancel" onclick="hideLoginModal()">닫기</button>
   </div>
@@ -682,40 +691,28 @@ const QUIZ = [
       {i:"🫀", t:"심박수 돌아올 때까지 벤치에서 회복 중.", score:1},
       {i:"🚑", t:"이게 마지막이라고 다짐하며 귀가.", score:0}
     ]
-  },
-  {
-    q: "롤러코스터 대기 시간 90분. 당신의 선택은?",
-    opts: [
-      {i:"⏳", t:"90분? 180분이어도 기다린다. 맨 뒷자리 각.", score:3},
-      {i:"🎫", t:"패스트패스 있으면 고려. 없으면 다른 거 탄다.", score:1},
-      {i:"☕", t:"카페 가서 쉬다 온다. 대기는 지옥.", score:0}
-    ]
-  },
-  {
-    q: "친구가 '무서우면 안 타도 돼'라고 한다면?",
-    opts: [
-      {i:"😈", t:"'너 안 타면 혼자라도 탄다' — 이미 줄 섰음.", score:3},
-      {i:"🤝", t:"같이 타되 앞자리는 내가 선점.", score:2},
-      {i:"🙏", t:"친구 말 듣고 포기. 다음 기회에.", score:0}
-    ]
   }
 ];
 
+const LS_ONBOARDING_DONE = 'dopamine_onboarding_done';
+const LS_RESULT_TYPE = 'dopamine_result_type';
+const SS_PENDING_DETAIL = 'dopamine_pending_detail';
+
 const GRADES = [
   {
-    min:11, grade:"하드코어 상급자", emoji:"💀", color:"#ff4444",
+    min:7, grade:"극한의 무서움", emoji:"💀", color:"#ff4444",
     desc:"당신은 이미 도파민의 노예입니다. 안전바가 흔들릴수록 기뻐하는 진정한 하드코어 매니아. 이 앱은 당신 같은 사람을 위해 만들었습니다.",
     stats:[{v:"MAX",l:"도파민 내성"},{v:"극한",l:"스릴 추구"},{v:"0%",l:"포기 확률"}],
     badges:["#뒷자리전문가","#안전바불신자","#재탑승왕","#찐매니아인증","#도파민각성완료"]
   },
   {
-    min:6, grade:"잠재적 도파민 중독자", emoji:"🔥", color:"#ff8800",
-    desc:"겉으론 평범한 척하지만 속은 이미 불타오르고 있습니다. 조금만 더 경험을 쌓으면 상급자 등급으로 올라설 재목입니다.",
+    min:4, grade:"도파민 각성 직전", emoji:"🔥", color:"#ff8800",
+    desc:"겉으론 평범한 척하지만 속은 이미 불타오르고 있습니다. 조금만 더 경험을 쌓으면 극한 등급으로 올라설 재목입니다.",
     stats:[{v:"HIGH",l:"도파민 수치"},{v:"성장중",l:"스릴 레벨"},{v:"30%",l:"포기 확률"}],
     badges:["#잠재적매니아","#각성직전","#도파민예비군","#다음엔맨뒷자리"]
   },
   {
-    min:0, grade:"도파민 입문자", emoji:"🌱", color:"#39ff14",
+    min:0, grade:"스릴 입문자", emoji:"🌱", color:"#39ff14",
     desc:"아직 진짜 스릴을 모르시는군요. 괜찮습니다. 모든 하드코어 매니아는 회전목마에서 시작했습니다. 이 앱이 당신의 각성을 도와드리겠습니다.",
     stats:[{v:"LOW",l:"현재 도파민"},{v:"무한대",l:"성장 가능성"},{v:"100%",l:"각성 필요"}],
     badges:["#입문자환영","#성장잠재력무한","#첫스릴준비완료"]
@@ -777,6 +774,50 @@ async function refreshAuth() {
     currentUser = null;
   }
   updateAuthButton();
+  if (currentUser) {
+    await syncDiagnosisAfterLogin();
+  }
+  await loadSavedDiagnosisChip();
+}
+
+async function syncDiagnosisAfterLogin() {
+  if (!currentUser) return;
+
+  let serverResult = null;
+  try {
+    const data = await DopamineStore.fetchDiagnosis();
+    serverResult = data.result || null;
+  } catch (_) {}
+
+  if (serverResult) {
+    lastDiagnosisResult = serverResult;
+    currentUser.diagnosisResult = serverResult;
+    localStorage.setItem(LS_RESULT_TYPE, serverResult);
+    localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+    return;
+  }
+
+  const local = getLocalResultType();
+  if (local) {
+    try {
+      await DopamineStore.saveDiagnosis(local);
+      currentUser.diagnosisResult = local;
+      lastDiagnosisResult = local;
+    } catch (_) {}
+  }
+}
+
+function getLocalResultType() {
+  return localStorage.getItem(LS_RESULT_TYPE)
+    || localStorage.getItem('dopamine_diagnosis_result')
+    || '';
+}
+
+function persistLocalDiagnosis(result) {
+  lastDiagnosisResult = result;
+  localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+  localStorage.setItem(LS_RESULT_TYPE, result);
+  localStorage.removeItem('dopamine_diagnosis_result');
 }
 
 function updateAuthButton() {
@@ -802,9 +843,11 @@ function hideLoginModal() {
 }
 
 function startKakaoLogin() {
-  let next = '/index.html';
-  if (pendingDetailId) next = '/index.html?openDetail=' + pendingDetailId;
-  location.href = DopamineStore.kakaoLoginUrl(next);
+  if (pendingDetailId) {
+    sessionStorage.setItem(SS_PENDING_DETAIL, String(pendingDetailId));
+  }
+  hideLoginModal();
+  location.href = DopamineStore.kakaoLoginUrl('/index.html');
 }
 
 async function handleAuthClick() {
@@ -822,14 +865,13 @@ async function handleAuthClick() {
 }
 
 async function saveDiagnosisResult(result) {
-  lastDiagnosisResult = result;
+  persistLocalDiagnosis(result);
   if (currentUser) {
     try {
       await DopamineStore.saveDiagnosis(result);
+      currentUser.diagnosisResult = result;
     } catch (_) {}
-    return;
   }
-  localStorage.setItem('dopamine_diagnosis_result', result);
 }
 
 function slide(fromId, toId) {
@@ -981,8 +1023,14 @@ function openDiagnosis() {
 }
 
 function closeDiagnosis() {
+  markOnboardingDone();
   resetDiagnosisView();
   slide('onboardScreen', 'mainScreen');
+  renderCards(getDisplayedSpots());
+}
+
+function markOnboardingDone() {
+  localStorage.setItem(LS_ONBOARDING_DONE, 'true');
 }
 
 function startQuiz() {
@@ -1030,12 +1078,19 @@ function nextQ() {
   else showResult();
 }
 
-function showResult() {
-  const total = scores.reduce((a,b) => a + (b < 0 ? 0 : b), 0);
-  const grade = GRADES.find(g => total >= g.min);
-  document.getElementById('quizPhase').classList.remove('active');
-  const rp = document.getElementById('resultPhase');
-  rp.classList.add('active');
+function findGradeByName(name) {
+  if (!name) return null;
+  const legacy = {
+    '하드코어 상급자': '극한의 무서움',
+    '잠재적 도파민 중독자': '도파민 각성 직전',
+    '도파민 입문자': '스릴 입문자',
+  };
+  const normalized = legacy[name] || name;
+  return GRADES.find(g => g.grade === normalized) || null;
+}
+
+function renderGradeResult(grade) {
+  if (!grade) return;
   document.getElementById('rsGrade').innerHTML =
     `당신의 등급<br><span style="color:${grade.color}">${grade.grade}</span>`;
   document.getElementById('rsEmoji').textContent = grade.emoji;
@@ -1048,8 +1103,68 @@ function showResult() {
   document.getElementById('rsBadges').innerHTML = grade.badges.map(b =>
     `<span class="rs-badge" style="color:${grade.color};border:1px solid ${grade.color}33;background:${grade.color}11">${b}</span>`
   ).join('');
-  saveDiagnosisResult(grade.grade);
+}
+
+function setupResultActions(mode) {
+  const kakaoBtn = document.getElementById('rsKakaoBtn');
+  const skipBtn = document.getElementById('rsSkipBtn');
+  const backBtn = document.getElementById('rsBackBtn');
+  if (!kakaoBtn || !skipBtn || !backBtn) return;
+
+  if (mode === 'onboarding') {
+    kakaoBtn.classList.remove('is-hidden');
+    skipBtn.classList.remove('is-hidden');
+    backBtn.classList.add('is-hidden');
+    kakaoBtn.onclick = () => {
+      location.href = DopamineStore.kakaoLoginUrl('/index.html');
+    };
+    skipBtn.onclick = () => enterMain();
+    return;
+  }
+
+  if (mode === 'saved' && currentUser) {
+    kakaoBtn.classList.add('is-hidden');
+    skipBtn.classList.add('is-hidden');
+    backBtn.classList.remove('is-hidden');
+    backBtn.onclick = () => closeDiagnosis();
+    return;
+  }
+
+  kakaoBtn.classList.remove('is-hidden');
+  skipBtn.classList.remove('is-hidden');
+  backBtn.classList.add('is-hidden');
+  kakaoBtn.onclick = () => {
+    location.href = DopamineStore.kakaoLoginUrl('/index.html');
+  };
+  skipBtn.onclick = () => closeDiagnosis();
+}
+
+function openSavedDiagnosis(resultName) {
+  const name = resultName || lastDiagnosisResult || currentUser?.diagnosisResult || getLocalResultType() || document.getElementById('diagChipText')?.textContent;
+  const grade = findGradeByName(name);
+  if (!grade) {
+    openDiagnosis();
+    return;
+  }
+  resetDiagnosisView();
+  document.getElementById('introPhase')?.classList.add('hidden');
+  document.getElementById('diagSkipIntro')?.classList.add('hidden');
+  document.getElementById('quizPhase')?.classList.remove('active');
+  document.getElementById('resultPhase')?.classList.add('active');
+  renderGradeResult(grade);
+  setupResultActions(currentUser ? 'saved' : 'review');
+  slide('mainScreen', 'onboardScreen');
+}
+
+function showResult() {
+  const total = scores.reduce((a,b) => a + (b < 0 ? 0 : b), 0);
+  const grade = GRADES.find(g => total >= g.min);
+  document.getElementById('quizPhase').classList.remove('active');
+  document.getElementById('resultPhase').classList.add('active');
+  renderGradeResult(grade);
+  persistLocalDiagnosis(grade.grade);
   updateDiagnosisChip(grade.grade);
+  setupResultActions('onboarding');
 }
 
 function updateDiagnosisChip(result) {
@@ -1061,17 +1176,20 @@ function updateDiagnosisChip(result) {
 }
 
 async function loadSavedDiagnosisChip() {
-  let result = localStorage.getItem('dopamine_diagnosis_result') || '';
-  if (currentUser) {
-    try {
-      const data = await DopamineStore.fetchDiagnosis();
-      if (data.result) result = data.result;
-    } catch (_) {}
+  let result = '';
+  if (currentUser?.diagnosisResult) {
+    result = currentUser.diagnosisResult;
+  } else {
+    result = getLocalResultType();
   }
-  if (result) updateDiagnosisChip(result);
+  if (result) {
+    lastDiagnosisResult = result;
+    updateDiagnosisChip(result);
+  }
 }
 
-function enterMain(skipFade) {
+function enterMain() {
+  markOnboardingDone();
   resetDiagnosisView();
   reloadSpots().then(() => {
     const ob = document.getElementById('onboardScreen');
@@ -1084,6 +1202,42 @@ function enterMain(skipFade) {
     renderCards(getDisplayedSpots());
     loadSavedDiagnosisChip();
   });
+}
+
+function migrateLegacyDiagnosisStorage() {
+  const old = localStorage.getItem('dopamine_diagnosis_result');
+  if (old && !localStorage.getItem(LS_RESULT_TYPE)) {
+    const legacy = {
+      '하드코어 상급자': '극한의 무서움',
+      '잠재적 도파민 중독자': '도파민 각성 직전',
+      '도파민 입문자': '스릴 입문자',
+    };
+    localStorage.setItem(LS_RESULT_TYPE, legacy[old] || old);
+    localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+    localStorage.removeItem('dopamine_diagnosis_result');
+  }
+}
+
+function ensureMainScreenVisible() {
+  document.getElementById('onboardScreen')?.classList.remove('active');
+  document.getElementById('onboardScreen')?.classList.add('hidden');
+  const main = document.getElementById('mainScreen');
+  main?.classList.remove('hidden', 'slide-left');
+  main?.classList.add('active');
+  renderCards(getDisplayedSpots());
+}
+
+function startOnboardingFlow() {
+  document.getElementById('mainScreen')?.classList.remove('active');
+  document.getElementById('mainScreen')?.classList.add('hidden');
+  const onboard = document.getElementById('onboardScreen');
+  onboard?.classList.remove('hidden');
+  onboard?.classList.add('active');
+  resetDiagnosisView();
+  initQuizScores();
+  quizStep = 0;
+  renderQuizSteps();
+  runDiagnosisIntro();
 }
 
 /* ═══════════════════════════════════════
@@ -1217,7 +1371,9 @@ function renderDetailView(a, fromReview=false) {
     </div>
     <div class="d-sticky">
       <button class="btn-secondary" style="flex:1" onclick="showToast('동선에 추가되었습니다 ✓')">＋ 동선 추가</button>
-      <button class="btn-primary" style="flex:1" onclick="goReview(${a.id})">✍️ 리뷰 쓰기</button>
+      ${currentUser
+        ? `<button class="btn-primary" style="flex:1" onclick="goReview(${a.id})">✍️ 리뷰 쓰기</button>`
+        : `<button class="btn-primary" style="flex:1" onclick="showLoginModal(${a.id});showToast('로그인 후 리뷰를 작성할 수 있어요')">🔐 로그인 후 리뷰 작성</button>`}
     </div>`;
 
   const from = fromReview ? 'reviewScreen' : (document.querySelector('.screen.active')?.id || 'mainScreen');
@@ -1228,6 +1384,10 @@ function renderDetailView(a, fromReview=false) {
 
 async function goDetail(id, fromReview=false) {
   currentId = id;
+  if (!fromReview && !currentUser) {
+    showLoginModal(id);
+    return;
+  }
   let a;
   try {
     a = await DopamineStore.fetchSpotById(id);
@@ -1299,6 +1459,11 @@ function goFromMap() {
    ④ REVIEW
 ═══════════════════════════════════════ */
 function goReview(id) {
+  if (!currentUser) {
+    showLoginModal(id);
+    showToast('로그인 후 리뷰를 작성할 수 있어요');
+    return;
+  }
   currentId = id;
   const a = getSpot(id);
   if (!a) return;
@@ -1658,9 +1823,17 @@ function goDetailFromMap(id) {
    BOOT
 ═══════════════════════════════════════ */
 async function bootApp() {
+  migrateLegacyDiagnosisStorage();
   await reloadSpots();
-  renderCards(getDisplayedSpots());
   await refreshAuth();
+
+  const onboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
+  if (!onboardingDone) {
+    startOnboardingFlow();
+  } else {
+    renderCards(getDisplayedSpots());
+    await loadSavedDiagnosisChip();
+  }
 
   if (location.protocol !== 'file:') {
     DopamineStore.recordVisit().catch(() => {});
@@ -1671,7 +1844,9 @@ async function bootApp() {
   if (params.get('login') === 'ok') {
     showToast('카카오 로그인 완료 ✓');
     history.replaceState({}, '', location.pathname);
+    ensureMainScreenVisible();
     await refreshAuth();
+    await loadSavedDiagnosisChip();
   }
   if (params.get('login') === 'fail') {
     const reason = decodeURIComponent(params.get('reason') || '');
@@ -1696,16 +1871,23 @@ async function bootApp() {
     });
   }
 
-  const openDetail = params.get('openDetail');
-  if (openDetail) {
-    history.replaceState({}, '', location.pathname);
+  const diagChipLink = document.getElementById('diagChipLink');
+  if (diagChipLink) {
+    diagChipLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      openSavedDiagnosis();
+    });
   }
 
-  await loadSavedDiagnosisChip();
-  renderCards(getDisplayedSpots());
-
-  if (openDetail) {
-    setTimeout(() => goDetail(Number(openDetail)), 400);
+  const pendingDetail = sessionStorage.getItem(SS_PENDING_DETAIL) || params.get('openDetail');
+  if (pendingDetail) {
+    sessionStorage.removeItem(SS_PENDING_DETAIL);
+    history.replaceState({}, '', location.pathname);
+    if (onboardingDone || localStorage.getItem(LS_ONBOARDING_DONE) === 'true') {
+      setTimeout(() => goDetail(Number(pendingDetail)), 400);
+    } else {
+      pendingDetailId = Number(pendingDetail);
+    }
   }
 }
 

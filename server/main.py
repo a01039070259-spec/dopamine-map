@@ -114,6 +114,16 @@ def api_auth_me(request: Request):
     user = get_user_from_request(request)
     if not user:
         return {"loggedIn": False, "user": None}
+    db_user = get_user_by_id(user["id"])
+    if db_user:
+        return {
+            "loggedIn": True,
+            "user": {
+                "id": db_user["id"],
+                "nickname": db_user["nickname"],
+                "diagnosisResult": db_user.get("diagnosisResult"),
+            },
+        }
     return {"loggedIn": True, "user": user}
 
 
@@ -139,6 +149,7 @@ def kakao_login(next: str = "/index.html"):
             "client_id": KAKAO_REST_API_KEY,
             "redirect_uri": KAKAO_REDIRECT_URI,
             "response_type": "code",
+            "scope": "profile_nickname",
             "state": state,
         }
     )
@@ -187,7 +198,13 @@ def kakao_callback(code: Optional[str] = None, state: Optional[str] = None, erro
 
     kakao_id = str(profile.get("id"))
     props = profile.get("properties") or {}
-    nickname = props.get("nickname") or "카카오유저"
+    kakao_account = profile.get("kakao_account") or {}
+    kakao_profile = kakao_account.get("profile") or {}
+    nickname = (
+        (kakao_profile.get("nickname") or props.get("nickname") or "").strip()
+    )
+    if not nickname:
+        nickname = f"유저{kakao_id[-4:]}"
     user = upsert_kakao_user(kakao_id, nickname)
     token = create_token(user["id"], kakao_id, user["nickname"])
     record_visit(user["id"])
