@@ -455,12 +455,13 @@
     });
   }
 
-  async function adminGeocode(queries, adminPassword) {
+  async function adminGeocode(queries, adminPassword, keywords) {
     const list = Array.isArray(queries) ? queries : [queries];
+    const kw = Array.isArray(keywords) ? keywords : keywords ? [keywords] : [];
     return apiFetch("/api/admin/geocode", {
       method: "POST",
       headers: { "X-Admin-Password": adminPassword || "" },
-      body: JSON.stringify({ queries: list }),
+      body: JSON.stringify({ queries: list.filter(Boolean), keywords: kw.filter(Boolean) }),
     });
   }
 

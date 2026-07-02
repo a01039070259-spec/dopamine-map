@@ -172,7 +172,7 @@
               <div class="addr-row" style="margin-top:8px">
                 <button type="button" class="geocode" id="coordSearchBtn">📍 좌표 찾기</button>
               </div>
-              <span class="hint">주소 검색 후 자동으로 좌표가 입력됩니다. 안 되면 주소 입력 후 「좌표 찾기」를 누르세요.</span>
+              <span class="hint">팝업: 「용산리」「대관령」처럼 <strong>지역·지번</strong>으로 검색 (장소명은 안 나올 수 있음). 주소 붙여넣기 후 「좌표 찾기」 또는 장소명+주소 함께 사용.</span>
             </div>
             <div class="grid2">
               <div class="field"><label for="regLat">위도 *</label><input id="regLat" type="number" step="any" required /></div>
@@ -868,19 +868,44 @@
 
     function expandGeocodeCandidates(candidates) {
       const out = [];
+      const push = (v) => {
+        const s = String(v || "").trim();
+        if (s && !out.includes(s)) out.push(s);
+      };
       candidates.forEach((addr) => {
         if (!addr) return;
-        out.push(addr);
-        const normalized = normalizeKoreanAddress(addr);
-        if (normalized && normalized !== addr) out.push(normalized);
+        push(addr);
+        push(normalizeKoreanAddress(addr));
         const plain = addr.replace(/\s*\([^)]*\)/g, "").trim();
-        if (plain && plain !== addr) {
-          out.push(plain);
-          const plainNorm = normalizeKoreanAddress(plain);
-          if (plainNorm && plainNorm !== plain) out.push(plainNorm);
+        push(plain);
+        push(normalizeKoreanAddress(plain));
+        const withoutSido = plain.replace(
+          /^(?:서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|제주특별자치도|강원특별자치도|전북특별자치도|경기도|충청북도|충청남도|전라남도|경상북도|경상남도|[가-힣]+(?:특별시|광역시|특별자치시|특별자치도|도))\s+/,
+          ""
+        );
+        push(withoutSido);
+        const bunji = plain.match(/(\d+)\s*-\s*(\d+)/);
+        if (bunji) {
+          push(plain.replace(bunji[0], `${bunji[1]}번지 ${bunji[2]}`));
+          push(plain.replace(bunji[0], `${bunji[1]} ${bunji[2]}`));
         }
       });
-      return [...new Set(out.filter(Boolean))];
+      return out;
+    }
+
+    function buildKeywordCandidates(displayAddr) {
+      const keywords = [];
+      const name = document.getElementById("regName")?.value.trim();
+      if (!name) return keywords;
+      keywords.push(name);
+      const addr = String(displayAddr || "").trim();
+      if (addr) {
+        const region = addr.match(/([가-힣]+(?:군|시))\s+([가-힣]+(?:면|읍|동))/);
+        if (region) keywords.push(`${region[1]} ${region[2]} ${name}`);
+        const ri = addr.match(/([가-힣]+(?:리|동))\s+\d+/);
+        if (ri) keywords.push(`${ri[1]} ${name}`);
+      }
+      return [...new Set(keywords.filter(Boolean))];
     }
 
     function getGeocodeCandidates(postcodeData, displayAddr) {
@@ -900,23 +925,25 @@
       return expandGeocodeCandidates(list);
     }
 
-    async function geocodeFromCandidates(candidates) {
-      return DopamineStore.adminGeocode(candidates, getAdminPass());
+    async function geocodeFromCandidates(candidates, keywords) {
+      return DopamineStore.adminGeocode(candidates, getAdminPass(), keywords || []);
     }
 
     async function fillCoordsFromAddress(displayAddr, postcodeData) {
       if (!displayAddr && !postcodeData) return;
 
       const candidates = getGeocodeCandidates(postcodeData, displayAddr);
-      if (!candidates.length) return;
+      const keywords = buildKeywordCandidates(displayAddr);
+      if (!candidates.length && !keywords.length) return;
 
       document.getElementById("regLat").value = "";
       document.getElementById("regLng").value = "";
       showToast("좌표 변환 중…", 1200);
 
       try {
-        const hit = await geocodeFromCandidates(candidates);
-        setLatLng(hit.lat, hit.lng, "주소 · 좌표 입력 완료 ✓");
+        const hit = await geocodeFromCandidates(candidates, keywords);
+        const label = hit.label ? `${hit.label} · 좌표 입력 ✓` : "주소 · 좌표 입력 완료 ✓";
+        setLatLng(hit.lat, hit.lng, label);
       } catch (err) {
         console.error(err);
         if (err.status === 401) {
@@ -933,12 +960,21 @@
 
     async function lookupCoordsFromForm() {
       const addr = getFullAddress() || document.getElementById("regAddr").value.trim();
-      if (!addr) {
-        showToast("주소를 먼저 입력하거나 검색해 주세요");
+      const name = document.getElementById("regName").value.trim();
+      if (!addr && !name) {
+        showToast("주소 또는 장소명을 입력해 주세요");
         return;
       }
-      await fillCoordsFromAddress(addr, null);
+      await fillCoordsFromAddress(addr || null, null);
     }
+
+    document.getElementById("regAddr").addEventListener("change", () => {
+      const addr = document.getElementById("regAddr").value.trim();
+      const lat = document.getElementById("regLat").value;
+      if (addr.length >= 8 && /\d/.test(addr) && !lat) {
+        fillCoordsFromAddress(getFullAddress() || addr, null);
+      }
+    });
 
     document.getElementById("addrSearchBtn").addEventListener("click", openAddressSearch);
     document.getElementById("addrSearchClose").addEventListener("click", closeAddressLayer);

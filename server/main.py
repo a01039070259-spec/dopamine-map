@@ -118,37 +118,66 @@ def api_admin_geocode(payload: dict, _: None = Depends(verify_admin)):
     if isinstance(raw_queries, str):
         raw_queries = [raw_queries]
     queries = [str(q).strip() for q in raw_queries if str(q).strip()]
-    if not queries:
+    raw_keywords = payload.get("keywords") or []
+    if isinstance(raw_keywords, str):
+        raw_keywords = [raw_keywords]
+    keywords = [str(k).strip() for k in raw_keywords if str(k).strip()]
+    if not queries and not keywords:
         raise HTTPException(status_code=400, detail="queries가 필요합니다")
 
     headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
     with httpx.Client(timeout=12.0) as client:
         for query in queries:
-            for path, params in (
-                ("search/address.json", {"query": query}),
-                ("search/keyword.json", {"query": query, "size": "1"}),
-            ):
-                try:
-                    res = client.get(
-                        f"https://dapi.kakao.com/v2/local/{path}",
-                        params=params,
-                        headers=headers,
-                    )
-                    if res.status_code >= 400:
-                        continue
-                    docs = res.json().get("documents") or []
-                    if docs:
-                        doc = docs[0]
-                        return {
-                            "lat": float(doc["y"]),
-                            "lng": float(doc["x"]),
-                            "query": query,
-                            "source": path,
-                        }
-                except (httpx.HTTPError, ValueError, KeyError):
-                    continue
+            hit = _kakao_geocode_query(client, headers, query, "address")
+            if hit:
+                hit["query"] = query
+                return hit
+        for query in queries:
+            hit = _kakao_geocode_query(client, headers, query, "keyword", size=3)
+            if hit:
+                hit["query"] = query
+                return hit
+        for keyword in keywords:
+            hit = _kakao_geocode_query(client, headers, keyword, "keyword", size=5)
+            if hit:
+                hit["query"] = keyword
+                hit["source"] = "keyword-name"
+                return hit
 
     raise HTTPException(status_code=404, detail="주소를 찾을 수 없습니다")
+
+
+def _kakao_geocode_query(
+    client: httpx.Client,
+    headers: dict[str, str],
+    query: str,
+    mode: str,
+    size: int = 1,
+) -> Optional[dict]:
+    path = "search/address.json" if mode == "address" else "search/keyword.json"
+    params = {"query": query}
+    if mode == "keyword":
+        params["size"] = str(size)
+    try:
+        res = client.get(
+            f"https://dapi.kakao.com/v2/local/{path}",
+            params=params,
+            headers=headers,
+        )
+        if res.status_code >= 400:
+            return None
+        docs = res.json().get("documents") or []
+        if not docs:
+            return None
+        doc = docs[0]
+        return {
+            "lat": float(doc["y"]),
+            "lng": float(doc["x"]),
+            "source": path,
+            "label": doc.get("place_name") or doc.get("address_name") or query,
+        }
+    except (httpx.HTTPError, ValueError, KeyError):
+        return None
 
 
 @app.get("/api/auth/me")
