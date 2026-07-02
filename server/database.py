@@ -403,3 +403,19 @@ def get_admin_stats() -> dict:
         "totalUsers": total_users,
         "totalReviews": total_reviews,
     }
+
+
+def clear_all_login_data() -> dict:
+    with get_conn() as conn:
+        total_users = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
+        total_visits = conn.execute("SELECT COUNT(*) AS c FROM visits").fetchone()["c"]
+        total_reviews = conn.execute("SELECT COUNT(*) AS c FROM reviews").fetchone()["c"]
+        conn.execute("DELETE FROM reviews")
+        conn.execute("DELETE FROM visits")
+        conn.execute("DELETE FROM users")
+        conn.commit()
+    return {
+        "deletedUsers": total_users,
+        "deletedVisits": total_visits,
+        "deletedReviews": total_reviews,
+    }

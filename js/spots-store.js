@@ -458,6 +458,14 @@
     });
   }
 
+  async function clearLoginDataFromApi(adminPassword) {
+    return apiFetch("/api/admin/clear-login-data", {
+      method: "POST",
+      headers: { "X-Admin-Password": adminPassword || "" },
+      body: "{}",
+    });
+  }
+
   async function adminGeocode(queries, adminPassword, keywords) {
     const list = Array.isArray(queries) ? queries : [queries];
     const kw = Array.isArray(keywords) ? keywords : keywords ? [keywords] : [];
@@ -532,6 +540,7 @@
     fetchDiagnosis,
     logoutAuth,
     fetchAdminStats,
+    clearLoginDataFromApi,
     adminGeocode,
     kakaoLoginUrl,
     verifyAdminPassword,

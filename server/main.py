@@ -20,6 +20,7 @@ from server.auth import (
     set_auth_cookie,
 )
 from server.database import (
+    clear_all_login_data,
     create_review,
     create_spot,
     delete_spot,
@@ -107,6 +108,11 @@ def admin_verify(_: None = Depends(verify_admin)):
 @app.get("/api/admin/stats")
 def api_admin_stats(_: None = Depends(verify_admin)):
     return get_admin_stats()
+
+
+@app.post("/api/admin/clear-login-data")
+def api_admin_clear_login_data(_: None = Depends(verify_admin)):
+    return clear_all_login_data()
 
 
 @app.post("/api/admin/geocode")

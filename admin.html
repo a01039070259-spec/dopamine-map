@@ -248,6 +248,14 @@
       <div class="panel" style="margin-top:20px">
         <p class="sec-label">방문 통계</p>
         <div id="statsBox" class="hint">로그인 후 통계를 불러옵니다.</div>
+        <div class="actions" style="margin-top:12px">
+          <button type="button" class="ghost-btn" id="clearLoginDataBtn" style="border-color:#ff4444;color:#ff8888">
+            로그인 기록 전체 삭제
+          </button>
+        </div>
+        <span class="hint" style="display:block;margin-top:8px">
+          카카오 가입 사용자 · 방문 로그 · 로그인 리뷰가 모두 삭제됩니다. (스팟 데이터는 유지)
+        </span>
       </div>
 
       <div class="panel" style="margin-top:20px">
@@ -626,6 +634,26 @@
       localStorage.setItem(ADMIN_PASS_KEY, next);
       document.getElementById("newPass").value = "";
       showToast("브라우저에 저장됨 — 서버(ADMIN_PASSWORD)도 호스팅 설정에서 같이 바꿔야 API가 동작합니다", 4500);
+    });
+
+    document.getElementById("clearLoginDataBtn").addEventListener("click", async () => {
+      if (
+        !confirm(
+          "카카오 가입 사용자, 방문 기록, 로그인 리뷰를 모두 삭제합니다.\n스팟 데이터는 유지됩니다.\n\n계속할까요?"
+        )
+      ) {
+        return;
+      }
+      try {
+        const result = await DopamineStore.clearLoginDataFromApi(getAdminPass());
+        await renderStats();
+        showToast(
+          `삭제 완료 — 사용자 ${result.deletedUsers || 0}명 · 방문 ${result.deletedVisits || 0}건 · 리뷰 ${result.deletedReviews || 0}건`,
+          4000
+        );
+      } catch (err) {
+        showToast(err.status === 401 ? "관리자 인증 실패" : "삭제 실패 — 다시 시도해 주세요", 3200);
+      }
     });
 
     function buildAddressFromPostcode(data) {
