@@ -172,6 +172,11 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .m-diag-chip b{color:var(--neon)}
 .m-diag-chip-prompt{color:var(--neon);cursor:pointer;font-weight:700;transition:opacity .15s}
 .m-diag-chip-prompt:hover{opacity:.85}
+.m-login-nudge{margin-top:12px;padding:14px 16px;border-radius:12px;border:1px solid #2a4a1a;background:linear-gradient(135deg,#0d2a06,#111);display:flex;flex-direction:column;gap:10px}
+.m-login-nudge p{font-size:13px;color:#ccc;line-height:1.55;margin:0}
+.m-login-nudge-actions{display:flex;gap:8px;flex-wrap:wrap}
+.m-login-nudge-kakao{flex:1;min-width:140px;background:#fee500;color:#191919;border:none;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:800;font-family:'Noto Sans KR',sans-serif;cursor:pointer}
+.m-login-nudge-later{background:transparent;border:1px solid var(--border2);color:var(--text-dim);border-radius:10px;padding:11px 14px;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer}
 .m-diag-chip.is-hidden{display:none!important}
 .is-hidden{display:none!important}
 .m-logo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -508,6 +513,13 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
       <button type="button" class="m-diag-chip-prompt" id="diagChipPrompt" onclick="openDiagnosis()">🧪 자가진단을 해서 등급을 확인해 보세요 →</button>
       <span id="diagChipResult" class="is-hidden">내 등급: <b id="diagChipText">-</b> · <a href="#" id="diagChipLink" style="color:var(--neon);text-decoration:none">상세 보기</a></span>
     </div>
+    <div class="m-login-nudge is-hidden" id="loginNudge">
+      <p>카카오 로그인하면 <strong style="color:var(--neon)">내 등급 저장</strong>과 <strong style="color:var(--neon)">스팟 상세·리뷰</strong>를 이용할 수 있어요.</p>
+      <div class="m-login-nudge-actions">
+        <button type="button" class="m-login-nudge-kakao" onclick="startKakaoLogin()">카카오로 로그인</button>
+        <button type="button" class="m-login-nudge-later" onclick="dismissLoginNudge()">나중에</button>
+      </div>
+    </div>
     <div class="m-search-wrap">
       <span class="m-si">🔍</span>
       <input class="m-search" type="text" id="searchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 롤러코스터, 인천)"/>
@@ -702,6 +714,7 @@ const QUIZ = [
 const LS_ONBOARDING_DONE = 'dopamine_onboarding_done';
 const LS_RESULT_TYPE = 'dopamine_result_type';
 const SS_PENDING_DETAIL = 'dopamine_pending_detail';
+const SS_LOGIN_NUDGE = 'dopamine_show_login_nudge';
 
 const GRADES = [
   {
@@ -781,8 +794,10 @@ async function refreshAuth() {
   updateAuthButton();
   if (currentUser) {
     await syncDiagnosisAfterLogin();
+    sessionStorage.removeItem(SS_LOGIN_NUDGE);
   }
   await loadSavedDiagnosisChip();
+  updateLoginNudge();
 }
 
 async function syncDiagnosisAfterLogin() {
@@ -834,6 +849,29 @@ function persistLocalDiagnosis(result) {
   localStorage.setItem(LS_ONBOARDING_DONE, 'true');
   localStorage.setItem(LS_RESULT_TYPE, result);
   localStorage.removeItem('dopamine_diagnosis_result');
+}
+
+function updateLoginNudge() {
+  const nudge = document.getElementById('loginNudge');
+  if (!nudge) return;
+  const show = !currentUser
+    && sessionStorage.getItem(SS_LOGIN_NUDGE) === '1'
+    && !!getLocalResultType();
+  nudge.classList.toggle('is-hidden', !show);
+}
+
+function dismissLoginNudge(clearFlag) {
+  if (clearFlag !== false) {
+    sessionStorage.removeItem(SS_LOGIN_NUDGE);
+  }
+  document.getElementById('loginNudge')?.classList.add('is-hidden');
+}
+
+function promptLoginAfterOnboarding() {
+  if (!currentUser && getLocalResultType()) {
+    sessionStorage.setItem(SS_LOGIN_NUDGE, '1');
+    updateLoginNudge();
+  }
 }
 
 function updateAuthButton() {
@@ -1131,33 +1169,20 @@ function setupResultActions(mode) {
   if (!kakaoBtn || !skipBtn || !backBtn) return;
 
   if (mode === 'onboarding') {
-    kakaoBtn.classList.remove('is-hidden');
+    kakaoBtn.classList.add('is-hidden');
     skipBtn.classList.remove('is-hidden');
-    skipBtn.textContent = '나중에 하기';
+    skipBtn.textContent = '🔥 도파민 지도 입장하기';
     backBtn.classList.add('is-hidden');
-    kakaoBtn.onclick = () => {
-      location.href = DopamineStore.kakaoLoginUrl('/index.html');
-    };
-    skipBtn.onclick = () => enterMain();
+    skipBtn.onclick = () => enterMain(true);
     return;
   }
 
   if (mode === 'retake') {
+    kakaoBtn.classList.add('is-hidden');
+    skipBtn.classList.remove('is-hidden');
+    skipBtn.textContent = '← 지도로 돌아가기';
     backBtn.classList.add('is-hidden');
-    if (currentUser) {
-      kakaoBtn.classList.add('is-hidden');
-      skipBtn.classList.remove('is-hidden');
-      skipBtn.textContent = '← 지도로 돌아가기';
-      skipBtn.onclick = () => closeDiagnosis();
-    } else {
-      kakaoBtn.classList.remove('is-hidden');
-      skipBtn.classList.remove('is-hidden');
-      skipBtn.textContent = '나중에 하기';
-      kakaoBtn.onclick = () => {
-        location.href = DopamineStore.kakaoLoginUrl('/index.html');
-      };
-      skipBtn.onclick = () => closeDiagnosis();
-    }
+    skipBtn.onclick = () => closeDiagnosis();
     return;
   }
 
@@ -1257,7 +1282,7 @@ async function loadSavedDiagnosisChip() {
   }
 }
 
-function enterMain() {
+function enterMain(fromFirstDiagnosis) {
   markOnboardingDone();
   resetDiagnosisView();
   reloadSpots().then(() => {
@@ -1270,6 +1295,11 @@ function enterMain() {
     prevScreen = 'mainScreen';
     renderCards(getDisplayedSpots());
     loadSavedDiagnosisChip();
+    if (fromFirstDiagnosis) {
+      promptLoginAfterOnboarding();
+    } else {
+      updateLoginNudge();
+    }
   });
 }
 
@@ -1916,6 +1946,8 @@ async function bootApp() {
     ensureMainScreenVisible();
     await refreshAuth();
     await loadSavedDiagnosisChip();
+    sessionStorage.removeItem(SS_LOGIN_NUDGE);
+    updateLoginNudge();
   }
   if (params.get('login') === 'fail') {
     const reason = decodeURIComponent(params.get('reason') || '');
