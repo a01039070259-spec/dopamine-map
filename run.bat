@@ -1,8 +1,11 @@
 @echo off
 cd /d "%~dp0"
 
-if not exist .env copy .env.example .env
-
+if not exist .env (
+  echo .env 파일이 없습니다. 프로젝트 폴더에 .env 를 만들고 KAKAO_REST_API_KEY 를 넣어주세요.
+  pause
+  exit /b 1
+)
 python -m pip install -r requirements.txt -q 2>nul
 if errorlevel 1 (
   echo Python을 찾을 수 없습니다. Python 3.10+ 설치 후 다시 실행하세요.

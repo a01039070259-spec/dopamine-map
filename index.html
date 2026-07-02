@@ -87,6 +87,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .ob-corner.bl{bottom:80px;left:16px;border-width:0 0 2px 2px}
 .ob-corner.br{bottom:80px;right:16px;border-width:0 2px 2px 0}
 #introPhase{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;max-width:720px;margin:0 auto;left:0;right:0}
+#introPhase.hidden{display:none!important}
 .ob-warn-bar{background:var(--neon);color:#000;font-size:11px;font-weight:900;letter-spacing:2px;padding:5px 14px;border-radius:3px;margin-bottom:32px;opacity:0;animation:obIn .4s forwards}
 .ob-line{font-size:17px;font-weight:700;color:#fff;line-height:1.5;text-align:center;margin-bottom:10px;opacity:0;min-height:26px;letter-spacing:-.3px}
 .ob-line.neon{color:var(--neon)}
@@ -109,6 +110,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   transition:color .2s,border-color .2s,background .2s;
 }
 .ob-skip:hover{color:var(--neon);border-color:var(--neon);background:rgba(13,42,6,.85)}
+.ob-skip.hidden{display:none!important}
 @keyframes obIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* QUIZ */
@@ -438,7 +440,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   <div class="ob-corner tl"></div><div class="ob-corner tr"></div>
   <div class="ob-corner bl"></div><div class="ob-corner br"></div>
 
-  <div id="introPhase">
+  <div id="introPhase" class="hidden">
     <div class="ob-warn-bar" id="obWarn">⚠ WARNING SYSTEM INITIALIZING ⚠</div>
     <div class="ob-line" id="obL1"></div>
     <div class="ob-line neon" id="obL2"></div>
@@ -447,17 +449,12 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     <div class="ob-logo-big" id="obLogo">도파민 지도 ⚡</div>
     <div class="ob-logo-sub" id="obLogoSub">DOPAMINE MAP — BETA</div>
   </div>
-  <button type="button" class="ob-skip skip-hidden" id="obSkipIntro" onclick="startQuiz()">퀴즈로 건너뛰기 →</button>
-  <button type="button" class="ob-skip skip-hidden" id="obSkipQuiz" onclick="closeDiagnosis()">지도로 돌아가기 →</button>
+  <button type="button" class="ob-skip hidden" id="diagSkipIntro" onclick="startQuiz()">건너뛰기 →</button>
 
   <div id="quizPhase">
     <div class="qz-header">
       <button type="button" class="qz-back" onclick="closeDiagnosis()">← 지도로 돌아가기</button>
-      <div class="qz-steps" id="qzSteps">
-        <div class="qz-dot active"></div>
-        <div class="qz-dot"></div>
-        <div class="qz-dot"></div>
-      </div>
+      <div class="qz-steps" id="qzSteps"></div>
       <div class="qz-tag">도파민 자가진단</div>
       <div class="qz-q" id="qzQ"></div>
     </div>
@@ -685,18 +682,34 @@ const QUIZ = [
       {i:"🫀", t:"심박수 돌아올 때까지 벤치에서 회복 중.", score:1},
       {i:"🚑", t:"이게 마지막이라고 다짐하며 귀가.", score:0}
     ]
+  },
+  {
+    q: "롤러코스터 대기 시간 90분. 당신의 선택은?",
+    opts: [
+      {i:"⏳", t:"90분? 180분이어도 기다린다. 맨 뒷자리 각.", score:3},
+      {i:"🎫", t:"패스트패스 있으면 고려. 없으면 다른 거 탄다.", score:1},
+      {i:"☕", t:"카페 가서 쉬다 온다. 대기는 지옥.", score:0}
+    ]
+  },
+  {
+    q: "친구가 '무서우면 안 타도 돼'라고 한다면?",
+    opts: [
+      {i:"😈", t:"'너 안 타면 혼자라도 탄다' — 이미 줄 섰음.", score:3},
+      {i:"🤝", t:"같이 타되 앞자리는 내가 선점.", score:2},
+      {i:"🙏", t:"친구 말 듣고 포기. 다음 기회에.", score:0}
+    ]
   }
 ];
 
 const GRADES = [
   {
-    min:7, grade:"하드코어 상급자", emoji:"💀", color:"#ff4444",
+    min:11, grade:"하드코어 상급자", emoji:"💀", color:"#ff4444",
     desc:"당신은 이미 도파민의 노예입니다. 안전바가 흔들릴수록 기뻐하는 진정한 하드코어 매니아. 이 앱은 당신 같은 사람을 위해 만들었습니다.",
     stats:[{v:"MAX",l:"도파민 내성"},{v:"극한",l:"스릴 추구"},{v:"0%",l:"포기 확률"}],
     badges:["#뒷자리전문가","#안전바불신자","#재탑승왕","#찐매니아인증","#도파민각성완료"]
   },
   {
-    min:4, grade:"잠재적 도파민 중독자", emoji:"🔥", color:"#ff8800",
+    min:6, grade:"잠재적 도파민 중독자", emoji:"🔥", color:"#ff8800",
     desc:"겉으론 평범한 척하지만 속은 이미 불타오르고 있습니다. 조금만 더 경험을 쌓으면 상급자 등급으로 올라설 재목입니다.",
     stats:[{v:"HIGH",l:"도파민 수치"},{v:"성장중",l:"스릴 레벨"},{v:"30%",l:"포기 확률"}],
     badges:["#잠재적매니아","#각성직전","#도파민예비군","#다음엔맨뒷자리"]
@@ -870,8 +883,17 @@ function spotThumbMedia(a, size) {
 }
 
 /* ═══════════════════════════════════════
-   ① 자가진단 (스플래시 → 퀴즈 → 결과)
+   ① 자가진단
 ═══════════════════════════════════════ */
+const INTRO_LINES = [
+  {id:'obL1', text:"뻔하고 지루한 여행에 지쳤습니까?", delay:400},
+  {id:'obL2', text:"안전바가 흔들려야 진짜 액티비티다.", delay:1400},
+  {id:'obL3', text:"찐 매니아들을 위한 하드코어 도파민 지도.", delay:2400},
+  {id:'obL4', text:"자가진단을 시작합니다.", delay:3400},
+];
+
+let introTimerIds = [];
+
 function typeText(el, text, cb) {
   let i = 0;
   el.style.opacity = '1';
@@ -888,60 +910,72 @@ function typeText(el, text, cb) {
   tick();
 }
 
-const INTRO_LINES = [
-  { id: 'obL1', text: '뻔하고 지루한 여행에 지쳤습니까?', delay: 800 },
-  { id: 'obL2', text: '안전바가 흔들려야 진짜 액티비티다.', delay: 2000 },
-  { id: 'obL3', text: '찐 매니아들을 위한 하드코어 도파민 지도.', delay: 3200 },
-  { id: 'obL4', text: '자가진단을 시작합니다.', delay: 4200 },
-];
+function clearIntroTimers() {
+  introTimerIds.forEach((id) => clearTimeout(id));
+  introTimerIds = [];
+}
 
-function showDiagnosisSkip(mode) {
-  const introSkip = document.getElementById('obSkipIntro');
-  const quizSkip = document.getElementById('obSkipQuiz');
-  if (introSkip) introSkip.classList.toggle('skip-hidden', mode !== 'intro');
-  if (quizSkip) quizSkip.classList.toggle('skip-hidden', mode !== 'quiz');
+function resetIntroLines() {
+  ['obL1','obL2','obL3','obL4','obLogo','obLogoSub','obWarn'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = id === 'obWarn' ? '⚠ WARNING SYSTEM INITIALIZING ⚠' : '';
+    el.style.opacity = id === 'obWarn' ? '' : '0';
+  });
 }
 
 function resetDiagnosisView() {
+  clearIntroTimers();
   const intro = document.getElementById('introPhase');
+  const skip = document.getElementById('diagSkipIntro');
   const qp = document.getElementById('quizPhase');
   const rp = document.getElementById('resultPhase');
-  if (intro) intro.style.display = 'flex';
+  if (intro) intro.classList.add('hidden');
+  if (skip) skip.classList.add('hidden');
   if (qp) qp.classList.remove('active');
   if (rp) rp.classList.remove('active');
-  showDiagnosisSkip('none');
+  resetIntroLines();
+}
+
+function initQuizScores() {
+  scores = Array(QUIZ.length).fill(-1);
+}
+
+function renderQuizSteps() {
+  const box = document.getElementById('qzSteps');
+  if (!box) return;
+  box.innerHTML = QUIZ.map((_, i) =>
+    `<div class="qz-dot${i === 0 ? ' active' : ''}"></div>`
+  ).join('');
 }
 
 function runDiagnosisIntro() {
-  showDiagnosisSkip('intro');
+  resetIntroLines();
   const intro = document.getElementById('introPhase');
-  if (intro) intro.style.display = 'flex';
-  ['obL1', 'obL2', 'obL3', 'obL4'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) { el.textContent = ''; el.style.opacity = '0'; }
-  });
-  const logo = document.getElementById('obLogo');
-  const sub = document.getElementById('obLogoSub');
-  if (logo) logo.style.opacity = '0';
-  if (sub) sub.style.opacity = '0';
+  const skip = document.getElementById('diagSkipIntro');
+  if (intro) intro.classList.remove('hidden');
+  if (skip) skip.classList.remove('hidden');
 
-  INTRO_LINES.forEach(({ id, text, delay }) => {
-    setTimeout(() => {
+  INTRO_LINES.forEach(({id, text, delay}) => {
+    introTimerIds.push(setTimeout(() => {
       const el = document.getElementById(id);
       if (el) typeText(el, text);
-    }, delay);
+    }, delay));
   });
-  setTimeout(() => {
+  introTimerIds.push(setTimeout(() => {
+    const logo = document.getElementById('obLogo');
+    const sub = document.getElementById('obLogoSub');
     if (logo) { logo.style.opacity = '1'; logo.style.transition = 'opacity .6s'; }
     if (sub) { sub.style.opacity = '1'; sub.style.transition = 'opacity .8s .2s'; }
-  }, 5200);
-  setTimeout(() => startQuiz(), 6600);
+  }, 4200));
+  introTimerIds.push(setTimeout(() => startQuiz(), 5600));
 }
 
 function openDiagnosis() {
   resetDiagnosisView();
+  initQuizScores();
   quizStep = 0;
-  scores = [-1, -1, -1];
+  renderQuizSteps();
   slide('mainScreen', 'onboardScreen');
   runDiagnosisIntro();
 }
@@ -952,15 +986,15 @@ function closeDiagnosis() {
 }
 
 function startQuiz() {
-  const intro = document.getElementById('introPhase');
-  if (intro) intro.style.display = 'none';
-  document.getElementById('quizPhase')?.classList.remove('active');
+  clearIntroTimers();
+  document.getElementById('introPhase')?.classList.add('hidden');
+  document.getElementById('diagSkipIntro')?.classList.add('hidden');
   document.getElementById('resultPhase')?.classList.remove('active');
-  showDiagnosisSkip('quiz');
+  initQuizScores();
+  quizStep = 0;
+  renderQuizSteps();
   const qp = document.getElementById('quizPhase');
   qp.classList.add('active');
-  quizStep = 0;
-  scores = [-1, -1, -1];
   renderQ(0);
 }
 
@@ -1000,7 +1034,6 @@ function showResult() {
   const total = scores.reduce((a,b) => a + (b < 0 ? 0 : b), 0);
   const grade = GRADES.find(g => total >= g.min);
   document.getElementById('quizPhase').classList.remove('active');
-  showDiagnosisSkip('none');
   const rp = document.getElementById('resultPhase');
   rp.classList.add('active');
   document.getElementById('rsGrade').innerHTML =

@@ -35,9 +35,9 @@ from server.database import (
     upsert_kakao_user,
 )
 
-load_dotenv()
-
 ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / ".env")
+
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "1111")
 KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
 KAKAO_CLIENT_SECRET = os.getenv("KAKAO_CLIENT_SECRET", "")
@@ -128,7 +128,7 @@ def api_auth_status():
 @app.get("/auth/kakao/login")
 def kakao_login(next: str = "/index.html"):
     if not KAKAO_REST_API_KEY:
-        raise HTTPException(status_code=500, detail="KAKAO_REST_API_KEY가 설정되지 않았습니다")
+        return login_fail_redirect("KAKAO_REST_API_KEY_missing")
     safe_next = next if next.startswith("/") else "/index.html"
     state = encode_oauth_state(safe_next)
     params = urllib.parse.urlencode(
