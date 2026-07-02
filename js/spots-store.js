@@ -306,7 +306,6 @@
     const now = new Date().toISOString();
 
     const spot = {
-      id: existingSpot ? existingSpot.id : nextSpotId(allSpots),
       name: data.name,
       addr: data.addr,
       type: typeInfo.type,
@@ -336,6 +335,10 @@
       createdAt: existingSpot && existingSpot.createdAt ? existingSpot.createdAt : now,
       updatedAt: now,
     };
+
+    if (existingSpot && existingSpot.id) {
+      spot.id = existingSpot.id;
+    }
 
     return spot;
   }
