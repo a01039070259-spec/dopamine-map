@@ -783,28 +783,39 @@ async function refreshAuth() {
 async function syncDiagnosisAfterLogin() {
   if (!currentUser) return;
 
+  const local = getLocalResultType();
   let serverResult = null;
   try {
     const data = await DopamineStore.fetchDiagnosis();
     serverResult = data.result || null;
   } catch (_) {}
 
-  if (serverResult) {
-    lastDiagnosisResult = serverResult;
-    currentUser.diagnosisResult = serverResult;
-    localStorage.setItem(LS_RESULT_TYPE, serverResult);
-    localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+  if (local) {
+    lastDiagnosisResult = local;
+    currentUser.diagnosisResult = local;
+    updateDiagnosisChip(local);
+    if (local !== serverResult) {
+      try {
+        await DopamineStore.saveDiagnosis(local);
+      } catch (_) {}
+    }
     return;
   }
 
-  const local = getLocalResultType();
-  if (local) {
-    try {
-      await DopamineStore.saveDiagnosis(local);
-      currentUser.diagnosisResult = local;
-      lastDiagnosisResult = local;
-    } catch (_) {}
+  if (serverResult) {
+    persistLocalDiagnosis(serverResult);
+    currentUser.diagnosisResult = serverResult;
+    lastDiagnosisResult = serverResult;
+    updateDiagnosisChip(serverResult);
   }
+}
+
+function getEffectiveDiagnosisResult() {
+  return getLocalResultType() || lastDiagnosisResult || currentUser?.diagnosisResult || '';
+}
+
+function detailButtonLabel() {
+  return currentUser ? '상세 보기 →' : '로그인하러가기 →';
 }
 
 function getLocalResultType() {
@@ -857,6 +868,8 @@ async function handleAuthClick() {
     } catch (_) {}
     currentUser = null;
     updateAuthButton();
+    renderCards(getDisplayedSpots());
+    await loadSavedDiagnosisChip();
     showToast('로그아웃 되었습니다');
     return;
   }
@@ -1027,6 +1040,7 @@ function closeDiagnosis() {
   resetDiagnosisView();
   slide('onboardScreen', 'mainScreen');
   renderCards(getDisplayedSpots());
+  loadSavedDiagnosisChip();
 }
 
 function markOnboardingDone() {
@@ -1114,11 +1128,31 @@ function setupResultActions(mode) {
   if (mode === 'onboarding') {
     kakaoBtn.classList.remove('is-hidden');
     skipBtn.classList.remove('is-hidden');
+    skipBtn.textContent = '나중에 하기';
     backBtn.classList.add('is-hidden');
     kakaoBtn.onclick = () => {
       location.href = DopamineStore.kakaoLoginUrl('/index.html');
     };
     skipBtn.onclick = () => enterMain();
+    return;
+  }
+
+  if (mode === 'retake') {
+    backBtn.classList.add('is-hidden');
+    if (currentUser) {
+      kakaoBtn.classList.add('is-hidden');
+      skipBtn.classList.remove('is-hidden');
+      skipBtn.textContent = '← 지도로 돌아가기';
+      skipBtn.onclick = () => closeDiagnosis();
+    } else {
+      kakaoBtn.classList.remove('is-hidden');
+      skipBtn.classList.remove('is-hidden');
+      skipBtn.textContent = '나중에 하기';
+      kakaoBtn.onclick = () => {
+        location.href = DopamineStore.kakaoLoginUrl('/index.html');
+      };
+      skipBtn.onclick = () => closeDiagnosis();
+    }
     return;
   }
 
@@ -1132,6 +1166,7 @@ function setupResultActions(mode) {
 
   kakaoBtn.classList.remove('is-hidden');
   skipBtn.classList.remove('is-hidden');
+  skipBtn.textContent = '나중에 하기';
   backBtn.classList.add('is-hidden');
   kakaoBtn.onclick = () => {
     location.href = DopamineStore.kakaoLoginUrl('/index.html');
@@ -1140,7 +1175,7 @@ function setupResultActions(mode) {
 }
 
 function openSavedDiagnosis(resultName) {
-  const name = resultName || lastDiagnosisResult || currentUser?.diagnosisResult || getLocalResultType() || document.getElementById('diagChipText')?.textContent;
+  const name = resultName || getEffectiveDiagnosisResult() || document.getElementById('diagChipText')?.textContent;
   const grade = findGradeByName(name);
   if (!grade) {
     openDiagnosis();
@@ -1156,15 +1191,16 @@ function openSavedDiagnosis(resultName) {
   slide('mainScreen', 'onboardScreen');
 }
 
-function showResult() {
+async function showResult() {
+  const wasOnboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
   const total = scores.reduce((a,b) => a + (b < 0 ? 0 : b), 0);
   const grade = GRADES.find(g => total >= g.min);
   document.getElementById('quizPhase').classList.remove('active');
   document.getElementById('resultPhase').classList.add('active');
   renderGradeResult(grade);
-  persistLocalDiagnosis(grade.grade);
+  await saveDiagnosisResult(grade.grade);
   updateDiagnosisChip(grade.grade);
-  setupResultActions('onboarding');
+  setupResultActions(wasOnboardingDone ? 'retake' : 'onboarding');
 }
 
 function updateDiagnosisChip(result) {
@@ -1175,16 +1211,32 @@ function updateDiagnosisChip(result) {
   chip.classList.remove('is-hidden');
 }
 
+function hideDiagnosisChip() {
+  const chip = document.getElementById('diagChip');
+  if (chip) chip.classList.add('is-hidden');
+}
+
 async function loadSavedDiagnosisChip() {
-  let result = '';
-  if (currentUser?.diagnosisResult) {
-    result = currentUser.diagnosisResult;
-  } else {
-    result = getLocalResultType();
+  let result = getLocalResultType();
+
+  if (!result && currentUser) {
+    try {
+      const data = await DopamineStore.fetchDiagnosis();
+      if (data.result) {
+        result = data.result;
+        persistLocalDiagnosis(result);
+        currentUser.diagnosisResult = result;
+      }
+    } catch (_) {}
+  } else if (result && currentUser) {
+    currentUser.diagnosisResult = result;
   }
+
   if (result) {
     lastDiagnosisResult = result;
     updateDiagnosisChip(result);
+  } else {
+    hideDiagnosisChip();
   }
 }
 
@@ -1272,7 +1324,7 @@ function renderCards(data) {
             <p class="mc-tl">스릴 지수</p>
             <p style="font-size:13px">${fireStars(a.th)}</p>
           </div>
-          <button class="mc-dbtn">상세 보기 →</button>
+          <button class="mc-dbtn">${detailButtonLabel()}</button>
         </div>
       </div>
     </div>`).join('');
@@ -1803,7 +1855,7 @@ function openSheet(id) {
     </div>
     <div class="bs-actions">
       <button class="bs-btn-add" onclick="showToast('동선에 추가되었습니다 ✓')">＋ 동선</button>
-      <button class="bs-btn-detail" onclick="goDetailFromMap(${id})">상세 보기 →</button>
+      <button class="bs-btn-detail" onclick="goDetailFromMap(${id})">${detailButtonLabel()}</button>
     </div>`;
 
   document.getElementById('bottomSheet').classList.add('open');
