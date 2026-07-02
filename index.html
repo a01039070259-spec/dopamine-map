@@ -399,6 +399,10 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   right:12px !important;
   z-index:250 !important;
 }
+@media(max-width:768px){
+  #kakaoMap .custom_zoomcontrol,
+  #kakaoMap .wrap_controllers{bottom:168px !important}
+}
 
 .radius-bar{position:relative;top:auto;left:auto;right:auto;z-index:200;padding:0 16px 12px;display:flex;gap:8px;justify-content:center}
 .rbtn{background:rgba(10,10,10,.88);border:1px solid var(--border2);color:var(--text-dim);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:6px 15px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .15s;font-weight:500;backdrop-filter:blur(6px)}
@@ -406,6 +410,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .rbtn:hover:not(.active){border-color:var(--neon);color:var(--neon)}
 .map-counter{position:absolute;bottom:14px;right:14px;z-index:200;background:rgba(10,10,10,.88);border:1px solid var(--border2);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--text-muted);backdrop-filter:blur(6px);text-align:right}
 .map-counter b{color:var(--neon);font-size:13px}
+@media(max-width:768px){
+  .map-counter{bottom:168px}
+}
 
 /* 카카오맵 API 없을 때 fallback */
 .map-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center;z-index:15;background:rgba(10,10,10,.95)}
@@ -415,15 +422,63 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .map-fallback-code{background:#111;border:1px solid var(--border2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--neon);font-family:monospace;letter-spacing:.3px;word-break:break-all}
 
 /* CUSTOM MARKER */
-.dopamine-marker{position:relative;cursor:pointer;transform:translateX(-50%) translateY(-100%)}
-.dm-bubble{background:#0a0a0a;border:2px solid var(--neon);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:5px;white-space:nowrap;box-shadow:0 0 12px rgba(57,255,20,.3);transition:all .2s}
-.dm-bubble:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(57,255,20,.5)}
-.dm-bubble.skull{border-color:var(--red);box-shadow:0 0 12px rgba(255,68,68,.3)}
-.dm-bubble.skull:hover{box-shadow:0 0 20px rgba(255,68,68,.5)}
+.dopamine-marker{position:relative;cursor:pointer;transform:translateX(-50%) translateY(-100%);touch-action:manipulation}
+.dm-bubble{background:#0a0a0a;border:2px solid var(--neon);border-radius:12px;padding:7px 9px;display:flex;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(0,0,0,.45),0 0 12px rgba(57,255,20,.25);transition:transform .15s,box-shadow .15s;max-width:168px}
+.dm-bubble:active{transform:scale(.97)}
+.dm-bubble.skull{border-color:var(--red);box-shadow:0 4px 16px rgba(0,0,0,.45),0 0 12px rgba(255,68,68,.25)}
 .dm-bubble::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--neon)}
 .dm-bubble.skull::after{border-top-color:var(--red)}
-.dm-ico{font-size:14px}
-.dm-name{font-size:11px;color:#fff;font-weight:700;font-family:'Noto Sans KR',sans-serif;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+.dm-thumb{width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid #333;background:#111}
+.dm-fallback{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:#111;border:1px solid #333}
+.dm-meta{min-width:0;flex:1}
+.dm-type{font-size:9px;color:var(--neon);font-weight:800;letter-spacing:.3px;margin-bottom:2px}
+.dm-bubble.skull .dm-type{color:var(--red)}
+.dm-name{font-size:11px;color:#fff;font-weight:700;font-family:'Noto Sans KR',sans-serif;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
+.dm-bubble.compact{padding:0;border-radius:50%;width:38px;height:38px;justify-content:center;align-items:center;max-width:none}
+.dm-bubble.compact .dm-meta,.dm-bubble.compact .dm-thumb{display:none}
+.dm-bubble.compact .dm-fallback{width:100%;height:100%;border:none;border-radius:50%;font-size:17px;background:transparent}
+@media(max-width:768px){
+  .dm-bubble{max-width:152px;padding:8px 10px}
+  .dm-thumb,.dm-fallback{width:40px;height:40px}
+  .dm-name{font-size:12px}
+  .dm-type{font-size:10px}
+}
+
+/* MOBILE MAP SPOT STRIP */
+.map-spot-strip-wrap{
+  position:absolute;left:0;right:0;bottom:0;z-index:210;
+  background:linear-gradient(to top,rgba(5,5,5,.98) 55%,rgba(5,5,5,.72) 80%,transparent);
+  padding:10px 0 12px;pointer-events:none;
+}
+.map-spot-strip-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px 8px;font-size:11px;color:var(--text-muted);pointer-events:none;
+}
+.map-spot-strip-hd b{color:var(--neon)}
+.map-spot-strip{
+  display:flex;gap:10px;overflow-x:auto;padding:0 12px 2px;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;pointer-events:auto;
+}
+.map-spot-strip::-webkit-scrollbar{display:none}
+.map-strip-card{
+  flex:0 0 132px;scroll-snap-align:start;
+  background:#141414;border:1px solid var(--border2);border-radius:11px;
+  overflow:hidden;cursor:pointer;text-align:left;
+  transition:border-color .15s,transform .12s;
+}
+.map-strip-card:active{transform:scale(.98)}
+.map-strip-card.active{border-color:var(--neon);box-shadow:0 0 12px rgba(57,255,20,.18)}
+.map-strip-thumb{height:68px;background:#111;position:relative;overflow:hidden}
+.map-strip-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.map-strip-fallback{height:100%;display:flex;align-items:center;justify-content:center;font-size:28px}
+.map-strip-body{padding:8px 9px 9px}
+.map-strip-name{font-size:11px;font-weight:800;color:#fff;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
+.map-strip-meta{display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:4px}
+.map-strip-type{font-size:9px;color:var(--neon);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-strip-th{font-size:10px;flex-shrink:0}
+@media(min-width:769px){
+  .map-spot-strip-wrap{display:none}
+}
 
 /* BOTTOM SHEET */
 .bottom-sheet{position:absolute;bottom:0;left:0;right:0;z-index:300;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);pointer-events:none}
@@ -434,6 +489,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .bs-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:10px}
 .bs-em{font-size:32px;flex-shrink:0;margin-top:2px}
 .spot-thumb-img{flex-shrink:0;object-fit:cover;border-radius:8px;border:1px solid var(--border2)}
+.bs-hero-img{width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px;border:1px solid var(--border2);display:block}
 .bs-name{font-size:16px;font-weight:900;color:#fff;margin-bottom:3px;line-height:1.2}
 .bs-addr{font-size:11px;color:var(--text-muted)}
 .bs-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
@@ -656,6 +712,14 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     </div>
 
     <div class="map-counter" id="mapCounter"><b>0</b> 스팟</div>
+
+    <div class="map-spot-strip-wrap" id="mapSpotStripWrap" aria-hidden="true">
+      <div class="map-spot-strip-hd">
+        <span>👆 스팟 카드 탭 · 지도 이동</span>
+        <span><b id="mapStripCount">0</b>개</span>
+      </div>
+      <div class="map-spot-strip" id="mapSpotStrip"></div>
+    </div>
 
     <div class="bottom-sheet" id="bottomSheet">
       <div class="bs-handle-area"><div class="bs-handle"></div></div>
@@ -1770,17 +1834,112 @@ function getMappableSpots(spots) {
   });
 }
 
-// 커스텀 마커 HTML 생성 (th5=💀, th4 이하=🔥)
+function isMobileMapView() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function isCompactMapMarkers() {
+  if (!kakaoMap || typeof kakaoMap.getLevel !== 'function') return false;
+  return kakaoMap.getLevel() >= 11;
+}
+
+function markerThumbHTML(a, compact) {
+  if (compact) {
+    const th = Number(a.th) || 0;
+    const icon = spotHasImg(a) ? '' : (a.em || (th >= 5 ? '💀' : '🔥'));
+    if (spotHasImg(a)) {
+      return `<img class="dm-thumb" src="${a.img}" alt=""/>`;
+    }
+    return `<span class="dm-fallback">${icon}</span>`;
+  }
+  if (spotHasImg(a)) {
+    return `<img class="dm-thumb" src="${a.img}" alt=""/>`;
+  }
+  return `<span class="dm-fallback">${a.em || '🔥'}</span>`;
+}
+
+// 커스텀 마커 HTML (th5=💀, th4 이하=🔥) — 모바일: 썸네일+종류+이름
 function makeMarkerHTML(a) {
   const th = Number(a.th) || 0;
   const isSkull = th >= 5;
-  return `
+  const compact = isCompactMapMarkers() && !isMobileMapView();
+  const skullClass = isSkull ? ' skull' : '';
+  const compactClass = compact ? ' compact' : '';
+  if (compact) {
+    return `
     <div class="dopamine-marker" onclick="openSheet(${a.id})">
-      <div class="dm-bubble ${isSkull ? 'skull' : ''}">
-        <span class="dm-ico">${isSkull ? '💀' : '🔥'}</span>
-        <span class="dm-name">${a.name.split(' ')[0]}</span>
+      <div class="dm-bubble${skullClass}${compactClass}">
+        ${markerThumbHTML(a, true)}
+        <div class="dm-meta">
+          <div class="dm-type">${a.tl || ''}</div>
+          <div class="dm-name">${a.name}</div>
+        </div>
       </div>
     </div>`;
+  }
+  return `
+    <div class="dopamine-marker" onclick="openSheet(${a.id})">
+      <div class="dm-bubble${skullClass}">
+        ${markerThumbHTML(a, false)}
+        <div class="dm-meta">
+          <div class="dm-type">${a.tl || ''}</div>
+          <div class="dm-name">${a.name}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function stripCardMedia(a) {
+  if (spotHasImg(a)) {
+    return `<img src="${a.img}" alt="${escAttr(a.name)}" loading="lazy"/>`;
+  }
+  return `<div class="map-strip-fallback">${a.em || '🔥'}</div>`;
+}
+
+function renderMapSpotStrip(spots) {
+  const wrap = document.getElementById('mapSpotStripWrap');
+  const strip = document.getElementById('mapSpotStrip');
+  const countEl = document.getElementById('mapStripCount');
+  if (!wrap || !strip) return;
+  if (!isMobileMapView() || !spots.length) {
+    wrap.setAttribute('aria-hidden', 'true');
+    strip.innerHTML = '';
+    if (countEl) countEl.textContent = '0';
+    return;
+  }
+  wrap.setAttribute('aria-hidden', 'false');
+  if (countEl) countEl.textContent = String(spots.length);
+  strip.innerHTML = spots.map((a) => `
+    <button type="button" class="map-strip-card${currentId === a.id ? ' active' : ''}" data-spot-id="${a.id}" onclick="focusMapSpot(${a.id})">
+      <div class="map-strip-thumb">${stripCardMedia(a)}</div>
+      <div class="map-strip-body">
+        <p class="map-strip-name">${a.name}</p>
+        <div class="map-strip-meta">
+          <span class="map-strip-type">${a.tl || ''}</span>
+          <span class="map-strip-th">${a.ts || ''}</span>
+        </div>
+      </div>
+    </button>`).join('');
+}
+
+function focusMapSpot(id) {
+  const a = getSpot(id);
+  if (!a || !kakaoMap) return;
+  currentId = id;
+  kakaoMap.panTo(new kakao.maps.LatLng(Number(a.lat), Number(a.lng)));
+  if (typeof kakaoMap.setLevel === 'function' && kakaoMap.getLevel() > 9) {
+    kakaoMap.setLevel(9);
+  }
+  document.querySelectorAll('.map-strip-card').forEach((el) => {
+    el.classList.toggle('active', Number(el.dataset.spotId) === id);
+  });
+  openSheet(id);
+}
+
+function highlightMapStripCard(id) {
+  document.querySelectorAll('.map-strip-card').forEach((el) => {
+    el.classList.toggle('active', Number(el.dataset.spotId) === id);
+  });
 }
 
 function syncMapChromeHeight() {
@@ -1831,6 +1990,10 @@ function initKakaoMap() {
 
       renderKakaoMarkers('all');
       fitMapToBounds(SPOTS);
+
+      kakao.maps.event.addListener(kakaoMap, 'zoom_changed', () => {
+        renderKakaoMarkers(currentFilter || 'all');
+      });
 
       setTimeout(() => {
         syncMapChromeHeight();
@@ -1889,6 +2052,8 @@ function renderKakaoMarkers(filter) {
     overlay.setMap(kakaoMap);
     kakaoMarkers.push(overlay);
   });
+
+  renderMapSpotStrip(visible);
 }
 
 function fitMapToBounds(spots) {
@@ -1959,6 +2124,7 @@ function openSheet(id) {
   }
 
   document.getElementById('bsContent').innerHTML = `
+    ${spotHasImg(a) ? `<img class="bs-hero-img" src="${a.img}" alt="${escAttr(a.name)}"/>` : ''}
     <div class="bs-top">
       ${spotThumbMedia(a, 48)}
       <div style="flex:1">
@@ -1991,6 +2157,7 @@ function openSheet(id) {
     </div>`;
 
   document.getElementById('bottomSheet').classList.add('open');
+  highlightMapStripCard(id);
 }
 
 function closeSheet() {
@@ -2078,7 +2245,10 @@ async function bootApp() {
 }
 
 window.addEventListener('resize', () => {
-  if (document.getElementById('mapScreen')?.classList.contains('active')) syncMapChromeHeight();
+  if (document.getElementById('mapScreen')?.classList.contains('active')) {
+    syncMapChromeHeight();
+    renderKakaoMarkers(currentFilter || 'all');
+  }
 });
 
 bootApp();

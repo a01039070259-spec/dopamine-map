@@ -53,6 +53,61 @@ function Compress-ToDataUrl {
   return "data:image/jpeg;base64," + [Convert]::ToBase64String($bytes)
 }
 
+function Parse-HexColor {
+  param([string]$Hex)
+  $h = [string]$Hex
+  if ($h -match '^#([0-9a-fA-F]{6})$') {
+    $v = $matches[1]
+    return [System.Drawing.Color]::FromArgb(
+      [Convert]::ToInt32($v.Substring(0, 2), 16),
+      [Convert]::ToInt32($v.Substring(2, 2), 16),
+      [Convert]::ToInt32($v.Substring(4, 2), 16)
+    )
+  }
+  return [System.Drawing.Color]::FromArgb(16, 16, 24)
+}
+
+function New-CategoryDataUrl {
+  param([string]$Type, [string]$Label, [string]$BgHex, [string]$Emoji)
+  $w = 800; $h = 600
+  $bmp = New-Object System.Drawing.Bitmap $w, $h
+  $g = [System.Drawing.Graphics]::FromImage($bmp)
+  $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+  $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
+  $base = Parse-HexColor $BgHex
+  $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush (
+    (New-Object System.Drawing.Rectangle 0, 0, $w, $h),
+    $base,
+    [System.Drawing.Color]::FromArgb(8, 8, 12),
+    45
+  )
+  $g.FillRectangle($brush, 0, 0, $w, $h)
+  $brush.Dispose()
+
+  $neon = [System.Drawing.Color]::FromArgb(57, 255, 20)
+  $fontEmoji = New-Object System.Drawing.Font "Segoe UI Emoji", 96, [System.Drawing.FontStyle]::Regular
+  $fontLabel = New-Object System.Drawing.Font "Malgun Gothic", 42, [System.Drawing.FontStyle]::Bold
+  $fontType = New-Object System.Drawing.Font "Malgun Gothic", 22, [System.Drawing.FontStyle]::Regular
+  $sf = New-Object System.Drawing.StringFormat
+  $sf.Alignment = [System.Drawing.StringAlignment]::Center
+  $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
+
+  $g.DrawString($Emoji, $fontEmoji, (New-Object System.Drawing.SolidBrush $neon), (New-Object System.Drawing.RectangleF 0, 120, $w, 140), $sf)
+  $g.DrawString($Label, $fontLabel, (New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::White)), (New-Object System.Drawing.RectangleF 40, 290, ($w - 80), 90), $sf)
+  $g.DrawString(("DOPAMINE · " + $Type.ToUpper()), $fontType, (New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(160, 160, 160))), (New-Object System.Drawing.RectangleF 40, 390, ($w - 80), 40), $sf)
+
+  $fontEmoji.Dispose(); $fontLabel.Dispose(); $fontType.Dispose(); $sf.Dispose(); $g.Dispose()
+
+  $ms = New-Object System.IO.MemoryStream
+  $enc = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
+  $ep = New-Object System.Drawing.Imaging.EncoderParameters 1
+  $ep.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality, 82L)
+  $bmp.Save($ms, $enc, $ep)
+  $bmp.Dispose()
+  $bytes = $ms.ToArray(); $ms.Dispose()
+  return "data:image/jpeg;base64," + [Convert]::ToBase64String($bytes)
+}
+
 $typeToFile = @{
   zipline     = "cat_zipline.jpg"
   bungee      = "cat_bungee.jpg"
@@ -73,12 +128,27 @@ $typeToFile = @{
   horse       = "cat_horse.jpg"
 }
 
+$typeMetaPath = Join-Path $root "type_meta.json"
+$typeMetaRaw = Get-Content $typeMetaPath -Raw -Encoding UTF8 | ConvertFrom-Json
+$typeMeta = @{}
+foreach ($k in $typeMetaRaw.PSObject.Properties.Name) {
+  $typeMeta[$k] = @{ tl = [string]$typeMetaRaw.$k.tl; bg = [string]$typeMetaRaw.$k.bg }
+}
+
+if (-not (Test-Path $imgDir)) { New-Item -ItemType Directory -Path $imgDir | Out-Null }
+
 $dataUrlCache = @{}
 foreach ($t in $typeToFile.Keys) {
   $path = Join-Path $imgDir $typeToFile[$t]
-  if (-not (Test-Path $path)) { throw ("missing image: " + $path) }
-  $dataUrlCache[$t] = Compress-ToDataUrl -InputPath $path
-  Write-Output ("cached " + $t + " len=" + $dataUrlCache[$t].Length)
+  $meta = if ($typeMeta.ContainsKey($t)) { $typeMeta[$t] } else { @{ tl = $t; bg = "#1a0a2e" } }
+  $badge = if ($meta.tl.Length -gt 0) { $meta.tl.Substring(0, 1) } else { "A" }
+  if (Test-Path $path) {
+    $dataUrlCache[$t] = Compress-ToDataUrl -InputPath $path
+    Write-Output ("cached file " + $t + " len=" + $dataUrlCache[$t].Length)
+  } else {
+    $dataUrlCache[$t] = New-CategoryDataUrl -Type $t -Label $meta.tl -BgHex $meta.bg -Emoji $badge
+    Write-Output ("generated " + $t + " len=" + $dataUrlCache[$t].Length)
+  }
 }
 
 $spotsOut = Join-Path $root "_spots_get.json"
