@@ -109,6 +109,48 @@ def api_admin_stats(_: None = Depends(verify_admin)):
     return get_admin_stats()
 
 
+@app.post("/api/admin/geocode")
+def api_admin_geocode(payload: dict, _: None = Depends(verify_admin)):
+    if not KAKAO_REST_API_KEY:
+        raise HTTPException(status_code=500, detail="KAKAO_REST_API_KEY가 설정되지 않았습니다")
+
+    raw_queries = payload.get("queries") or payload.get("query") or []
+    if isinstance(raw_queries, str):
+        raw_queries = [raw_queries]
+    queries = [str(q).strip() for q in raw_queries if str(q).strip()]
+    if not queries:
+        raise HTTPException(status_code=400, detail="queries가 필요합니다")
+
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
+    with httpx.Client(timeout=12.0) as client:
+        for query in queries:
+            for path, params in (
+                ("search/address.json", {"query": query}),
+                ("search/keyword.json", {"query": query, "size": "1"}),
+            ):
+                try:
+                    res = client.get(
+                        f"https://dapi.kakao.com/v2/local/{path}",
+                        params=params,
+                        headers=headers,
+                    )
+                    if res.status_code >= 400:
+                        continue
+                    docs = res.json().get("documents") or []
+                    if docs:
+                        doc = docs[0]
+                        return {
+                            "lat": float(doc["y"]),
+                            "lng": float(doc["x"]),
+                            "query": query,
+                            "source": path,
+                        }
+                except (httpx.HTTPError, ValueError, KeyError):
+                    continue
+
+    raise HTTPException(status_code=404, detail="주소를 찾을 수 없습니다")
+
+
 @app.get("/api/auth/me")
 def api_auth_me(request: Request):
     user = get_user_from_request(request)

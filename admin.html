@@ -111,6 +111,10 @@
     .photo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .photo-actions label.primary-btn{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0}
     .photo-actions input[type=file]{display:none}
+    .addr-layer{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px}
+    .addr-layer-inner{background:#fff;border-radius:12px;width:100%;max-width:520px;height:500px;max-height:82vh;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+    .addr-layer-close{position:absolute;top:10px;right:10px;z-index:2;background:#111;color:#fff;border:none;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer}
+    #postcodeEmbed{flex:1;min-height:0}
   </style>
 </head>
 <body>
@@ -161,11 +165,14 @@
             <div class="field">
               <label for="regAddr">주소 *</label>
               <div class="addr-row">
-                <input id="regAddr" class="addr-readonly" type="text" required maxlength="200" placeholder="아래 버튼으로 주소 검색" />
+                <input id="regAddr" type="text" required maxlength="200" placeholder="주소 검색 또는 직접 입력" />
                 <button type="button" class="geocode" id="addrSearchBtn">🔍 주소 검색</button>
               </div>
               <input id="regAddrDetail" class="addr-detail" type="text" maxlength="80" placeholder="상세주소 (건물명·층 등) — 선택" />
-              <span class="hint">주소 검색 팝업에서 선택하면 좌표가 자동 입력됩니다</span>
+              <div class="addr-row" style="margin-top:8px">
+                <button type="button" class="geocode" id="coordSearchBtn">📍 좌표 찾기</button>
+              </div>
+              <span class="hint">주소 검색 후 자동으로 좌표가 입력됩니다. 안 되면 주소 입력 후 「좌표 찾기」를 누르세요.</span>
             </div>
             <div class="grid2">
               <div class="field"><label for="regLat">위도 *</label><input id="regLat" type="number" step="any" required /></div>
@@ -256,11 +263,17 @@
 
   <div class="toast" id="toast"></div>
 
+  <div id="addrSearchLayer" class="addr-layer hidden">
+    <div class="addr-layer-inner">
+      <button type="button" class="addr-layer-close" id="addrSearchClose" aria-label="닫기">✕</button>
+      <div id="postcodeEmbed"></div>
+    </div>
+  </div>
+
   <script src="js/spots-store.js"></script>
   <script>
     const ADMIN_PASS_KEY = "dopamine_admin_pass";
     const ADMIN_SESSION_KEY = "dopamine_admin_session";
-    const KAKAO_REST_API_KEY = "2edaa06be7bef407fe54cb1e5e30e22f";
     const DEFAULT_ADMIN_PASS = "1111";
     const SESSION_MS = 8 * 60 * 60 * 1000;
     const IS_FILE_PROTOCOL = location.protocol === "file:";
@@ -570,8 +583,11 @@
       await renderStats();
     }
 
-    function getKakaoRestKey() {
-      return KAKAO_REST_API_KEY;
+    function closeAddressLayer() {
+      const layer = document.getElementById("addrSearchLayer");
+      const embed = document.getElementById("postcodeEmbed");
+      if (embed) embed.innerHTML = "";
+      if (layer) layer.classList.add("hidden");
     }
 
     function showLogin() {
@@ -682,24 +698,33 @@
         (window.kakao && window.kakao.Postcode);
 
       if (!Postcode) {
-        showToast("주소 검색 스크립트를 불러오지 못했습니다");
+        showToast("주소 검색 스크립트를 불러오지 못했습니다 · 페이지 새로고침 후 다시 시도");
         return;
       }
 
+      const layer = document.getElementById("addrSearchLayer");
+      const embed = document.getElementById("postcodeEmbed");
+      if (!layer || !embed) return;
+
+      embed.innerHTML = "";
+      layer.classList.remove("hidden");
+
       new Postcode({
         oncomplete: function (data) {
+          closeAddressLayer();
           const addr = buildAddressFromPostcode(data);
           if (!addr) {
             showToast("주소 정보를 가져오지 못했습니다");
             return;
           }
-          // 팝업 닫힌 직후 DOM 반영 타이밍 이슈 방지
           setTimeout(function () {
             applySelectedAddress(addr, data);
             showToast("주소가 입력되었습니다 · 좌표 변환 중…", 1800);
           }, 50);
         },
-      }).open();
+        width: "100%",
+        height: "100%",
+      }).embed(embed);
     }
 
     document.getElementById("resetBtn").addEventListener("click", resetForm);
@@ -772,8 +797,12 @@
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = getFormData();
-      if (!data.name || !data.addr || !data.type || Number.isNaN(data.lat) || Number.isNaN(data.lng)) {
-        showToast("필수 항목(종류 포함)을 입력해 주세요");
+      if (!data.name || !data.addr || !data.type) {
+        showToast("장소명·주소·종류를 입력해 주세요");
+        return;
+      }
+      if (Number.isNaN(data.lat) || Number.isNaN(data.lng)) {
+        showToast("좌표가 필요합니다 · 주소 입력 후 「좌표 찾기」를 눌러 주세요", 3200);
         return;
       }
 
@@ -871,69 +900,8 @@
       return expandGeocodeCandidates(list);
     }
 
-    async function kakaoRestFetch(path, params) {
-      const key = getKakaoRestKey();
-      if (!key) throw new Error("NO_REST_KEY");
-      const url =
-        "https://dapi.kakao.com/v2/local/" +
-        path +
-        "?" +
-        new URLSearchParams(params);
-      const res = await fetch(url, {
-        headers: { Authorization: "KakaoAK " + key },
-      });
-      if (res.status === 401) throw new Error("REST_UNAUTHORIZED");
-      if (!res.ok) throw new Error("REST_HTTP_" + res.status);
-      return res.json();
-    }
-
-    async function geocodeWithKakaoRest(addr) {
-      const data = await kakaoRestFetch("search/address.json", { query: addr });
-      if (data.documents && data.documents[0]) {
-        return {
-          lat: data.documents[0].y,
-          lng: data.documents[0].x,
-          source: "rest-address",
-        };
-      }
-      throw new Error("REST_ZERO_RESULT");
-    }
-
-    async function geocodeWithKakaoRestKeyword(keyword) {
-      const data = await kakaoRestFetch("search/keyword.json", {
-        query: keyword,
-        size: "1",
-      });
-      if (data.documents && data.documents[0]) {
-        return {
-          lat: data.documents[0].y,
-          lng: data.documents[0].x,
-          source: "rest-keyword",
-        };
-      }
-      throw new Error("REST_KEYWORD_ZERO");
-    }
-
-    async function geocodeWithKakaoRestCandidates(candidates) {
-      for (const addr of candidates) {
-        try {
-          return await geocodeWithKakaoRest(addr);
-        } catch (err) {
-          console.warn("Kakao REST address miss:", addr, err.message);
-        }
-      }
-      for (const keyword of candidates) {
-        try {
-          return await geocodeWithKakaoRestKeyword(keyword);
-        } catch (err) {
-          console.warn("Kakao REST keyword miss:", keyword, err.message);
-        }
-      }
-      throw new Error("REST_ALL_FAILED");
-    }
-
     async function geocodeFromCandidates(candidates) {
-      return geocodeWithKakaoRestCandidates(candidates);
+      return DopamineStore.adminGeocode(candidates, getAdminPass());
     }
 
     async function fillCoordsFromAddress(displayAddr, postcodeData) {
@@ -951,15 +919,30 @@
         setLatLng(hit.lat, hit.lng, "주소 · 좌표 입력 완료 ✓");
       } catch (err) {
         console.error(err);
-        if (err.message === "REST_UNAUTHORIZED") {
-          showToast("REST API 키가 올바르지 않습니다", 3200);
+        if (err.status === 401) {
+          showToast("관리자 인증 실패 — 다시 로그인해 주세요", 3200);
+        } else if (err.status === 404) {
+          showToast("좌표를 찾지 못했습니다 · 주소를 다시 확인하거나 「좌표 찾기」를 눌러 주세요", 3600);
+        } else if (err.status === 500) {
+          showToast("서버에 KAKAO_REST_API_KEY 가 없습니다 (Render 환경변수 확인)", 3600);
         } else {
           showToast("좌표 변환 실패 — 주소 확인 또는 카카오 콘솔 지도/로컬 API 확인", 3600);
         }
       }
     }
 
+    async function lookupCoordsFromForm() {
+      const addr = getFullAddress() || document.getElementById("regAddr").value.trim();
+      if (!addr) {
+        showToast("주소를 먼저 입력하거나 검색해 주세요");
+        return;
+      }
+      await fillCoordsFromAddress(addr, null);
+    }
+
     document.getElementById("addrSearchBtn").addEventListener("click", openAddressSearch);
+    document.getElementById("addrSearchClose").addEventListener("click", closeAddressLayer);
+    document.getElementById("coordSearchBtn").addEventListener("click", lookupCoordsFromForm);
 
     if (isAuthed()) showAdmin().catch(() => showLogin());
     showFileProtocolWarning();

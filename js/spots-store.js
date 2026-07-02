@@ -455,6 +455,15 @@
     });
   }
 
+  async function adminGeocode(queries, adminPassword) {
+    const list = Array.isArray(queries) ? queries : [queries];
+    return apiFetch("/api/admin/geocode", {
+      method: "POST",
+      headers: { "X-Admin-Password": adminPassword || "" },
+      body: JSON.stringify({ queries: list }),
+    });
+  }
+
   function kakaoLoginUrl(nextPath) {
     const next = nextPath || "/index.html";
     return "/auth/kakao/login?next=" + encodeURIComponent(next);
@@ -519,6 +528,7 @@
     fetchDiagnosis,
     logoutAuth,
     fetchAdminStats,
+    adminGeocode,
     kakaoLoginUrl,
     verifyAdminPassword,
     saveSpotToApi,
