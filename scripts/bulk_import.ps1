@@ -47,11 +47,22 @@ foreach ($k in $typeMetaRaw.PSObject.Properties.Name) {
   $typeMeta[$k] = @{ tl = [string]$typeMetaRaw.$k.tl; bg = [string]$typeMetaRaw.$k.bg }
 }
 
-$existing = @{}
-$existingText = Invoke-CurlJson -Method "GET" -Url ($base + "/api/spots")
-if ($existingText) {
-  foreach ($s in ($existingText | ConvertFrom-Json)) { $existing[[string]$s.name] = $true }
+function Get-ExistingSpotNames {
+  for ($try = 1; $try -le 8; $try++) {
+    try {
+      $text = Invoke-CurlJson -Method "GET" -Url ($base + "/api/spots")
+      if (-not $text -or $text.Trim().Length -lt 2) { throw "empty response" }
+      $names = @{}
+      foreach ($s in ($text | ConvertFrom-Json)) { $names[[string]$s.name] = $true }
+      return $names
+    } catch {
+      if ($try -ge 8) { throw "failed to load existing spots: $_" }
+      Start-Sleep -Seconds ([Math]::Min(6, $try * 2))
+    }
+  }
 }
+
+$existing = Get-ExistingSpotNames
 
 $items = Read-Utf8Json $inputPath
 $ok = 0; $skip = 0; $fail = 0

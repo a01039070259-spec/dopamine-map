@@ -457,7 +457,10 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   #kakaoMap .wrap_controllers{bottom:88px !important}
 }
 
-.radius-bar{position:relative;top:auto;left:auto;right:auto;z-index:200;padding:0 16px 12px;display:flex;gap:8px;justify-content:center}
+.radius-bar{position:relative;top:auto;left:auto;right:auto;z-index:200;padding:0 16px 10px;display:flex;gap:8px;justify-content:center}
+.map-search-wrap{position:relative;padding:0 16px 12px;max-width:100%}
+.map-search-wrap .m-si{left:28px}
+.map-search-wrap .map-search{font-size:13px;padding:9px 12px 9px 34px}
 .rbtn{background:rgba(10,10,10,.88);border:1px solid var(--border2);color:var(--text-dim);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:6px 15px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .15s;font-weight:500;backdrop-filter:blur(6px)}
 .rbtn.active{background:var(--neon);border-color:var(--neon);color:#0a0a0a;font-weight:700}
 .rbtn:hover:not(.active){border-color:var(--neon);color:var(--neon)}
@@ -704,6 +707,10 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
       <button class="rbtn" onclick="setRadius(this,'thrill5')">💀 극한만</button>
       <button class="rbtn" onclick="setRadius(this,'thrill4')">🔥 스릴 4+</button>
     </div>
+    <div class="map-search-wrap">
+      <span class="m-si">🔍</span>
+      <input class="m-search map-search" type="text" id="mapSearchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 짚라인, 제주)" autocomplete="off"/>
+    </div>
   </div>
 
   <div class="map-stage">
@@ -917,9 +924,46 @@ function chipClass(a) {
   return DopamineStore.chipClassForSpot(a);
 }
 
+function getSpotSearchQuery() {
+  const main = document.getElementById('searchInput');
+  const map = document.getElementById('mapSearchInput');
+  const v = (main && main.value.trim()) || (map && map.value.trim()) || '';
+  return v;
+}
+
+function syncSearchInputs(fromId) {
+  const main = document.getElementById('searchInput');
+  const map = document.getElementById('mapSearchInput');
+  if (!main || !map) return;
+  const src = fromId === 'mapSearchInput' ? map : main;
+  const v = src.value;
+  if (fromId !== 'searchInput') main.value = v;
+  if (fromId !== 'mapSearchInput') map.value = v;
+}
+
+function onSearchInputChanged(fromId) {
+  syncSearchInputs(fromId);
+  renderCards(getDisplayedSpots());
+  if (kakaoMap) {
+    renderKakaoMarkers(currentFilter || 'all');
+    const visible = getMapVisibleSpots(currentFilter || 'all');
+    if (visible.length > 0) fitMapToBounds(visible);
+  }
+}
+
+function getMapVisibleSpots(filter) {
+  const q = getSpotSearchQuery();
+  return SPOTS.filter((a) => {
+    if (filter === 'thrill5' && a.th !== 5) return false;
+    if (filter === 'thrill4' && a.th < 4) return false;
+    if (q && !DopamineStore.matchSpotSearch(a, q)) return false;
+    return true;
+  });
+}
+
 function getDisplayedSpots() {
   const f = document.querySelector('.mfb.active')?.dataset.f || 'thrill';
-  const q = document.getElementById('searchInput').value.trim();
+  const q = getSpotSearchQuery();
   let list = sortSpots(f);
   if (q) list = list.filter((a) => DopamineStore.matchSpotSearch(a, q));
   return list;
@@ -1688,7 +1732,10 @@ document.getElementById('filterRow').addEventListener('click', e => {
 });
 
 document.getElementById('searchInput').addEventListener('input', () => {
-  renderCards(getDisplayedSpots());
+  onSearchInputChanged('searchInput');
+});
+document.getElementById('mapSearchInput').addEventListener('input', () => {
+  onSearchInputChanged('mapSearchInput');
 });
 
 /* ═══════════════════════════════════════
@@ -2131,14 +2178,9 @@ function renderKakaoMarkers(filter) {
   kakaoMarkers.forEach(m => m.setMap(null));
   kakaoMarkers = [];
 
-  const visible = SPOTS.filter(a => {
-    if (filter === 'all') return true;
-    if (filter === 'thrill5') return a.th === 5;
-    if (filter === 'thrill4') return a.th >= 4;
-    return true;
-  });
-
-  document.getElementById('mapCounter').innerHTML = `<b>${visible.length}</b> 스팟`;
+  const visible = getMapVisibleSpots(filter || 'all');
+  const q = getSpotSearchQuery();
+  document.getElementById('mapCounter').innerHTML = `<b>${visible.length}</b> ${q ? '검색' : '스팟'}`;
 
   visible.forEach(a => {
     const lat = Number(a.lat);
@@ -2177,12 +2219,7 @@ function setRadius(btn, filter) {
 
   if (typeof kakao !== 'undefined' && kakao.maps) {
     renderKakaoMarkers(filter);
-    const visible = SPOTS.filter(a => {
-      if (filter === 'all') return true;
-      if (filter === 'thrill5') return a.th === 5;
-      if (filter === 'thrill4') return a.th >= 4;
-      return true;
-    });
+    const visible = getMapVisibleSpots(filter);
     if (visible.length > 0) fitMapToBounds(visible);
   }
 }
@@ -2206,11 +2243,14 @@ function goMap() {
     }
   };
 
+  syncSearchInputs('searchInput');
+
   requestAnimationFrame(() => {
     syncMapChromeHeight();
     setTimeout(() => {
       syncMapChromeHeight();
       bootMap();
+      if (kakaoMap) renderKakaoMarkers(currentFilter || 'all');
     }, 150);
   });
 }
