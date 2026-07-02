@@ -119,9 +119,12 @@ def api_auth_me(request: Request):
 
 @app.get("/api/auth/status")
 def api_auth_status():
+    key = KAKAO_REST_API_KEY or ""
     return {
-        "kakaoConfigured": bool(KAKAO_REST_API_KEY),
+        "kakaoConfigured": bool(key),
         "redirectUri": KAKAO_REDIRECT_URI,
+        "clientSecretConfigured": bool(KAKAO_CLIENT_SECRET),
+        "restKeySuffix": key[-4:] if len(key) >= 4 else "",
     }
 
 

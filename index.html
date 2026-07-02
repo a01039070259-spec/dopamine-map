@@ -1674,8 +1674,16 @@ async function bootApp() {
     await refreshAuth();
   }
   if (params.get('login') === 'fail') {
-    const reason = params.get('reason') || '';
-    showToast(reason ? `카카오 로그인 실패: ${decodeURIComponent(reason)}` : '카카오 로그인에 실패했습니다', 4500);
+    const reason = decodeURIComponent(params.get('reason') || '');
+    let msg = '카카오 로그인에 실패했습니다';
+    if (reason.includes('KOE010') || reason.includes('invalid_client') || reason.includes('Bad client credentials')) {
+      msg = '카카오 Client Secret 또는 REST API 키가 맞지 않습니다. Render 환경변수·카카오 콘솔 설정을 확인하세요';
+    } else if (reason.includes('KAKAO_REST_API_KEY_missing')) {
+      msg = '서버에 KAKAO_REST_API_KEY 가 없습니다 (Render Environment 확인)';
+    } else if (reason) {
+      msg = '카카오 로그인 실패: ' + reason.slice(0, 80);
+    }
+    showToast(msg, 5000);
     history.replaceState({}, '', location.pathname);
   }
 
