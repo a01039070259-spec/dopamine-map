@@ -1,10 +1,15 @@
-# Render 무료 플랜 — YOUR-APP.onrender.com (0원)
+# Render Starter + Persistent Disk — SQLite 유지 (월 약 $7)
+# 무료 플랜(render-free.yaml)은 재배포 시 DB 초기화됨
 services:
   - type: web
     name: dopamine-map
     runtime: docker
-    plan: free
+    plan: starter
     healthCheckPath: /api/health
     envVars:
       - key: ADMIN_PASSWORD
         sync: false
+    disk:
+      name: dopamine-data
+      mountPath: /app/data
+      sizeGB: 1
