@@ -41,13 +41,27 @@ const LS_ONBOARDING_DONE = "dopamine_onboarding_done";
 const LS_RESULT_TYPE = "dopamine_result_type";
 const LEGACY_RESULT_KEY = "dopamine_diagnosis_result";
 
+const LEGACY_DIAGNOSIS_MAP = {
+  "하드코어 상급자": "매운맛 · 상급자",
+  "잠재적 도파민 중독자": "중간맛 · 각성 직전",
+  "도파민 입문자": "순한맛 · 입문자",
+  "극한의 무서움": "매운맛 · 상급자",
+  "도파민 각성 직전": "중간맛 · 각성 직전",
+  "스릴 입문자": "순한맛 · 입문자",
+};
+
 function normalizeResultType(name) {
-  const legacy = {
-    "하드코어 상급자": "극한의 무서움",
-    "잠재적 도파민 중독자": "도파민 각성 직전",
-    "도파민 입문자": "스릴 입문자",
-  };
-  return legacy[name] || name || "";
+  return LEGACY_DIAGNOSIS_MAP[name] || name || "";
+}
+
+function migrateLegacyDiagnosisStorage() {
+  const legacy = localStorage.getItem(LEGACY_RESULT_KEY);
+  if (!legacy) return;
+  if (!localStorage.getItem(LS_RESULT_TYPE)) {
+    localStorage.setItem(LS_RESULT_TYPE, normalizeResultType(legacy));
+    localStorage.setItem(LS_ONBOARDING_DONE, "true");
+  }
+  localStorage.removeItem(LEGACY_RESULT_KEY);
 }
 
 function renderResult(text, source) {
@@ -58,12 +72,7 @@ function renderResult(text, source) {
 
 async function boot() {
   DopamineStore.recordVisit().catch(() => {});
-  const legacy = localStorage.getItem(LEGACY_RESULT_KEY);
-  if (legacy && !localStorage.getItem(LS_RESULT_TYPE)) {
-    localStorage.setItem(LS_RESULT_TYPE, normalizeResultType(legacy));
-    localStorage.setItem(LS_ONBOARDING_DONE, "true");
-    localStorage.removeItem(LEGACY_RESULT_KEY);
-  }
+  migrateLegacyDiagnosisStorage();
 
   try {
     const auth = await DopamineStore.fetchAuthMe();

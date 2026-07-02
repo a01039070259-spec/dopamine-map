@@ -14,6 +14,20 @@
     luge: { tl: "루지", bg: "#1f1a0a" },
     coaster: { tl: "마운틴코스터", bg: "#0a1f1a" },
     sky: { tl: "스카이다이빙", bg: "#1f0a1f" },
+    paragliding: { tl: "패러글라이딩", bg: "#1a1020" },
+    balloon: { tl: "열기구", bg: "#1f1520" },
+    aircraft: { tl: "경비행기", bg: "#0a1520" },
+    seawalk: { tl: "씨워킹", bg: "#001820" },
+    skybike: { tl: "하늘자전거", bg: "#101820" },
+    amphibious: { tl: "수륙양용차", bg: "#0a1820" },
+    monorail: { tl: "모노레일", bg: "#12121a" },
+    slide: { tl: "슬라이드", bg: "#1a1208" },
+    skywalk: { tl: "스카이워크", bg: "#101018" },
+    netadv: { tl: "네트어드벤처", bg: "#181008" },
+    jetboat: { tl: "제트보트", bg: "#001828" },
+    kart: { tl: "카트체험", bg: "#1a0a08" },
+    atv: { tl: "ATV체험", bg: "#1a1208" },
+    horse: { tl: "승마체험", bg: "#1a1008" },
   };
 
   /** 관리자 등록 · 리뷰 등에서 선택하는 공통 태그 */

@@ -140,7 +140,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 /* RESULT */
 #resultPhase{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s;overflow-y:auto;max-width:720px;margin:0 auto;left:0;right:0}
 #resultPhase.active{opacity:1;pointer-events:all}
-.rs-wrap{padding:26px 20px 0;text-align:center}
+.rs-wrap{padding:26px 20px 0;text-align:center;border-radius:14px;transition:border-color .3s,box-shadow .3s,background .3s}
+.rs-wrap.special-tier{border:2px solid #39ff14;background:#0a0a0a;box-shadow:0 0 28px rgba(57,255,20,.18)}
+.rs-nickname{font-size:14px;font-weight:700;margin-top:10px;letter-spacing:-.2px}
 .rs-badge-label{font-size:10px;color:var(--neon);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
 .rs-grade{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.25;margin-bottom:6px}
 .rs-emoji{font-size:52px;margin:14px 0}
@@ -686,27 +688,43 @@ function getSpot(id) {
 ═══════════════════════════════════════ */
 const QUIZ = [
   {
-    q: "놀이공원 가면 가장 먼저 타는 것은?",
+    q: "롤러코스터 맨 앞자리 vs 맨 뒷자리, 넌 어디?",
     opts: [
-      {i:"💀", t:"T-익스프레스 맨 뒷자리. 묻지도 따지지도 않고 직행.", score:3},
-      {i:"🎠", t:"회전목마. 경치 보면서 여유롭게.", score:1},
-      {i:"🏠", t:"집에 있는 게 제일 편함. 왜 왔지?", score:0}
+      {i:"🌱", t:"무조건 뒷자리, 앞은 무서워서 못 앉음", score:1},
+      {i:"🔥", t:"앞뒤 상관없음, 그냥 타면 됨", score:2},
+      {i:"💀", t:"맨 앞자리 아니면 안 탐. 손 들고 타야 제맛", score:3}
     ]
   },
   {
-    q: "안전바가 살짝 덜렁거리는 느낌을 받았다면?",
+    q: "놀이기구 대기줄에서 옆사람이 \"이거 작년에 사고났대\"라고 말하면?",
     opts: [
-      {i:"🔥", t:"오히려 좋아. 도파민이 폭발하는 구간임.", score:3},
-      {i:"😱", t:"당장 내리겠다고 직원 소리질러 부름.", score:0},
-      {i:"🤔", t:"한 번 더 확인하고... 그냥 탐.", score:1}
+      {i:"🌱", t:"그 순간 바로 줄 이탈", score:1},
+      {i:"🔥", t:"\"진짜?\" 하면서도 그냥 탐", score:2},
+      {i:"💀", t:"오히려 더 기대됨, 사고 나은 놈으로다가", score:3}
     ]
   },
   {
-    q: "스릴 액티비티 직후 나의 모습은?",
+    q: "번지점프대에 올라가서 카운트다운이 시작됐다. 넌?",
     opts: [
-      {i:"💪", t:"'한 번 더!' 외치며 재탑승 줄 서기.", score:3},
-      {i:"🫀", t:"심박수 돌아올 때까지 벤치에서 회복 중.", score:1},
-      {i:"🚑", t:"이게 마지막이라고 다짐하며 귀가.", score:0}
+      {i:"🌱", t:"카운트 끝나기 전에 발이 안 떨어짐", score:1},
+      {i:"🔥", t:"심장 터질 것 같지만 어떻게든 뛰어내림", score:2},
+      {i:"💀", t:"직원이 세기도 전에 먼저 뛰어내림", score:3}
+    ]
+  },
+  {
+    q: "짚라인 타는 도중 갑자기 속도가 확 빨라지면?",
+    opts: [
+      {i:"🌱", t:"\"악!!!\" 소리지르면서 눈 감음", score:1},
+      {i:"🔥", t:"\"오오오\" 하면서 눈은 뜸", score:2},
+      {i:"💀", t:"두 팔 벌리고 \"더 빨리!!!\" 외침", score:3}
+    ]
+  },
+  {
+    q: "액티비티 끝나고 다리가 풀렸다. 넌?",
+    opts: [
+      {i:"🌱", t:"오늘은 여기까지, 카페 가서 쉬어야 함", score:1},
+      {i:"🔥", t:"30분 쉬고 하나만 더 타러 감", score:2},
+      {i:"💀", t:"다리 풀린 채로 다음 코스로 직행", score:3}
     ]
   }
 ];
@@ -716,24 +734,45 @@ const LS_RESULT_TYPE = 'dopamine_result_type';
 const SS_PENDING_DETAIL = 'dopamine_pending_detail';
 const SS_LOGIN_NUDGE = 'dopamine_show_login_nudge';
 
+const LEGACY_DIAGNOSIS_MAP = {
+  "하드코어 상급자": "매운맛 · 상급자",
+  "잠재적 도파민 중독자": "중간맛 · 각성 직전",
+  "도파민 입문자": "순한맛 · 입문자",
+  "극한의 무서움": "매운맛 · 상급자",
+  "도파민 각성 직전": "중간맛 · 각성 직전",
+  "스릴 입문자": "순한맛 · 입문자",
+};
+
 const GRADES = [
   {
-    min:7, grade:"극한의 무서움", emoji:"💀", color:"#ff4444",
-    desc:"당신은 이미 도파민의 노예입니다. 안전바가 흔들릴수록 기뻐하는 진정한 하드코어 매니아. 이 앱은 당신 같은 사람을 위해 만들었습니다.",
-    stats:[{v:"MAX",l:"도파민 내성"},{v:"극한",l:"스릴 추구"},{v:"0%",l:"포기 확률"}],
-    badges:["#뒷자리전문가","#안전바불신자","#재탑승왕","#찐매니아인증","#도파민각성완료"]
+    min:14, grade:"핵불닭 · 통제불능", nickname:"이 사이트를 만든 이유", emoji:"☠️", color:"#39ff14", special:true,
+    desc:"직원보다 먼저 카운트다운 하는 인간. 대기줄 사고 얘기 들으면 오히려 흥분함. 축하합니다, 당신이 바로 도파민 지도의 존재 이유입니다.",
+    stats:[{v:"MAX",l:"도파민 내성"},{v:"통제불능",l:"재탑승 의지"},{v:"0%",l:"포기 확률"}],
+    badges:["#직원보다빠름","#사고각오완료","#다음코스직행","#존재이유","#핵불닭인증"]
   },
   {
-    min:4, grade:"도파민 각성 직전", emoji:"🔥", color:"#ff8800",
-    desc:"겉으론 평범한 척하지만 속은 이미 불타오르고 있습니다. 조금만 더 경험을 쌓으면 극한 등급으로 올라설 재목입니다.",
-    stats:[{v:"HIGH",l:"도파민 수치"},{v:"성장중",l:"스릴 레벨"},{v:"30%",l:"포기 확률"}],
-    badges:["#잠재적매니아","#각성직전","#도파민예비군","#다음엔맨뒷자리"]
+    min:11, grade:"매운맛 · 상급자", nickname:"불닭 파운데이션", emoji:"💀", color:"#DC2626",
+    desc:"안전바는 잡으라고 있는 게 아니라 흔들라고 있는 물건. 이미 이 바닥에서 알아주는 급. 도파민 내성 상당함.",
+    stats:[{v:"HIGH",l:"도파민 수치"},{v:"상급",l:"스릴 추구"},{v:"5%",l:"포기 확률"}],
+    badges:["#안전바덜렁","#맨앞자리전문","#재탑승왕","#매운맛인증","#불닭파운데이션"]
   },
   {
-    min:0, grade:"스릴 입문자", emoji:"🌱", color:"#39ff14",
-    desc:"아직 진짜 스릴을 모르시는군요. 괜찮습니다. 모든 하드코어 매니아는 회전목마에서 시작했습니다. 이 앱이 당신의 각성을 도와드리겠습니다.",
-    stats:[{v:"LOW",l:"현재 도파민"},{v:"무한대",l:"성장 가능성"},{v:"100%",l:"각성 필요"}],
-    badges:["#입문자환영","#성장잠재력무한","#첫스릴준비완료"]
+    min:9, grade:"중간맛 · 각성 직전", nickname:"청양고추 반개 투척", emoji:"🔥", color:"#F97316",
+    desc:"이미 절반은 넘어온 상태. 무서운 거 알면서 눈 뜨고 타는 단계. 뇌가 몸보다 먼저 다음 코스 찾고 있음.",
+    stats:[{v:"MID+",l:"도파민 수치"},{v:"각성중",l:"스릴 레벨"},{v:"20%",l:"포기 확률"}],
+    badges:["#각성직전","#눈뜨고탑승","#한번더타기","#청양고추반개","#성장중"]
+  },
+  {
+    min:7, grade:"순한맛 · 입문자", nickname:"쫄면 맵기 정도", emoji:"🌶️", color:"#A3E635",
+    desc:"무섭다고 말은 하는데 결국 다 타는 타입. 비명은 지르지만 다음 줄에 또 서있음. 성장 가능성 있음.",
+    stats:[{v:"MID",l:"도파민 수치"},{v:"성장중",l:"스릴 레벨"},{v:"40%",l:"포기 확률"}],
+    badges:["#쫄지만탐","#비명지르고재탑승","#입문자환영","#성장가능","#순한맛시작"]
+  },
+  {
+    min:5, grade:"무맛 · 회전목마 단계", nickname:"순한맛도 아니고 무맛", emoji:"🥛", color:"#9CA3AF",
+    desc:"동물원 코끼리열차도 손잡이 꽉 잡는 타입. 이 사이트 잘못 들어오신 거 아니에요? 근데 왔으니까 일단 순한맛부터 시작해봐요.",
+    stats:[{v:"LOW",l:"도파민 수치"},{v:"입문",l:"스릴 레벨"},{v:"80%",l:"포기 확률"}],
+    badges:["#회전목마족","#손잡이필수","#무맛인증","#첫스릴준비","#순한맛부터"]
   }
 ];
 
@@ -767,7 +806,7 @@ let mapReturnScreen = 'mainScreen';
 let detailReturnScreen = 'mainScreen';
 let selectedTags = new Set();
 let quizStep = 0;
-let scores = [0, 0, 0];
+let scores = [];
 let kakaoMap = null;
 let kakaoMarkers = [];
 let currentFilter = 'all';
@@ -839,9 +878,7 @@ function detailButtonLabel() {
 }
 
 function getLocalResultType() {
-  return localStorage.getItem(LS_RESULT_TYPE)
-    || localStorage.getItem('dopamine_diagnosis_result')
-    || '';
+  return localStorage.getItem(LS_RESULT_TYPE) || '';
 }
 
 function persistLocalDiagnosis(result) {
@@ -1032,6 +1069,7 @@ function resetDiagnosisView() {
   if (skip) skip.classList.add('hidden');
   if (qp) qp.classList.remove('active');
   if (rp) rp.classList.remove('active');
+  document.querySelector('#resultPhase .rs-wrap')?.classList.remove('special-tier');
   resetIntroLines();
 }
 
@@ -1137,19 +1175,17 @@ function nextQ() {
 
 function findGradeByName(name) {
   if (!name) return null;
-  const legacy = {
-    '하드코어 상급자': '극한의 무서움',
-    '잠재적 도파민 중독자': '도파민 각성 직전',
-    '도파민 입문자': '스릴 입문자',
-  };
-  const normalized = legacy[name] || name;
+  const normalized = LEGACY_DIAGNOSIS_MAP[name] || name;
   return GRADES.find(g => g.grade === normalized) || null;
 }
 
 function renderGradeResult(grade) {
   if (!grade) return;
+  const wrap = document.querySelector('#resultPhase .rs-wrap');
+  if (wrap) wrap.classList.toggle('special-tier', !!grade.special);
   document.getElementById('rsGrade').innerHTML =
-    `당신의 등급<br><span style="color:${grade.color}">${grade.grade}</span>`;
+    `당신의 등급<br><span style="color:${grade.color}">${grade.grade}</span>` +
+    (grade.nickname ? `<div class="rs-nickname" style="color:${grade.color}">「${grade.nickname}」</div>` : '');
   document.getElementById('rsEmoji').textContent = grade.emoji;
   document.getElementById('rsDesc').textContent = grade.desc;
   document.getElementById('rsStats').innerHTML = grade.stats.map(s =>
@@ -1322,16 +1358,12 @@ function enterMain(fromFirstDiagnosis) {
 
 function migrateLegacyDiagnosisStorage() {
   const old = localStorage.getItem('dopamine_diagnosis_result');
-  if (old && !localStorage.getItem(LS_RESULT_TYPE)) {
-    const legacy = {
-      '하드코어 상급자': '극한의 무서움',
-      '잠재적 도파민 중독자': '도파민 각성 직전',
-      '도파민 입문자': '스릴 입문자',
-    };
-    localStorage.setItem(LS_RESULT_TYPE, legacy[old] || old);
+  if (!old) return;
+  if (!localStorage.getItem(LS_RESULT_TYPE)) {
+    localStorage.setItem(LS_RESULT_TYPE, LEGACY_DIAGNOSIS_MAP[old] || old);
     localStorage.setItem(LS_ONBOARDING_DONE, 'true');
-    localStorage.removeItem('dopamine_diagnosis_result');
   }
+  localStorage.removeItem('dopamine_diagnosis_result');
 }
 
 function ensureMainScreenVisible() {
