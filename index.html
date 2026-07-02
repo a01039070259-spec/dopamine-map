@@ -170,6 +170,8 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .m-diag-btn:hover{background:#0d2a06}
 .m-diag-chip{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:#111;font-size:12px;color:var(--text-dim)}
 .m-diag-chip b{color:var(--neon)}
+.m-diag-chip-prompt{color:var(--neon);cursor:pointer;font-weight:700;transition:opacity .15s}
+.m-diag-chip-prompt:hover{opacity:.85}
 .m-diag-chip.is-hidden{display:none!important}
 .is-hidden{display:none!important}
 .m-logo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -502,7 +504,10 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     </div>
     <p class="m-title">도파민 지도 <em>⚡</em></p>
     <p class="m-sub">찐 매니아를 위한 하드코어 액티비티 정보</p>
-    <div class="m-diag-chip is-hidden" id="diagChip">내 등급: <b id="diagChipText">-</b> · <a href="#" id="diagChipLink" style="color:var(--neon);text-decoration:none">상세 보기</a></div>
+    <div class="m-diag-chip" id="diagChip">
+      <button type="button" class="m-diag-chip-prompt" id="diagChipPrompt" onclick="openDiagnosis()">🧪 자가진단을 해서 등급을 확인해 보세요 →</button>
+      <span id="diagChipResult" class="is-hidden">내 등급: <b id="diagChipText">-</b> · <a href="#" id="diagChipLink" style="color:var(--neon);text-decoration:none">상세 보기</a></span>
+    </div>
     <div class="m-search-wrap">
       <span class="m-si">🔍</span>
       <input class="m-search" type="text" id="searchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 롤러코스터, 인천)"/>
@@ -869,7 +874,7 @@ async function handleAuthClick() {
     currentUser = null;
     updateAuthButton();
     renderCards(getDisplayedSpots());
-    hideDiagnosisChip();
+    await loadSavedDiagnosisChip();
     showToast('로그아웃 되었습니다');
     return;
   }
@@ -1199,49 +1204,56 @@ async function showResult() {
   document.getElementById('resultPhase').classList.add('active');
   renderGradeResult(grade);
   await saveDiagnosisResult(grade.grade);
-  if (currentUser) updateDiagnosisChip(grade.grade);
+  updateDiagnosisChip(grade.grade);
   setupResultActions(wasOnboardingDone ? 'retake' : 'onboarding');
 }
 
 function updateDiagnosisChip(result) {
   const chip = document.getElementById('diagChip');
+  const prompt = document.getElementById('diagChipPrompt');
+  const resultWrap = document.getElementById('diagChipResult');
   const text = document.getElementById('diagChipText');
-  if (!chip || !text || !result) return;
-  text.textContent = result;
+  if (!chip) return;
+
   chip.classList.remove('is-hidden');
+  if (result) {
+    prompt?.classList.add('is-hidden');
+    resultWrap?.classList.remove('is-hidden');
+    if (text) text.textContent = result;
+  } else {
+    prompt?.classList.remove('is-hidden');
+    resultWrap?.classList.add('is-hidden');
+    if (text) text.textContent = '-';
+  }
 }
 
-function hideDiagnosisChip() {
-  const chip = document.getElementById('diagChip');
-  if (chip) chip.classList.add('is-hidden');
+function showDiagnosisPrompt() {
+  updateDiagnosisChip('');
 }
 
 async function loadSavedDiagnosisChip() {
-  if (!currentUser) {
-    hideDiagnosisChip();
-    return;
-  }
-
   let result = getLocalResultType();
 
-  if (!result) {
-    try {
-      const data = await DopamineStore.fetchDiagnosis();
-      if (data.result) {
-        result = data.result;
-        persistLocalDiagnosis(result);
-        currentUser.diagnosisResult = result;
-      }
-    } catch (_) {}
-  } else {
-    currentUser.diagnosisResult = result;
+  if (currentUser) {
+    if (!result) {
+      try {
+        const data = await DopamineStore.fetchDiagnosis();
+        if (data.result) {
+          result = data.result;
+          persistLocalDiagnosis(result);
+          currentUser.diagnosisResult = result;
+        }
+      } catch (_) {}
+    } else {
+      currentUser.diagnosisResult = result;
+    }
   }
 
   if (result) {
     lastDiagnosisResult = result;
     updateDiagnosisChip(result);
   } else {
-    hideDiagnosisChip();
+    showDiagnosisPrompt();
   }
 }
 
