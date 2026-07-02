@@ -696,8 +696,8 @@ const QUIZ = [
 
 const LS_ONBOARDING_DONE = 'dopamine_onboarding_done';
 const LS_RESULT_TYPE = 'dopamine_result_type';
+const LS_GRADE_HIDDEN = 'dopamine_grade_hidden_until_login';
 const SS_PENDING_DETAIL = 'dopamine_pending_detail';
-const SS_GRADE_HIDDEN = 'dopamine_grade_hidden_until_login';
 
 const GRADES = [
   {
@@ -868,7 +868,7 @@ async function handleAuthClick() {
       await DopamineStore.logoutAuth();
     } catch (_) {}
     currentUser = null;
-    sessionStorage.setItem(SS_GRADE_HIDDEN, '1');
+    localStorage.setItem(LS_GRADE_HIDDEN, '1');
     updateAuthButton();
     renderCards(getDisplayedSpots());
     hideDiagnosisChip();
@@ -1220,7 +1220,7 @@ function hideDiagnosisChip() {
 
 async function loadSavedDiagnosisChip() {
   if (!currentUser) {
-    if (sessionStorage.getItem(SS_GRADE_HIDDEN) === '1') {
+    if (localStorage.getItem(LS_GRADE_HIDDEN) === '1') {
       hideDiagnosisChip();
       return;
     }
@@ -1234,7 +1234,7 @@ async function loadSavedDiagnosisChip() {
     return;
   }
 
-  sessionStorage.removeItem(SS_GRADE_HIDDEN);
+  localStorage.removeItem(LS_GRADE_HIDDEN);
 
   let result = getLocalResultType();
 
