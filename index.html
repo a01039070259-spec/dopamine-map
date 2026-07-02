@@ -438,6 +438,18 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   <div class="ob-corner tl"></div><div class="ob-corner tr"></div>
   <div class="ob-corner bl"></div><div class="ob-corner br"></div>
 
+  <div id="introPhase">
+    <div class="ob-warn-bar" id="obWarn">⚠ WARNING SYSTEM INITIALIZING ⚠</div>
+    <div class="ob-line" id="obL1"></div>
+    <div class="ob-line neon" id="obL2"></div>
+    <div class="ob-line" id="obL3"></div>
+    <div class="ob-line neon" style="font-size:14px" id="obL4"></div>
+    <div class="ob-logo-big" id="obLogo">도파민 지도 ⚡</div>
+    <div class="ob-logo-sub" id="obLogoSub">DOPAMINE MAP — BETA</div>
+  </div>
+  <button type="button" class="ob-skip skip-hidden" id="obSkipIntro" onclick="startQuiz()">퀴즈로 건너뛰기 →</button>
+  <button type="button" class="ob-skip skip-hidden" id="obSkipQuiz" onclick="closeDiagnosis()">지도로 돌아가기 →</button>
+
   <div id="quizPhase">
     <div class="qz-header">
       <button type="button" class="qz-back" onclick="closeDiagnosis()">← 지도로 돌아가기</button>
@@ -858,21 +870,80 @@ function spotThumbMedia(a, size) {
 }
 
 /* ═══════════════════════════════════════
-   ① 자가진단
+   ① 자가진단 (스플래시 → 퀴즈 → 결과)
 ═══════════════════════════════════════ */
+function typeText(el, text, cb) {
+  let i = 0;
+  el.style.opacity = '1';
+  function tick() {
+    if (i <= text.length) {
+      el.textContent = text.slice(0, i) + (i < text.length ? '|' : '');
+      i++;
+      setTimeout(tick, i < text.length ? 38 : 0);
+    } else {
+      el.textContent = text;
+      if (cb) cb();
+    }
+  }
+  tick();
+}
+
+const INTRO_LINES = [
+  { id: 'obL1', text: '뻔하고 지루한 여행에 지쳤습니까?', delay: 800 },
+  { id: 'obL2', text: '안전바가 흔들려야 진짜 액티비티다.', delay: 2000 },
+  { id: 'obL3', text: '찐 매니아들을 위한 하드코어 도파민 지도.', delay: 3200 },
+  { id: 'obL4', text: '자가진단을 시작합니다.', delay: 4200 },
+];
+
+function showDiagnosisSkip(mode) {
+  const introSkip = document.getElementById('obSkipIntro');
+  const quizSkip = document.getElementById('obSkipQuiz');
+  if (introSkip) introSkip.classList.toggle('skip-hidden', mode !== 'intro');
+  if (quizSkip) quizSkip.classList.toggle('skip-hidden', mode !== 'quiz');
+}
+
 function resetDiagnosisView() {
+  const intro = document.getElementById('introPhase');
   const qp = document.getElementById('quizPhase');
   const rp = document.getElementById('resultPhase');
+  if (intro) intro.style.display = 'flex';
   if (qp) qp.classList.remove('active');
   if (rp) rp.classList.remove('active');
+  showDiagnosisSkip('none');
+}
+
+function runDiagnosisIntro() {
+  showDiagnosisSkip('intro');
+  const intro = document.getElementById('introPhase');
+  if (intro) intro.style.display = 'flex';
+  ['obL1', 'obL2', 'obL3', 'obL4'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = ''; el.style.opacity = '0'; }
+  });
+  const logo = document.getElementById('obLogo');
+  const sub = document.getElementById('obLogoSub');
+  if (logo) logo.style.opacity = '0';
+  if (sub) sub.style.opacity = '0';
+
+  INTRO_LINES.forEach(({ id, text, delay }) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) typeText(el, text);
+    }, delay);
+  });
+  setTimeout(() => {
+    if (logo) { logo.style.opacity = '1'; logo.style.transition = 'opacity .6s'; }
+    if (sub) { sub.style.opacity = '1'; sub.style.transition = 'opacity .8s .2s'; }
+  }, 5200);
+  setTimeout(() => startQuiz(), 6600);
 }
 
 function openDiagnosis() {
   resetDiagnosisView();
   quizStep = 0;
   scores = [-1, -1, -1];
-  startQuiz();
   slide('mainScreen', 'onboardScreen');
+  runDiagnosisIntro();
 }
 
 function closeDiagnosis() {
@@ -881,7 +952,11 @@ function closeDiagnosis() {
 }
 
 function startQuiz() {
-  resetDiagnosisView();
+  const intro = document.getElementById('introPhase');
+  if (intro) intro.style.display = 'none';
+  document.getElementById('quizPhase')?.classList.remove('active');
+  document.getElementById('resultPhase')?.classList.remove('active');
+  showDiagnosisSkip('quiz');
   const qp = document.getElementById('quizPhase');
   qp.classList.add('active');
   quizStep = 0;
@@ -925,6 +1000,7 @@ function showResult() {
   const total = scores.reduce((a,b) => a + (b < 0 ? 0 : b), 0);
   const grade = GRADES.find(g => total >= g.min);
   document.getElementById('quizPhase').classList.remove('active');
+  showDiagnosisSkip('none');
   const rp = document.getElementById('resultPhase');
   rp.classList.add('active');
   document.getElementById('rsGrade').innerHTML =
