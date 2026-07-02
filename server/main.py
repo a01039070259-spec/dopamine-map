@@ -144,15 +144,16 @@ def kakao_login(next: str = "/index.html"):
         return login_fail_redirect("KAKAO_REST_API_KEY_missing")
     safe_next = next if next.startswith("/") else "/index.html"
     state = encode_oauth_state(safe_next)
-    params = urllib.parse.urlencode(
-        {
-            "client_id": KAKAO_REST_API_KEY,
-            "redirect_uri": KAKAO_REDIRECT_URI,
-            "response_type": "code",
-            "scope": "profile_nickname",
-            "state": state,
-        }
-    )
+    oauth_params = {
+        "client_id": KAKAO_REST_API_KEY,
+        "redirect_uri": KAKAO_REDIRECT_URI,
+        "response_type": "code",
+        "state": state,
+    }
+    # KOE205 방지: 카카오 콘솔 [동의항목]에서 닉네임 활성화 후에만 scope 요청
+    if os.getenv("KAKAO_NICKNAME_SCOPE", "").lower() in ("1", "true", "yes"):
+        oauth_params["scope"] = "profile_nickname"
+    params = urllib.parse.urlencode(oauth_params)
     return RedirectResponse(f"https://kauth.kakao.com/oauth/authorize?{params}")
 
 
