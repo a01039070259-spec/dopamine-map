@@ -56,8 +56,64 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 }
 .action-btn:hover{border-color:var(--neon);color:var(--neon)}
 .action-btn.primary{border-color:rgba(57,255,20,.35);color:var(--neon)}
-.icon-btn{background:transparent;border:1px solid var(--border2);color:var(--text-dim);width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s}
+.icon-btn{background:transparent;border:1px solid var(--border2);color:var(--text-dim);width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;flex-shrink:0;touch-action:manipulation}
 .icon-btn:hover{border-color:var(--neon);color:var(--neon)}
+.app-menu-btn{
+  width:40px;height:40px;border-radius:10px;border:1px solid var(--border2);
+  background:rgba(16,16,16,.92);color:#f0f0f0;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  flex-shrink:0;touch-action:manipulation;transition:border-color .15s,background .15s;
+}
+.app-menu-btn:hover,.app-menu-btn:focus-visible{border-color:var(--neon)}
+.app-menu-btn span{display:block;width:16px;height:2px;background:currentColor;border-radius:1px}
+.app-drawer-backdrop{
+  position:fixed;inset:0;z-index:100020;background:rgba(0,0,0,.55);
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+  backdrop-filter:blur(2px);
+}
+.app-drawer-backdrop.open{opacity:1;pointer-events:auto}
+.app-drawer{
+  position:fixed;top:0;right:0;bottom:0;z-index:100030;width:min(320px,88vw);
+  background:#101010;border-left:1px solid var(--border2);
+  transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.45);
+}
+.app-drawer.open{transform:translateX(0)}
+.app-drawer-head{
+  padding:18px 16px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.app-drawer-brand{font-size:11px;color:#555;letter-spacing:1px;margin-bottom:6px}
+.app-drawer-grade{
+  padding:14px;border-radius:12px;border:1px solid var(--border2);background:#141414;
+}
+.app-drawer-grade-label{font-size:10px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.app-drawer-grade-main{font-size:18px;font-weight:900;line-height:1.35;color:#fff}
+.app-drawer-grade-sub{font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.5}
+.app-drawer-user{font-size:11px;color:#888;margin-top:8px}
+.app-drawer-close{
+  background:transparent;border:1px solid var(--border2);color:var(--text-dim);
+  width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:16px;flex-shrink:0;
+}
+.app-drawer-nav{flex:1;overflow-y:auto;padding:10px 12px 16px}
+.app-drawer-item{
+  width:100%;display:flex;align-items:center;gap:12px;
+  padding:13px 12px;border-radius:10px;border:1px solid transparent;
+  background:transparent;color:#f0f0f0;text-align:left;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:600;
+  transition:background .15s,border-color .15s;
+}
+.app-drawer-item:hover{background:#161616;border-color:#252525}
+.app-drawer-item:active{transform:scale(.99)}
+.app-drawer-item .ico{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.app-drawer-item .sub{display:block;font-size:11px;color:#666;font-weight:500;margin-top:2px}
+.app-drawer-foot{padding:12px 16px 18px;border-top:1px solid var(--border);background:#0c0c0c}
+.app-drawer-auth{
+  width:100%;border:none;border-radius:10px;padding:12px 14px;
+  font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;cursor:pointer;
+}
+.app-drawer-auth.login{background:#fee500;color:#191919}
+.app-drawer-auth.logout{background:transparent;border:1px solid var(--border2);color:var(--neon)}
 .sec-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
 .chip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px}
 .t-roller{background:#1f0a30;color:#c084fc;border:1px solid #3b1a5c}
@@ -165,12 +221,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
    ② MAIN
 ══════════════════════════════ */
 .m-header{background:var(--bg);padding:20px clamp(16px,4vw,48px) 14px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-.m-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.m-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:nowrap}
 .m-header-top .m-logo-row{flex:1;min-width:0}
-.m-header-top .m-fab,.m-header-top .m-auth-btn,.m-header-top .m-diag-btn{flex-shrink:0}
-.m-diag-btn{background:transparent;border:1px solid var(--neon);color:var(--neon);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:700;transition:all .15s;white-space:nowrap}
-.m-diag-btn:hover{background:#0d2a06}
-.m-diag-chip{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:#111;font-size:12px;color:var(--text-dim);transition:border-color .2s,background .2s}
+.m-diag-chip{display:none!important}
 .m-diag-chip b{font-weight:900;transition:color .2s}
 .m-diag-chip-prompt{color:var(--neon);cursor:pointer;font-weight:700;transition:opacity .15s}
 .m-diag-chip-prompt:hover{opacity:.85}
@@ -401,7 +454,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 }
 @media(max-width:768px){
   #kakaoMap .custom_zoomcontrol,
-  #kakaoMap .wrap_controllers{bottom:168px !important}
+  #kakaoMap .wrap_controllers{bottom:88px !important}
 }
 
 .radius-bar{position:relative;top:auto;left:auto;right:auto;z-index:200;padding:0 16px 12px;display:flex;gap:8px;justify-content:center}
@@ -410,9 +463,6 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .rbtn:hover:not(.active){border-color:var(--neon);color:var(--neon)}
 .map-counter{position:absolute;bottom:14px;right:14px;z-index:200;background:rgba(10,10,10,.88);border:1px solid var(--border2);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--text-muted);backdrop-filter:blur(6px);text-align:right}
 .map-counter b{color:var(--neon);font-size:13px}
-@media(max-width:768px){
-  .map-counter{bottom:168px}
-}
 
 /* 카카오맵 API 없을 때 fallback */
 .map-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center;z-index:15;background:rgba(10,10,10,.95)}
@@ -442,42 +492,6 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   .dm-thumb,.dm-fallback{width:40px;height:40px}
   .dm-name{font-size:12px}
   .dm-type{font-size:10px}
-}
-
-/* MOBILE MAP SPOT STRIP */
-.map-spot-strip-wrap{
-  position:absolute;left:0;right:0;bottom:0;z-index:210;
-  background:linear-gradient(to top,rgba(5,5,5,.98) 55%,rgba(5,5,5,.72) 80%,transparent);
-  padding:10px 0 12px;pointer-events:none;
-}
-.map-spot-strip-hd{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 14px 8px;font-size:11px;color:var(--text-muted);pointer-events:none;
-}
-.map-spot-strip-hd b{color:var(--neon)}
-.map-spot-strip{
-  display:flex;gap:10px;overflow-x:auto;padding:0 12px 2px;
-  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;pointer-events:auto;
-}
-.map-spot-strip::-webkit-scrollbar{display:none}
-.map-strip-card{
-  flex:0 0 132px;scroll-snap-align:start;
-  background:#141414;border:1px solid var(--border2);border-radius:11px;
-  overflow:hidden;cursor:pointer;text-align:left;
-  transition:border-color .15s,transform .12s;
-}
-.map-strip-card:active{transform:scale(.98)}
-.map-strip-card.active{border-color:var(--neon);box-shadow:0 0 12px rgba(57,255,20,.18)}
-.map-strip-thumb{height:68px;background:#111;position:relative;overflow:hidden}
-.map-strip-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.map-strip-fallback{height:100%;display:flex;align-items:center;justify-content:center;font-size:28px}
-.map-strip-body{padding:8px 9px 9px}
-.map-strip-name{font-size:11px;font-weight:800;color:#fff;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
-.map-strip-meta{display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:4px}
-.map-strip-type{font-size:9px;color:var(--neon);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.map-strip-th{font-size:10px;flex-shrink:0}
-@media(min-width:769px){
-  .map-spot-strip-wrap{display:none}
 }
 
 /* BOTTOM SHEET */
@@ -582,9 +596,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
         <span class="m-badge">BETA</span>
         <span style="font-size:11px;color:#444;letter-spacing:1px">DOPAMINE MAP</span>
       </div>
-      <button class="m-diag-btn" type="button" onclick="openDiagnosis()">🧪 자가진단</button>
-      <button class="m-fab" onclick="goMap()">🗺️ <span class="fab-label">지도로 보기</span></button>
-      <button class="m-auth-btn" id="authBtn" type="button" onclick="handleAuthClick()">카카오 로그인</button>
+      <button type="button" class="app-menu-btn" onclick="openAppMenu()" aria-label="메뉴 열기">
+        <span></span><span></span><span></span>
+      </button>
     </div>
     <p class="m-title">도파민 지도 <em>⚡</em></p>
     <p class="m-sub">찐 매니아를 위한 하드코어 액티비티 정보</p>
@@ -628,11 +642,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 <div class="screen hidden" id="reviewScreen">
   <div class="topbar">
     <button class="back-btn" onclick="goDetail(currentId,true)">← 상세로</button>
-    <div style="display:flex;gap:5px;align-items:center">
-      <div style="width:6px;height:6px;border-radius:50%;background:#2a2a2a"></div>
-      <div style="width:6px;height:6px;border-radius:50%;background:#2a2a2a"></div>
-      <div style="width:18px;height:6px;border-radius:3px;background:var(--neon)"></div>
-    </div>
+    <button type="button" class="app-menu-btn" onclick="openAppMenu()" aria-label="메뉴 열기">
+      <span></span><span></span><span></span>
+    </button>
   </div>
   <div class="rw-body">
     <div class="rw-sec">
@@ -683,7 +695,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     <div class="map-topbar">
       <button type="button" class="back-btn map-back-btn" id="mapBackBtn">← 뒤로</button>
       <span class="map-title">도파민 <em>지도</em></span>
-      <div style="width:84px;flex-shrink:0"></div>
+      <button type="button" class="app-menu-btn" onclick="openAppMenu()" aria-label="메뉴 열기">
+        <span></span><span></span><span></span>
+      </button>
     </div>
     <div class="radius-bar">
       <button class="rbtn active" onclick="setRadius(this,'all')">🗺️ 전체</button>
@@ -713,14 +727,6 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 
     <div class="map-counter" id="mapCounter"><b>0</b> 스팟</div>
 
-    <div class="map-spot-strip-wrap" id="mapSpotStripWrap" aria-hidden="true">
-      <div class="map-spot-strip-hd">
-        <span>👆 스팟 카드 탭 · 지도 이동</span>
-        <span><b id="mapStripCount">0</b>개</span>
-      </div>
-      <div class="map-spot-strip" id="mapSpotStrip"></div>
-    </div>
-
     <div class="bottom-sheet" id="bottomSheet">
       <div class="bs-handle-area"><div class="bs-handle"></div></div>
       <div class="bs-body">
@@ -732,6 +738,43 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="app-drawer-backdrop" id="appDrawerBackdrop" onclick="closeAppMenu()"></div>
+<aside class="app-drawer" id="appDrawer" aria-hidden="true">
+  <div class="app-drawer-head">
+    <div style="flex:1;min-width:0">
+      <div class="app-drawer-brand">DOPAMINE MAP</div>
+      <div class="app-drawer-grade" id="appDrawerGrade">
+        <p class="app-drawer-grade-label">내 도파민 등급</p>
+        <p class="app-drawer-grade-main" id="appDrawerGradeMain">🧪 진단 전</p>
+        <p class="app-drawer-grade-sub" id="appDrawerGradeSub">자가진단을 하면 등급이 표시됩니다.</p>
+        <p class="app-drawer-user is-hidden" id="appDrawerUser"></p>
+      </div>
+    </div>
+    <button type="button" class="app-drawer-close" onclick="closeAppMenu()" aria-label="메뉴 닫기">✕</button>
+  </div>
+  <nav class="app-drawer-nav">
+    <button type="button" class="app-drawer-item" onclick="menuGoHome()">
+      <span class="ico">🏠</span>
+      <span>스팟 목록<span class="sub">매운맛 액티비티 카드</span></span>
+    </button>
+    <button type="button" class="app-drawer-item" onclick="menuGoMap()">
+      <span class="ico">🗺️</span>
+      <span>지도로 보기<span class="sub">전국 스팟 위치</span></span>
+    </button>
+    <button type="button" class="app-drawer-item" onclick="menuOpenDiagnosis()">
+      <span class="ico">🧪</span>
+      <span>자가진단<span class="sub">내 도파민 등급 측정</span></span>
+    </button>
+    <button type="button" class="app-drawer-item" id="appDrawerGradeBtn" onclick="menuOpenGradeDetail()">
+      <span class="ico">⚡</span>
+      <span>내 등급 상세<span class="sub">진단 결과 다시 보기</span></span>
+    </button>
+  </nav>
+  <div class="app-drawer-foot">
+    <button type="button" class="app-drawer-auth login" id="appDrawerAuthBtn" onclick="menuAuthClick()">카카오 로그인</button>
+  </div>
+</aside>
 
 <div class="login-modal hidden" id="loginModal">
   <div class="login-modal-box">
@@ -908,6 +951,121 @@ function showToast(msg, dur=2200) {
   setTimeout(() => t.classList.remove('show'), dur);
 }
 
+function openAppMenu() {
+  updateAppMenu();
+  document.getElementById('appDrawerBackdrop')?.classList.add('open');
+  document.getElementById('appDrawer')?.classList.add('open');
+  document.getElementById('appDrawer')?.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAppMenu() {
+  document.getElementById('appDrawerBackdrop')?.classList.remove('open');
+  document.getElementById('appDrawer')?.classList.remove('open');
+  document.getElementById('appDrawer')?.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function updateAppMenu() {
+  const result = getEffectiveDiagnosisResult();
+  const grade = findGradeByName(result);
+  const mainEl = document.getElementById('appDrawerGradeMain');
+  const subEl = document.getElementById('appDrawerGradeSub');
+  const userEl = document.getElementById('appDrawerUser');
+  const gradeBtn = document.getElementById('appDrawerGradeBtn');
+  const gradeBox = document.getElementById('appDrawerGrade');
+  const authBtn = document.getElementById('appDrawerAuthBtn');
+
+  if (grade && mainEl && subEl) {
+    mainEl.textContent = `${grade.emoji || '⚡'} ${grade.grade}`;
+    mainEl.style.color = grade.color || '#fff';
+    subEl.textContent = grade.nickname ? `「${grade.nickname}」` : (grade.desc || '').slice(0, 48);
+    if (gradeBox) {
+      gradeBox.style.borderColor = (grade.color || '#39ff14') + '55';
+      gradeBox.style.background = (grade.color || '#39ff14') + '10';
+    }
+    gradeBtn?.classList.remove('is-hidden');
+  } else if (mainEl && subEl) {
+    mainEl.textContent = '🧪 진단 전';
+    mainEl.style.color = '#fff';
+    subEl.textContent = '자가진단을 하면 등급이 표시됩니다.';
+    if (gradeBox) {
+      gradeBox.style.borderColor = '';
+      gradeBox.style.background = '';
+    }
+    gradeBtn?.classList.add('is-hidden');
+  }
+
+  if (userEl) {
+    if (currentUser) {
+      userEl.textContent = `@${currentUser.nickname} 로그인됨`;
+      userEl.classList.remove('is-hidden');
+    } else {
+      userEl.textContent = '';
+      userEl.classList.add('is-hidden');
+    }
+  }
+
+  if (authBtn) {
+    if (currentUser) {
+      authBtn.textContent = `@${currentUser.nickname} · 로그아웃`;
+      authBtn.className = 'app-drawer-auth logout';
+    } else {
+      authBtn.textContent = '카카오 로그인';
+      authBtn.className = 'app-drawer-auth login';
+    }
+  }
+}
+
+function menuGoHome() {
+  closeAppMenu();
+  closeSheet();
+  const active = document.querySelector('.screen.active')?.id;
+  if (active === 'mainScreen') return;
+  if (active === 'mapScreen') {
+    goFromMap();
+    return;
+  }
+  if (active === 'detailScreen' || active === 'reviewScreen') {
+    goFromDetail();
+    return;
+  }
+  ensureMainScreenVisible();
+}
+
+function menuGoMap() {
+  closeAppMenu();
+  goMap();
+}
+
+function menuOpenDiagnosis() {
+  closeAppMenu();
+  openDiagnosis();
+}
+
+function menuOpenGradeDetail() {
+  closeAppMenu();
+  openSavedDiagnosis();
+}
+
+async function menuAuthClick() {
+  closeAppMenu();
+  await handleAuthClick();
+}
+
+function showScreen(toId) {
+  document.querySelectorAll('.screen').forEach((s) => {
+    if (s.id === toId) {
+      s.classList.remove('hidden', 'slide-left');
+      s.classList.add('active');
+      s.scrollTop = 0;
+    } else {
+      s.classList.remove('active', 'slide-left');
+      s.classList.add('hidden');
+    }
+  });
+}
+
 async function refreshAuth() {
   try {
     const data = await DopamineStore.fetchAuthMe();
@@ -997,15 +1155,7 @@ function promptLoginAfterOnboarding() {
 }
 
 function updateAuthButton() {
-  const btn = document.getElementById('authBtn');
-  if (!btn) return;
-  if (currentUser) {
-    btn.textContent = `@${currentUser.nickname} · 로그아웃`;
-    btn.classList.add('logged-in');
-  } else {
-    btn.textContent = '카카오 로그인';
-    btn.classList.remove('logged-in');
-  }
+  updateAppMenu();
 }
 
 function showLoginModal(detailId) {
@@ -1197,14 +1347,19 @@ function openDiagnosis() {
   initQuizScores();
   quizStep = 0;
   renderQuizSteps();
-  slide('mainScreen', 'onboardScreen');
+  const from = document.querySelector('.screen.active')?.id || 'mainScreen';
+  if (from === 'onboardScreen') {
+    runDiagnosisIntro();
+    return;
+  }
+  showScreen('onboardScreen');
   runDiagnosisIntro();
 }
 
 function closeDiagnosis() {
   markOnboardingDone();
   resetDiagnosisView();
-  slide('onboardScreen', 'mainScreen');
+  showScreen('mainScreen');
   renderCards(getDisplayedSpots());
   loadSavedDiagnosisChip();
 }
@@ -1339,7 +1494,7 @@ function openSavedDiagnosis(resultName) {
   document.getElementById('resultPhase')?.classList.add('active');
   renderGradeResult(grade);
   setupResultActions(currentUser ? 'saved' : 'review');
-  slide('mainScreen', 'onboardScreen');
+  showScreen('onboardScreen');
 }
 
 async function showResult() {
@@ -1388,6 +1543,7 @@ function updateDiagnosisChip(result) {
     chip.style.background = '';
     chip.style.boxShadow = '';
   }
+  updateAppMenu();
 }
 
 function showDiagnosisPrompt() {
@@ -1556,8 +1712,9 @@ function renderDetailView(a, fromReview=false) {
     <div class="topbar">
       <button class="back-btn" onclick="goFromDetail()">← 뒤로</button>
       <div class="topbar-actions">
-        <button type="button" class="action-btn primary" onclick="goMap()">지도로 보기</button>
-        <button type="button" class="action-btn" onclick="showToast('링크가 복사되었습니다 ✓')">공유하기</button>
+        <button type="button" class="app-menu-btn" onclick="openAppMenu()" aria-label="메뉴 열기">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
     <div class="d-hero" style="background:${a.bg}">
@@ -1889,59 +2046,6 @@ function makeMarkerHTML(a) {
     </div>`;
 }
 
-function stripCardMedia(a) {
-  if (spotHasImg(a)) {
-    return `<img src="${a.img}" alt="${escAttr(a.name)}" loading="lazy"/>`;
-  }
-  return `<div class="map-strip-fallback">${a.em || '🔥'}</div>`;
-}
-
-function renderMapSpotStrip(spots) {
-  const wrap = document.getElementById('mapSpotStripWrap');
-  const strip = document.getElementById('mapSpotStrip');
-  const countEl = document.getElementById('mapStripCount');
-  if (!wrap || !strip) return;
-  if (!isMobileMapView() || !spots.length) {
-    wrap.setAttribute('aria-hidden', 'true');
-    strip.innerHTML = '';
-    if (countEl) countEl.textContent = '0';
-    return;
-  }
-  wrap.setAttribute('aria-hidden', 'false');
-  if (countEl) countEl.textContent = String(spots.length);
-  strip.innerHTML = spots.map((a) => `
-    <button type="button" class="map-strip-card${currentId === a.id ? ' active' : ''}" data-spot-id="${a.id}" onclick="focusMapSpot(${a.id})">
-      <div class="map-strip-thumb">${stripCardMedia(a)}</div>
-      <div class="map-strip-body">
-        <p class="map-strip-name">${a.name}</p>
-        <div class="map-strip-meta">
-          <span class="map-strip-type">${a.tl || ''}</span>
-          <span class="map-strip-th">${a.ts || ''}</span>
-        </div>
-      </div>
-    </button>`).join('');
-}
-
-function focusMapSpot(id) {
-  const a = getSpot(id);
-  if (!a || !kakaoMap) return;
-  currentId = id;
-  kakaoMap.panTo(new kakao.maps.LatLng(Number(a.lat), Number(a.lng)));
-  if (typeof kakaoMap.setLevel === 'function' && kakaoMap.getLevel() > 9) {
-    kakaoMap.setLevel(9);
-  }
-  document.querySelectorAll('.map-strip-card').forEach((el) => {
-    el.classList.toggle('active', Number(el.dataset.spotId) === id);
-  });
-  openSheet(id);
-}
-
-function highlightMapStripCard(id) {
-  document.querySelectorAll('.map-strip-card').forEach((el) => {
-    el.classList.toggle('active', Number(el.dataset.spotId) === id);
-  });
-}
-
 function syncMapChromeHeight() {
   const chrome = document.querySelector('#mapScreen .map-chrome');
   const stage = document.querySelector('#mapScreen .map-stage');
@@ -2052,8 +2156,6 @@ function renderKakaoMarkers(filter) {
     overlay.setMap(kakaoMap);
     kakaoMarkers.push(overlay);
   });
-
-  renderMapSpotStrip(visible);
 }
 
 function fitMapToBounds(spots) {
@@ -2157,7 +2259,6 @@ function openSheet(id) {
     </div>`;
 
   document.getElementById('bottomSheet').classList.add('open');
-  highlightMapStripCard(id);
 }
 
 function closeSheet() {
@@ -2231,6 +2332,12 @@ async function bootApp() {
       openSavedDiagnosis();
     });
   }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAppMenu();
+  });
+
+  updateAppMenu();
 
   const pendingDetail = sessionStorage.getItem(SS_PENDING_DETAIL) || params.get('openDetail');
   if (pendingDetail) {
