@@ -1,0 +1,15 @@
+# Render Starter — DB 디스크 유지 (월 약 $7)
+# 무료 테스트 후 이 파일 내용을 render.yaml 로 바꿔 재배포
+services:
+  - type: web
+    name: dopamine-map
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
+    disk:
+      name: dopamine-data
+      mountPath: /app/data
+      sizeGB: 1

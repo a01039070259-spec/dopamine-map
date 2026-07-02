@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>도파민 자가진단 결과 · 도파민 지도</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+:root{--neon:#39ff14;--border2:#252525;--text-dim:#888;--bg:#0a0a0a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:var(--bg);color:#f0f0f0;font-family:'Noto Sans KR',sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:32px 20px 48px}
+h1{font-size:22px;font-weight:900;margin-bottom:8px}
+.sub{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:24px}
+.card{background:#141414;border:1px solid var(--border2);border-radius:14px;padding:24px;margin-bottom:16px}
+.grade{font-size:28px;font-weight:900;color:var(--neon);margin-bottom:8px}
+.empty{color:var(--text-dim);font-size:14px;line-height:1.7}
+.btn{display:inline-block;width:100%;text-align:center;padding:13px;border-radius:10px;font-size:14px;font-weight:800;font-family:'Noto Sans KR',sans-serif;text-decoration:none;cursor:pointer;border:none}
+.btn-kakao{background:#fee500;color:#191919;margin-bottom:10px}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text-dim)}
+.btn-neon{background:var(--neon);color:#0a0a0a}
+.actions{display:grid;gap:10px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>도파민 자가진단 결과</h1>
+  <p class="sub">로그인하면 결과가 서버에 저장됩니다. 비로그인 시 브라우저에만 저장됩니다.</p>
+  <div class="card" id="resultBox">
+    <p class="empty">불러오는 중...</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-neon" href="/index.html">지도로 돌아가기</a>
+    <a class="btn btn-ghost" href="/index.html">자가진단 다시 하기</a>
+    <button class="btn btn-kakao" id="loginBtn" type="button">카카오로 로그인</button>
+  </div>
+</div>
+<script src="js/spots-store.js"></script>
+<script>
+const LOCAL_KEY = "dopamine_diagnosis_result";
+
+function renderResult(text, source) {
+  document.getElementById("resultBox").innerHTML =
+    `<div class="grade">${text}</div>` +
+    `<p class="empty" style="margin-top:8px">${source}</p>`;
+}
+
+async function boot() {
+  DopamineStore.recordVisit().catch(() => {});
+  try {
+    const auth = await DopamineStore.fetchAuthMe();
+    if (auth.loggedIn) {
+      document.getElementById("loginBtn").textContent = "로그아웃";
+      document.getElementById("loginBtn").onclick = async () => {
+        await DopamineStore.logoutAuth();
+        location.reload();
+      };
+      try {
+        const data = await DopamineStore.fetchDiagnosis();
+        if (data.result) {
+          renderResult(data.result, "서버에 저장된 결과");
+          return;
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+
+  const local = localStorage.getItem(LOCAL_KEY);
+  if (local) {
+    renderResult(local, "브라우저(localStorage)에 저장된 결과");
+    return;
+  }
+  document.getElementById("resultBox").innerHTML =
+    '<p class="empty">저장된 자가진단 결과가 없습니다.<br><a href="/index.html" style="color:var(--neon)">메인에서 진단</a>을 먼저 진행해 주세요.</p>';
+  document.getElementById("loginBtn").onclick = () => {
+    location.href = DopamineStore.kakaoLoginUrl("/diagnosis.html");
+  };
+}
+
+boot();
+</script>
+</body>
+</html>
