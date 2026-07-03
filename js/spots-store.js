@@ -28,6 +28,10 @@
     kart: { tl: "카트체험", bg: "#1a0a08" },
     atv: { tl: "ATV체험", bg: "#1a1208" },
     horse: { tl: "승마체험", bg: "#1a1008" },
+    shooting: { tl: "실탄사격", bg: "#1a0808" },
+    speedboat: { tl: "스피드보트", bg: "#001830" },
+    hangglider: { tl: "행글라이더", bg: "#201018" },
+    cave: { tl: "동굴탐험", bg: "#120a08" },
   };
 
   /** 관리자 등록 · 리뷰 등에서 선택하는 공통 태그 */
@@ -294,6 +298,11 @@
     luge: "t-luge",
     coaster: "t-coaster",
     sky: "t-sky",
+    jetboat: "t-sky",
+    shooting: "t-custom",
+    speedboat: "t-sky",
+    hangglider: "t-sky",
+    cave: "t-custom",
     롤러코스터: "t-roller",
     바이킹: "t-swing",
     번지점프: "t-bungee",

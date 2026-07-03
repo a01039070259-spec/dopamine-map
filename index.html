@@ -135,6 +135,12 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
    ① ONBOARDING
 ══════════════════════════════ */
 #onboardScreen{background:#000;z-index:100;overflow:hidden}
+.diag-topbar{
+  position:absolute;top:0;left:0;right:0;z-index:210;
+  padding:14px 16px 0;max-width:640px;margin:0 auto;
+  pointer-events:none;
+}
+.diag-topbar .qz-back{pointer-events:auto;margin-bottom:0}
 .ob-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(57,255,20,.07) 0%,transparent 70%)}
 .ob-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);pointer-events:none;opacity:.35}
 .ob-corner{position:absolute;width:28px;height:28px;border-color:var(--neon);border-style:solid;opacity:.35}
@@ -142,7 +148,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .ob-corner.tr{top:16px;right:16px;border-width:2px 2px 0 0}
 .ob-corner.bl{bottom:80px;left:16px;border-width:0 0 2px 2px}
 .ob-corner.br{bottom:80px;right:16px;border-width:0 2px 2px 0}
-#introPhase{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;max-width:720px;margin:0 auto;left:0;right:0}
+#introPhase{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 24px 40px;max-width:720px;margin:0 auto;left:0;right:0}
 #introPhase.hidden{display:none!important}
 .ob-warn-bar{background:var(--neon);color:#000;font-size:11px;font-weight:900;letter-spacing:2px;padding:5px 14px;border-radius:3px;margin-bottom:32px;opacity:0;animation:obIn .4s forwards}
 .ob-line{font-size:17px;font-weight:700;color:#fff;line-height:1.5;text-align:center;margin-bottom:10px;opacity:0;min-height:26px;letter-spacing:-.3px}
@@ -170,7 +176,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 @keyframes obIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* QUIZ */
-#quizPhase{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s;max-width:640px;margin:0 auto;left:0;right:0}
+#quizPhase{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s;max-width:640px;margin:0 auto;left:0;right:0;padding-top:52px;box-sizing:border-box}
 #quizPhase.active{opacity:1;pointer-events:all}
 .qz-header{padding:20px 20px 16px;border-bottom:1px solid var(--border);background:#050505}
 .qz-back{background:transparent;border:1px solid var(--border2);color:var(--text-dim);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:6px 12px;border-radius:8px;cursor:pointer;margin-bottom:12px;transition:all .15s}
@@ -194,7 +200,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .qz-next.on:active{transform:scale(.97)}
 
 /* RESULT */
-#resultPhase{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s;overflow-y:auto;max-width:720px;margin:0 auto;left:0;right:0}
+#resultPhase{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s;overflow-y:auto;max-width:720px;margin:0 auto;left:0;right:0;padding-top:52px;box-sizing:border-box}
 #resultPhase.active{opacity:1;pointer-events:all}
 .rs-wrap{padding:26px 20px 0;text-align:center;border-radius:14px;transition:border-color .3s,box-shadow .3s,background .3s}
 .rs-wrap.special-tier{border:2px solid #39ff14;background:#0a0a0a;box-shadow:0 0 28px rgba(57,255,20,.18)}
@@ -260,6 +266,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .mc:hover{border-color:#2a2a2a}
 .mc-img{width:100%;height:135px;display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;overflow:hidden}
 .spot-cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.spot-thumb-img{flex-shrink:0;object-fit:cover;border-radius:8px;border:1px solid var(--border2)}
 .spot-emoji{font-size:42px;z-index:1;position:relative}
 .mc-ov{position:absolute;inset:0;background:linear-gradient(to top,var(--bg2) 0%,transparent 55%);z-index:1}
 .mc-rb{position:absolute;top:8px;left:8px;background:var(--neon);color:#0a0a0a;font-size:9px;font-weight:900;padding:3px 7px;border-radius:3px;z-index:2}
@@ -321,7 +328,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .rv-tag{display:inline-block;background:#1a1a1a;color:#666;font-size:10px;padding:2px 6px;border-radius:3px;margin-top:6px;margin-right:3px}
 .d-sticky{position:sticky;bottom:0;background:rgba(10,10,10,.96);border-top:1px solid var(--border);padding:11px 16px;display:flex;gap:9px;z-index:50;backdrop-filter:blur(8px)}
 #detailScreen.active{background:#050505}
-#detailScreen.active #detailContent{max-width:480px;margin:0 auto}
+#detailScreen.active #detailContent{max-width:480px;margin:0 auto;min-height:100%;width:100%}
 @media(min-width:768px){
   .d-hero{height:160px}
   .d-body{max-width:920px;padding-bottom:88px}
@@ -475,7 +482,12 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .map-fallback-code{background:#111;border:1px solid var(--border2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--neon);font-family:monospace;letter-spacing:.3px;word-break:break-all}
 
 /* CUSTOM MARKER */
-.dopamine-marker{position:relative;cursor:pointer;transform:translateX(-50%) translateY(-100%);touch-action:manipulation}
+.dopamine-marker{position:relative;cursor:pointer;transform:translateX(-50%) translateY(-100%);touch-action:manipulation;transition:transform .2s ease,z-index .2s ease;z-index:1}
+.dopamine-marker.selected{transform:translateX(-50%) translateY(calc(-100% - 12px));z-index:500}
+.dopamine-marker.selected .dm-bubble{box-shadow:0 8px 22px rgba(0,0,0,.55),0 0 18px rgba(57,255,20,.4)}
+.dopamine-marker.selected .dm-bubble.skull{box-shadow:0 8px 22px rgba(0,0,0,.55),0 0 18px rgba(255,68,68,.4)}
+.dopamine-marker.selected .dm-hint{display:block}
+.dm-hint{display:none;margin-top:4px;font-size:9px;font-weight:700;color:var(--neon);letter-spacing:.02em;text-align:center;white-space:nowrap}
 .dm-bubble{background:#0a0a0a;border:2px solid var(--neon);border-radius:12px;padding:7px 9px;display:flex;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(0,0,0,.45),0 0 12px rgba(57,255,20,.25);transition:transform .15s,box-shadow .15s;max-width:168px}
 .dm-bubble:active{transform:scale(.97)}
 .dm-bubble.skull{border-color:var(--red);box-shadow:0 4px 16px rgba(0,0,0,.45),0 0 12px rgba(255,68,68,.25)}
@@ -497,35 +509,8 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   .dm-type{font-size:10px}
 }
 
-/* BOTTOM SHEET */
-.bottom-sheet{position:absolute;bottom:0;left:0;right:0;z-index:300;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);pointer-events:none}
-.bottom-sheet.open{transform:translateY(0);pointer-events:auto}
-.bs-handle-area{padding:10px 0 0;display:flex;justify-content:center;background:#141414;border-radius:14px 14px 0 0;border-top:1px solid var(--border2)}
-.bs-handle{width:34px;height:4px;background:#333;border-radius:2px;margin-bottom:10px}
-.bs-body{background:#141414;padding:0 15px 20px;position:relative}
-.bs-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:10px}
-.bs-em{font-size:32px;flex-shrink:0;margin-top:2px}
-.spot-thumb-img{flex-shrink:0;object-fit:cover;border-radius:8px;border:1px solid var(--border2)}
-.bs-hero-img{width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px;border:1px solid var(--border2);display:block}
-.bs-name{font-size:16px;font-weight:900;color:#fff;margin-bottom:3px;line-height:1.2}
-.bs-addr{font-size:11px;color:var(--text-muted)}
-.bs-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
-.bs-tag{background:#1a1a1a;border:1px solid #252525;color:var(--neon);font-size:10px;padding:3px 7px;border-radius:3px;font-weight:500}
-.bs-gauges{margin-bottom:13px}
-.bs-g-row{display:flex;align-items:center;gap:9px;margin-bottom:6px}
-.bs-g-lbl{font-size:11px;color:var(--text-dim);width:76px;flex-shrink:0}
-.bs-g-track{flex:1;background:var(--border);border-radius:3px;height:5px;overflow:hidden}
-.bs-g-fill{height:100%;border-radius:3px}
-.bs-g-val{font-size:11px;font-weight:700;width:30px;text-align:right}
-.bs-actions{display:flex;gap:9px}
-.bs-btn-detail{flex:2;background:var(--neon);color:#0a0a0a;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px}
-.bs-btn-detail:active{transform:scale(.97)}
-.bs-btn-add{flex:1;background:transparent;color:var(--text-dim);border:1px solid var(--border2);border-radius:9px;padding:11px;font-size:12px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s}
-.bs-btn-add:hover{border-color:var(--neon);color:var(--neon)}
-.bs-close{position:absolute;top:12px;right:14px;background:transparent;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;line-height:1;padding:2px 5px;transition:color .15s}
-.bs-close:hover{color:#f0f0f0}
-
-/* AUTH */
+/* AUTH — bs-em: 리뷰·썸네일 폴백 */
+.bs-em{font-size:32px;flex-shrink:0;line-height:1}
 .m-auth-btn{background:transparent;border:1px solid var(--border2);color:#fee500;font-size:11px;font-family:'Noto Sans KR',sans-serif;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:700;white-space:nowrap;transition:all .15s}
 .m-auth-btn:hover{border-color:#fee500;background:#fee50014}
 .m-auth-btn.logged-in{color:var(--neon);border-color:var(--neon)}
@@ -548,6 +533,10 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   <div class="ob-corner tl"></div><div class="ob-corner tr"></div>
   <div class="ob-corner bl"></div><div class="ob-corner br"></div>
 
+  <div class="diag-topbar" id="diagTopBar">
+    <button type="button" class="qz-back" onclick="closeDiagnosis()">← 뒤로</button>
+  </div>
+
   <div id="introPhase" class="hidden">
     <div class="ob-warn-bar" id="obWarn">⚠ WARNING SYSTEM INITIALIZING ⚠</div>
     <div class="ob-line" id="obL1"></div>
@@ -561,7 +550,6 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 
   <div id="quizPhase">
     <div class="qz-header">
-      <button type="button" class="qz-back" onclick="closeDiagnosis()">← 지도로 돌아가기</button>
       <div class="qz-steps" id="qzSteps"></div>
       <div class="qz-tag">도파민 자가진단</div>
       <div class="qz-q" id="qzQ"></div>
@@ -586,7 +574,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     <div class="rs-actions" id="rsActions">
       <button class="rs-kakao-btn" id="rsKakaoBtn" type="button">카카오 로그인 · 결과 저장</button>
       <button class="rs-skip-btn" id="rsSkipBtn" type="button">나중에 하기</button>
-      <button class="rs-back-btn is-hidden" id="rsBackBtn" type="button">← 지도로 돌아가기</button>
+      <button class="rs-back-btn is-hidden" id="rsBackBtn" type="button">← 뒤로</button>
     </div>
   </div>
 </div>
@@ -733,14 +721,6 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
     </div>
 
     <div class="map-counter" id="mapCounter"><b>0</b> 스팟</div>
-
-    <div class="bottom-sheet" id="bottomSheet">
-      <div class="bs-handle-area"><div class="bs-handle"></div></div>
-      <div class="bs-body">
-        <button class="bs-close" onclick="closeSheet()">✕</button>
-        <div id="bsContent"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -982,6 +962,7 @@ let scores = [];
 let kakaoMap = null;
 let kakaoMarkers = [];
 let currentFilter = 'all';
+let selectedMapSpotId = null;
 let currentUser = null;
 let pendingDetailId = null;
 let lastDiagnosisResult = '';
@@ -1063,18 +1044,43 @@ function updateAppMenu() {
 
 function menuGoHome() {
   closeAppMenu();
-  closeSheet();
   const active = document.querySelector('.screen.active')?.id;
   if (active === 'mainScreen') return;
-  if (active === 'mapScreen') {
-    goFromMap();
-    return;
+  if (active === 'onboardScreen') markOnboardingDone();
+  goToMainScreen();
+}
+
+function goToMainScreen() {
+  resetDiagnosisView();
+  clearMapSpotSelection();
+
+  ['onboardScreen', 'detailScreen', 'reviewScreen', 'mapScreen'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('active', 'slide-left');
+    el.classList.add('hidden');
+  });
+
+  const main = document.getElementById('mainScreen');
+  if (main) {
+    main.classList.remove('hidden', 'slide-left');
+    main.classList.add('active');
+    main.scrollTop = 0;
   }
-  if (active === 'detailScreen' || active === 'reviewScreen') {
-    goFromDetail();
-    return;
+
+  prevScreen = 'mainScreen';
+  detailReturnScreen = 'mainScreen';
+  mapReturnScreen = 'mainScreen';
+
+  renderCards(getDisplayedSpots());
+  loadSavedDiagnosisChip();
+
+  if (kakaoMap) {
+    setTimeout(() => {
+      syncMapChromeHeight();
+      kakaoMap.relayout();
+    }, 50);
   }
-  ensureMainScreenVisible();
 }
 
 function menuGoMap() {
@@ -1296,6 +1302,37 @@ function spotThumbMedia(a, size) {
   return `<span class="bs-em" style="font-size:${Math.round(px * 0.65)}px">${a.em}</span>`;
 }
 
+/** 메인 목록 카드 HTML (상세 전 미리보기 — 메인 전용) */
+function renderSpotCardHtml(a) {
+  const id = a.id;
+  const bg = a.bg || '#1a0a2e';
+  const tags = (a.tags || []).map(t => `<span class="mc-tag">${t}</span>`).join('');
+  return `
+    <div class="mc" onclick="goDetail(${id})">
+      <div class="mc-img" style="background:${bg}">
+        ${spotCardMedia(a)}
+        <div class="mc-ov"></div>
+        <div class="mc-rb">${a.rank || ''}</div>
+        <div class="mc-tb">${a.ts || ''}</div>
+      </div>
+      <div class="mc-body">
+        <span class="chip ${chipClass(a)}">${a.tl || ''}</span>
+        <p class="mc-name">${a.name}</p>
+        <p class="mc-addr">📍 ${a.addr || ''}</p>
+        <div class="mc-tags">${tags}</div>
+        <div class="mc-div"></div>
+        <p class="mc-review">${a.br || ''}</p>
+        <div class="mc-footer">
+          <div>
+            <p class="mc-tl">스릴 지수</p>
+            <p style="font-size:13px">${fireStars(a.th || 3)}</p>
+          </div>
+          <button type="button" class="mc-dbtn">${detailButtonLabel()}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 /* ═══════════════════════════════════════
    ① 자가진단
 ═══════════════════════════════════════ */
@@ -1402,10 +1439,7 @@ function openDiagnosis() {
 
 function closeDiagnosis() {
   markOnboardingDone();
-  resetDiagnosisView();
-  showScreen('mainScreen');
-  renderCards(getDisplayedSpots());
-  loadSavedDiagnosisChip();
+  goToMainScreen();
 }
 
 function markOnboardingDone() {
@@ -1500,7 +1534,7 @@ function setupResultActions(mode) {
   if (mode === 'retake') {
     kakaoBtn.classList.add('is-hidden');
     skipBtn.classList.remove('is-hidden');
-    skipBtn.textContent = '← 지도로 돌아가기';
+    skipBtn.textContent = '목록으로 돌아가기';
     backBtn.classList.add('is-hidden');
     skipBtn.onclick = () => closeDiagnosis();
     return;
@@ -1652,12 +1686,7 @@ function migrateLegacyDiagnosisStorage() {
 }
 
 function ensureMainScreenVisible() {
-  document.getElementById('onboardScreen')?.classList.remove('active');
-  document.getElementById('onboardScreen')?.classList.add('hidden');
-  const main = document.getElementById('mainScreen');
-  main?.classList.remove('hidden', 'slide-left');
-  main?.classList.add('active');
-  renderCards(getDisplayedSpots());
+  goToMainScreen();
 }
 
 function startOnboardingFlow() {
@@ -1685,30 +1714,7 @@ function renderCards(data) {
     document.getElementById('resultCount').textContent = 0;
     return;
   }
-  document.getElementById('cardList').innerHTML = data.map(a => `
-    <div class="mc" onclick="goDetail(${a.id})">
-      <div class="mc-img" style="background:${a.bg}">
-        ${spotCardMedia(a)}
-        <div class="mc-ov"></div>
-        <div class="mc-rb">${a.rank}</div>
-        <div class="mc-tb">${a.ts}</div>
-      </div>
-      <div class="mc-body">
-        <span class="chip ${chipClass(a)}">${a.tl}</span>
-        <p class="mc-name">${a.name}</p>
-        <p class="mc-addr">📍 ${a.addr}</p>
-        <div class="mc-tags">${a.tags.map(t=>`<span class="mc-tag">${t}</span>`).join('')}</div>
-        <div class="mc-div"></div>
-        <p class="mc-review">${a.br}</p>
-        <div class="mc-footer">
-          <div>
-            <p class="mc-tl">스릴 지수</p>
-            <p style="font-size:13px">${fireStars(a.th)}</p>
-          </div>
-          <button class="mc-dbtn">${detailButtonLabel()}</button>
-        </div>
-      </div>
-    </div>`).join('');
+  document.getElementById('cardList').innerHTML = data.map(a => renderSpotCardHtml(a)).join('');
   document.getElementById('resultCount').textContent = data.length;
 }
 
@@ -1741,7 +1747,7 @@ document.getElementById('mapSearchInput').addEventListener('input', () => {
 /* ═══════════════════════════════════════
    ③ DETAIL
 ═══════════════════════════════════════ */
-function renderDetailView(a, fromReview=false) {
+function renderDetailView(a, fromReview=false, returnTo=null) {
   const wHTML = (a.warns || []).map(w =>
     `<div class="warn-item ${w.t==='y'?'y':w.t==='g'?'g':''}">
        <span style="font-size:14px;flex-shrink:0;margin-top:1px">${w.i}</span>
@@ -1759,6 +1765,7 @@ function renderDetailView(a, fromReview=false) {
     <div class="topbar">
       <button class="back-btn" onclick="goFromDetail()">← 뒤로</button>
       <div class="topbar-actions">
+        <button type="button" class="icon-btn" onclick="goFromDetail()" aria-label="상세 닫기">✕</button>
         <button type="button" class="app-menu-btn" onclick="openAppMenu()" aria-label="메뉴 열기">
           <span></span><span></span><span></span>
         </button>
@@ -1807,19 +1814,26 @@ function renderDetailView(a, fromReview=false) {
       </div>
     </div>
     <div class="d-sticky">
-      <button class="btn-secondary" style="flex:1" onclick="showToast('동선에 추가되었습니다 ✓')">＋ 동선 추가</button>
       ${currentUser
-        ? `<button class="btn-primary" style="flex:1" onclick="goReview(${a.id})">✍️ 리뷰 쓰기</button>`
-        : `<button class="btn-primary" style="flex:1" onclick="showLoginModal(${a.id});showToast('로그인 후 리뷰를 작성할 수 있어요')">🔐 로그인 후 리뷰 작성</button>`}
+        ? `<button class="btn-primary" style="width:100%" onclick="goReview(${a.id})">✍️ 리뷰 쓰기</button>`
+        : `<button class="btn-primary" style="width:100%" onclick="showLoginModal(${a.id});showToast('로그인 후 리뷰를 작성할 수 있어요')">🔐 로그인 후 리뷰 작성</button>`}
     </div>`;
 
-  const from = fromReview ? 'reviewScreen' : (document.querySelector('.screen.active')?.id || 'mainScreen');
-  if (from !== 'detailScreen') detailReturnScreen = from;
+  let fromId;
+  if (fromReview) {
+    fromId = 'reviewScreen';
+  } else if (returnTo) {
+    fromId = returnTo;
+    detailReturnScreen = returnTo;
+  } else {
+    fromId = document.querySelector('.screen.active')?.id || 'mainScreen';
+    if (fromId !== 'detailScreen') detailReturnScreen = fromId;
+  }
   prevScreen = detailReturnScreen;
-  slide(from, 'detailScreen');
+  slide(fromId, 'detailScreen');
 }
 
-async function goDetail(id, fromReview=false) {
+async function goDetail(id, fromReview=false, returnTo=null) {
   currentId = id;
   if (!fromReview && !currentUser) {
     showLoginModal(id);
@@ -1839,7 +1853,7 @@ async function goDetail(id, fromReview=false) {
     showToast('스팟 정보를 불러올 수 없습니다');
     return;
   }
-  renderDetailView(a, fromReview);
+  renderDetailView(a, fromReview, returnTo);
 }
 
 function goFromDetail() {
@@ -1860,6 +1874,13 @@ function goFromDetail() {
   to.classList.remove('hidden', 'slide-left');
   to.classList.add('active');
   to.scrollTop = 0;
+
+  if (toId === 'mapScreen' && kakaoMap) {
+    setTimeout(() => {
+      syncMapChromeHeight();
+      kakaoMap.relayout();
+    }, 50);
+  }
 }
 
 function goMain() {
@@ -1872,7 +1893,7 @@ function goMain() {
 }
 
 function goFromMap() {
-  closeSheet();
+  clearMapSpotSelection();
   let toId = mapReturnScreen || prevScreen || 'mainScreen';
   if (toId === 'mapScreen') toId = 'mainScreen';
 
@@ -2069,28 +2090,55 @@ function makeMarkerHTML(a) {
   const compact = isCompactMapMarkers() && !isMobileMapView();
   const skullClass = isSkull ? ' skull' : '';
   const compactClass = compact ? ' compact' : '';
+  const selectedClass = selectedMapSpotId === a.id ? ' selected' : '';
   if (compact) {
     return `
-    <div class="dopamine-marker" onclick="openSheet(${a.id})">
+    <div class="dopamine-marker${selectedClass}" onclick="selectMapSpot(${a.id}, event)">
       <div class="dm-bubble${skullClass}${compactClass}">
         ${markerThumbHTML(a, true)}
         <div class="dm-meta">
           <div class="dm-type">${a.tl || ''}</div>
           <div class="dm-name">${a.name}</div>
+          <div class="dm-hint">한 번 더 탭 → 상세</div>
         </div>
       </div>
     </div>`;
   }
   return `
-    <div class="dopamine-marker" onclick="openSheet(${a.id})">
+    <div class="dopamine-marker${selectedClass}" onclick="selectMapSpot(${a.id}, event)">
       <div class="dm-bubble${skullClass}">
         ${markerThumbHTML(a, false)}
         <div class="dm-meta">
           <div class="dm-type">${a.tl || ''}</div>
           <div class="dm-name">${a.name}</div>
+          <div class="dm-hint">한 번 더 탭 → 상세</div>
         </div>
       </div>
     </div>`;
+}
+
+function clearMapSpotSelection() {
+  if (selectedMapSpotId == null) return;
+  selectedMapSpotId = null;
+  if (kakaoMap) renderKakaoMarkers(currentFilter || 'all');
+}
+
+function selectMapSpot(id, ev) {
+  if (ev) {
+    ev.stopPropagation();
+    if (ev.preventDefault) ev.preventDefault();
+  }
+  if (selectedMapSpotId === id) {
+    goDetail(id, false, 'mapScreen');
+    return;
+  }
+  selectedMapSpotId = id;
+  currentId = id;
+  const a = getSpot(id);
+  if (a && kakaoMap && a.lat != null && a.lng != null) {
+    kakaoMap.panTo(new kakao.maps.LatLng(a.lat, a.lng));
+  }
+  renderKakaoMarkers(currentFilter || 'all');
 }
 
 function syncMapChromeHeight() {
@@ -2144,6 +2192,10 @@ function initKakaoMap() {
 
       kakao.maps.event.addListener(kakaoMap, 'zoom_changed', () => {
         renderKakaoMarkers(currentFilter || 'all');
+      });
+
+      kakao.maps.event.addListener(kakaoMap, 'click', () => {
+        clearMapSpotSelection();
       });
 
       setTimeout(() => {
@@ -2216,6 +2268,7 @@ function setRadius(btn, filter) {
   document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentFilter = filter;
+  clearMapSpotSelection();
 
   if (typeof kakao !== 'undefined' && kakao.maps) {
     renderKakaoMarkers(filter);
@@ -2253,62 +2306,6 @@ function goMap() {
       if (kakaoMap) renderKakaoMarkers(currentFilter || 'all');
     }, 150);
   });
-}
-
-function openSheet(id) {
-  currentId = id;
-  const a = getSpot(id);
-  if (!a) return;
-
-  // 지도 중심 이동
-  if (kakaoMap) {
-    kakaoMap.panTo(new kakao.maps.LatLng(a.lat, a.lng));
-  }
-
-  document.getElementById('bsContent').innerHTML = `
-    ${spotHasImg(a) ? `<img class="bs-hero-img" src="${a.img}" alt="${escAttr(a.name)}"/>` : ''}
-    <div class="bs-top">
-      ${spotThumbMedia(a, 48)}
-      <div style="flex:1">
-        <p class="bs-name">${a.name}</p>
-        <p class="bs-addr">📍 ${a.addr.split(' ').slice(0,3).join(' ')}</p>
-      </div>
-      <span class="chip ${chipClass(a)}">${a.tl}</span>
-    </div>
-    <div class="bs-tags">${a.tags.slice(0,3).map(t=>`<span class="bs-tag">${t}</span>`).join('')}</div>
-    <div class="bs-gauges">
-      <div class="bs-g-row">
-        <span class="bs-g-lbl">🔴 공포도</span>
-        <div class="bs-g-track"><div class="bs-g-fill" style="width:${a.fp}%;background:var(--red)"></div></div>
-        <span class="bs-g-val" style="color:var(--red)">${a.fp}%</span>
-      </div>
-      <div class="bs-g-row">
-        <span class="bs-g-lbl">⚡ 체감속도</span>
-        <div class="bs-g-track"><div class="bs-g-fill" style="width:${a.sp2}%;background:var(--neon)"></div></div>
-        <span class="bs-g-val" style="color:var(--neon)">${a.sp2}%</span>
-      </div>
-      <div class="bs-g-row">
-        <span class="bs-g-lbl">💜 아드레날린</span>
-        <div class="bs-g-track"><div class="bs-g-fill" style="width:${a.ap}%;background:var(--purple)"></div></div>
-        <span class="bs-g-val" style="color:var(--purple)">${a.ap}%</span>
-      </div>
-    </div>
-    <div class="bs-actions">
-      <button class="bs-btn-add" onclick="showToast('동선에 추가되었습니다 ✓')">＋ 동선</button>
-      <button class="bs-btn-detail" onclick="goDetailFromMap(${id})">${detailButtonLabel()}</button>
-    </div>`;
-
-  document.getElementById('bottomSheet').classList.add('open');
-}
-
-function closeSheet() {
-  document.getElementById('bottomSheet').classList.remove('open');
-}
-
-function goDetailFromMap(id) {
-  closeSheet();
-  detailReturnScreen = 'mapScreen';
-  setTimeout(() => goDetail(id), 150);
 }
 
 /* ═══════════════════════════════════════
