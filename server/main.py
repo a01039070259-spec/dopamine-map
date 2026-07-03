@@ -54,8 +54,14 @@ KAKAO_REDIRECT_URI = os.getenv(
     "https://dopamine-map.onrender.com/auth/kakao/callback",
 )
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://dopamine-map.onrender.com")
-GOOGLE_SITE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION", "")
-NAVER_SITE_VERIFICATION = os.getenv("NAVER_SITE_VERIFICATION", "")
+GOOGLE_SITE_VERIFICATION = os.getenv(
+    "GOOGLE_SITE_VERIFICATION",
+    "myCeWNY3QMXhBpvuo_WKHnf6qCDLOx6gBNb2iNnqEdw",
+)
+NAVER_SITE_VERIFICATION = os.getenv(
+    "NAVER_SITE_VERIFICATION",
+    "7b004530b3cb9a6352464fe49a6958b2a6916670",
+)
 
 
 def login_fail_redirect(reason: str) -> RedirectResponse:
