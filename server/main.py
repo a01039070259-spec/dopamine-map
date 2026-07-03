@@ -42,6 +42,7 @@ from server.database import (
     update_user_diagnosis,
     upsert_kakao_user,
 )
+from server.venues import get_venue, list_venues
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
@@ -326,6 +327,19 @@ def api_record_visit(request: Request):
 @app.get("/api/spots")
 def api_list_spots():
     return list_spots()
+
+
+@app.get("/api/venues")
+def api_list_venues():
+    return list_venues()
+
+
+@app.get("/api/venues/{venue_id}")
+def api_get_venue(venue_id: int):
+    venue = get_venue(venue_id)
+    if not venue:
+        raise HTTPException(status_code=404, detail="장소를 찾을 수 없습니다")
+    return venue
 
 
 @app.get("/api/spots/{spot_id}")

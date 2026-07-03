@@ -279,6 +279,13 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .mc-div{height:1px;background:var(--border);margin:8px 0}
 .mc-review{font-size:12px;color:var(--text-dim);line-height:1.5;padding-left:13px;position:relative}
 .mc-review::before{content:'"';position:absolute;left:0;top:-2px;color:var(--neon);font-size:17px;font-weight:900;line-height:1}
+.mc-img-cap{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:28px 12px 10px;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.45) 55%,transparent 100%);pointer-events:none}
+.mc-img-cap-tl{font-size:9px;font-weight:700;color:var(--neon);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
+.mc-img-cap-tx{font-size:11px;color:#eee;line-height:1.45;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
+.mc-venue-badge{position:absolute;top:10px;left:10px;z-index:3;background:rgba(10,10,10,.88);border:1px solid rgba(57,255,20,.45);color:var(--neon);font-size:10px;font-weight:800;padding:4px 9px;border-radius:6px;backdrop-filter:blur(4px);letter-spacing:-.2px}
+.venue-spot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:0 16px 24px}
+.d-desc{font-size:14px;color:#ccc;line-height:1.65;font-weight:500;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;border-left:3px solid var(--neon)}
+.d-hero-cap{position:absolute;left:12px;right:12px;bottom:52px;z-index:2;font-size:11px;color:#ddd;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;text-shadow:0 1px 6px rgba(0,0,0,.9)}
 .mc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
 .mc-tl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 .mc-dbtn{background:transparent;border:1px solid var(--border2);color:var(--text-dim);font-size:11px;font-family:'Noto Sans KR',sans-serif;padding:5px 11px;border-radius:6px;cursor:pointer;transition:all .15s}
@@ -329,13 +336,18 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .d-sticky{position:sticky;bottom:0;background:rgba(10,10,10,.96);border-top:1px solid var(--border);padding:11px 16px;display:flex;gap:9px;z-index:50;backdrop-filter:blur(8px)}
 #detailScreen.active{background:#050505}
 #detailScreen.active #detailContent{max-width:480px;margin:0 auto;min-height:100%;width:100%}
+#venueScreen.active{background:#050505}
+#venueScreen.active #venueContent{max-width:960px;margin:0 auto;min-height:100%;width:100%}
 @media(min-width:768px){
   .d-hero{height:160px}
   .d-body{max-width:920px;padding-bottom:88px}
   .d-body-desktop-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
-  .d-body-desktop-grid .d-sec:nth-child(1){grid-column:1}
-  .d-body-desktop-grid .d-sec:nth-child(2){grid-column:2;grid-row:1 / span 2;border-bottom:none}
-  .d-body-desktop-grid .d-sec:nth-child(3){grid-column:1 / -1}
+  .d-body-desktop-grid .d-sec-intro{grid-column:1 / -1}
+  .d-body-desktop-grid .d-sec-gauge{grid-column:1}
+  .d-body-desktop-grid .d-sec-guide{grid-column:2;grid-row:2 / span 2;border-bottom:none}
+  .d-body-desktop-grid .d-sec-reviews{grid-column:1 / -1}
+  .d-body-desktop-grid:not(:has(.d-sec-intro)) .d-sec-gauge{grid-row:1}
+  .d-body-desktop-grid:not(:has(.d-sec-intro)) .d-sec-guide{grid-row:1 / span 2}
   .d-sticky{max-width:920px;margin:0 auto;left:0;right:0}
   .topbar{max-width:920px;margin:0 auto;left:0;right:0}
   .d-hero{max-width:920px;margin:0 auto}
@@ -629,6 +641,11 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   <div class="m-cards" id="cardList"></div>
 </div>
 
+<!-- ════════════ ②b VENUE (multi-activity) ════════════ -->
+<div class="screen hidden" id="venueScreen">
+  <div id="venueContent"></div>
+</div>
+
 <!-- ════════════ ③ DETAIL ════════════ -->
 <div class="screen hidden" id="detailScreen">
   <div id="detailContent"></div>
@@ -786,6 +803,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 const DEFAULT_SPOTS = [];
 
 let SPOTS = [];
+let VENUES = [];
 
 function reloadSpots() {
   return DopamineStore.fetchAllSpots()
@@ -796,6 +814,37 @@ function reloadSpots() {
       console.warn("스팟 API 로드 실패", e);
       SPOTS = [];
     });
+}
+
+function reloadVenues() {
+  return DopamineStore.fetchAllVenues()
+    .then((list) => {
+      VENUES = enrichVenues(list || []);
+    })
+    .catch((e) => {
+      console.warn("장소 API 로드 실패", e);
+      VENUES = [];
+    });
+}
+
+function reloadSpotAndVenueData() {
+  return reloadSpots().then(() => reloadVenues());
+}
+
+function enrichVenues(list) {
+  return list.map((v) => {
+    const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+    return Object.assign({}, v, {
+      _th: spot ? spot.th : 3,
+      _fe: spot ? spot.fe : 3,
+      _sp: spot ? spot.sp : 0,
+    });
+  });
+}
+
+function getVenue(id) {
+  const num = Number(id);
+  return VENUES.find((v) => v.id === num);
 }
 
 function getSpot(id) {
@@ -928,7 +977,7 @@ function syncSearchInputs(fromId) {
 
 function onSearchInputChanged(fromId) {
   syncSearchInputs(fromId);
-  renderCards(getDisplayedSpots());
+  renderCards(getDisplayedVenues());
   if (kakaoMap) {
     renderKakaoMarkers(currentFilter || 'all');
     const visible = getMapVisibleSpots(currentFilter || 'all');
@@ -946,17 +995,44 @@ function getMapVisibleSpots(filter) {
   });
 }
 
-function getDisplayedSpots() {
+function getDisplayedVenues() {
   const f = document.querySelector('.mfb.active')?.dataset.f || 'thrill';
   const q = getSpotSearchQuery();
-  let list = sortSpots(f);
-  if (q) list = list.filter((a) => DopamineStore.matchSpotSearch(a, q));
+  let list = sortVenues(f);
+  if (q) list = list.filter((v) => matchVenueSearch(v, q));
   return list;
+}
+
+function getVenueMemberSpots(v) {
+  if (v.spotCount === 1 && v.primarySpotId) {
+    const spot = getSpot(v.primarySpotId);
+    return spot ? [spot] : [];
+  }
+  return SPOTS.filter((s) => s.venueId === v.id);
+}
+
+function matchVenueSearch(v, query) {
+  if (v.spotCount === 1 && v.primarySpotId) {
+    const spot = getSpot(v.primarySpotId);
+    if (spot) return DopamineStore.matchSpotSearch(spot, query);
+  }
+  const members = getVenueMemberSpots(v);
+  if (members.length) {
+    return members.some((s) => DopamineStore.matchSpotSearch(s, query));
+  }
+  return DopamineStore.matchSpotSearch({
+    name: v.name || '',
+    addr: v.address || '',
+    br: v.description || '',
+    tags: [],
+  }, query);
 }
 
 /* ═══════════════════════════════════════
    STATE
 ═══════════════════════════════════════ */
+let currentVenueId = 0;
+let venueReturnScreen = 'mainScreen';
 let currentId = 0;
 let prevScreen = 'mainScreen';
 let mapReturnScreen = 'mainScreen';
@@ -1059,7 +1135,7 @@ function goToMainScreen() {
   resetDiagnosisView();
   clearMapSpotSelection();
 
-  ['onboardScreen', 'detailScreen', 'reviewScreen', 'mapScreen'].forEach((id) => {
+  ['onboardScreen', 'venueScreen', 'detailScreen', 'reviewScreen', 'mapScreen'].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.remove('active', 'slide-left');
@@ -1077,7 +1153,7 @@ function goToMainScreen() {
   detailReturnScreen = 'mainScreen';
   mapReturnScreen = 'mainScreen';
 
-  renderCards(getDisplayedSpots());
+  renderCards(getDisplayedVenues());
   loadSavedDiagnosisChip();
 
   if (kakaoMap) {
@@ -1238,7 +1314,7 @@ async function handleAuthClick() {
     } catch (_) {}
     currentUser = null;
     updateAuthButton();
-    renderCards(getDisplayedSpots());
+    renderCards(getDisplayedVenues());
     await loadSavedDiagnosisChip();
     showToast('로그아웃 되었습니다');
     return;
@@ -1258,7 +1334,7 @@ async function saveDiagnosisResult(result) {
 }
 
 function slide(fromId, toId) {
-  const order = ['onboardScreen','mainScreen','detailScreen','reviewScreen','mapScreen'];
+  const order = ['onboardScreen','mainScreen','venueScreen','detailScreen','reviewScreen','mapScreen'];
   const fi = order.indexOf(fromId), ti = order.indexOf(toId);
   const from = document.getElementById(fromId);
   const to = document.getElementById(toId);
@@ -1308,15 +1384,17 @@ function spotThumbMedia(a, size) {
 }
 
 /** 메인 목록 카드 HTML (상세 전 미리보기 — 메인 전용) */
-function renderSpotCardHtml(a) {
+function renderSpotCardHtml(a, opts) {
   const id = a.id;
   const bg = a.bg || '#1a0a2e';
   const tags = (a.tags || []).map(t => `<span class="mc-tag">${t}</span>`).join('');
+  const click = (opts && opts.onClick) ? opts.onClick : `goDetail(${id})`;
   return `
-    <div class="mc" onclick="goDetail(${id})">
+    <div class="mc" onclick="${click}">
       <div class="mc-img" style="background:${bg}">
         ${spotCardMedia(a)}
         <div class="mc-ov"></div>
+        ${a.br ? `<div class="mc-img-cap"><div class="mc-img-cap-tl">이곳은?</div><div class="mc-img-cap-tx">${a.br}</div></div>` : ''}
         <div class="mc-rb">${a.rank || ''}</div>
         <div class="mc-tb">${a.ts || ''}</div>
       </div>
@@ -1336,6 +1414,147 @@ function renderSpotCardHtml(a) {
         </div>
       </div>
     </div>`;
+}
+
+function venueCardMedia(v) {
+  const img = v.mainImage || '';
+  if (img && DopamineStore.hasSpotImage({ img: img })) {
+    return `<img class="spot-cover-img" src="${img}" alt="${escAttr(v.name)}"/>`;
+  }
+  const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+  if (spot && spotHasImg(spot)) {
+    return `<img class="spot-cover-img" src="${spot.img}" alt="${escAttr(v.name)}"/>`;
+  }
+  return `<span class="spot-emoji">${spot && spot.em ? spot.em : '📍'}</span>`;
+}
+
+/** VenueCard — 메인 리스트용 */
+function renderVenueCardHtml(v) {
+  const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+  const bg = spot && spot.bg ? spot.bg : '#1a0a2e';
+  const badge = v.spotCount > 1
+    ? `<div class="mc-venue-badge">${v.spotCount}개 체험</div>`
+    : '';
+  const tl = v.spotCount > 1 ? '복합 체험장' : (spot && spot.tl ? spot.tl : '액티비티');
+  const chip = spot ? chipClass(spot) : 't-custom';
+  const ts = spot && v.spotCount === 1 ? (spot.ts || '') : '';
+  const rank = spot && v.spotCount === 1 ? (spot.rank || '') : '';
+  const th = v._th || (spot ? spot.th : 3);
+  const desc = spot && v.spotCount === 1 ? (spot.br || '') : (v.description || '');
+  const cap = desc
+    ? `<div class="mc-img-cap"><div class="mc-img-cap-tl">이곳은?</div><div class="mc-img-cap-tx">${desc}</div></div>`
+    : '';
+  const memberSpots = getVenueMemberSpots(v);
+  const tagList = [];
+  memberSpots.forEach((s) => {
+    (s.tags || []).forEach((t) => {
+      if (tagList.indexOf(t) === -1) tagList.push(t);
+    });
+  });
+  const tags = tagList.map((t) => `<span class="mc-tag">${t}</span>`).join('');
+  return `
+    <div class="mc" onclick="goVenue(${v.id})">
+      <div class="mc-img" style="background:${bg}">
+        ${venueCardMedia(v)}
+        <div class="mc-ov"></div>
+        ${badge}
+        ${cap}
+        <div class="mc-rb">${rank}</div>
+        <div class="mc-tb">${ts}</div>
+      </div>
+      <div class="mc-body">
+        <span class="chip ${chip}">${tl}</span>
+        <p class="mc-name">${v.name}</p>
+        <p class="mc-addr">📍 ${v.address || (spot ? spot.addr : '')}</p>
+        <div class="mc-tags">${tags}</div>
+        <div class="mc-div"></div>
+        <p class="mc-review">${desc}</p>
+        <div class="mc-footer">
+          <div>
+            <p class="mc-tl">${v.spotCount > 1 ? '체험 수' : '스릴 지수'}</p>
+            <p style="font-size:13px">${v.spotCount > 1 ? `${v.spotCount}개` : fireStars(th)}</p>
+          </div>
+          <button type="button" class="mc-dbtn">${v.spotCount > 1 ? '체험 보기 →' : detailButtonLabel()}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/** VenueDetail — venue 내부 액티비티 목록 */
+function renderVenueDetailView(venue) {
+  const spots = venue.spots || [];
+  const cards = spots.map((s) =>
+    renderSpotCardHtml(s, { onClick: `goDetail(${s.id}, false, 'venueScreen')` })
+  ).join('');
+  document.getElementById('venueContent').innerHTML = `
+    <div class="topbar">
+      <button class="back-btn" onclick="goFromVenue()">← 뒤로</button>
+      <div class="topbar-actions">
+        <button type="button" class="icon-btn" onclick="goFromVenue()" aria-label="닫기">✕</button>
+        <button type="button" class="app-menu-btn" onclick="openAppMenu()" aria-label="메뉴 열기">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="d-hero" style="background:#1a0a2e;min-height:180px">
+      <div class="d-hero-ov"></div>
+      ${venue.mainImage && DopamineStore.hasSpotImage({ img: venue.mainImage })
+        ? `<img class="spot-hero-img" src="${venue.mainImage}" alt="${escAttr(venue.name)}"/>`
+        : `<span class="d-hero-em">📍</span>`}
+      <div class="d-hero-ct">
+        <span class="chip t-custom" style="margin-bottom:6px;display:inline-flex">${venue.spotCount}개 체험</span>
+        <p class="d-title">${venue.name}</p>
+        <p class="d-addr">📍 ${venue.address || ''}</p>
+      </div>
+    </div>
+    <div class="d-body" style="padding-top:16px">
+      ${venue.description ? `<div class="d-sec" style="padding-top:0">
+        <p class="sec-label">이곳은?</p>
+        <p class="d-desc">${venue.description}</p>
+      </div>` : ''}
+      <p class="sec-label" style="padding:0 16px 12px">이 장소의 체험 ${spots.length}개</p>
+      <div class="venue-spot-grid">${cards || '<p style="padding:0 16px;color:var(--text-muted);font-size:13px">등록된 체험이 없습니다.</p>'}</div>
+    </div>`;
+}
+
+function goVenue(id) {
+  const v = getVenue(id);
+  if (!v) return;
+  if (v.spotCount === 1 && v.primarySpotId) {
+    goDetail(v.primarySpotId);
+    return;
+  }
+  openVenueDetail(id);
+}
+
+async function openVenueDetail(id) {
+  venueReturnScreen = document.querySelector('.screen.active')?.id || 'mainScreen';
+  currentVenueId = Number(id);
+  try {
+    const venue = await DopamineStore.fetchVenueById(id);
+    renderVenueDetailView(venue);
+    slide(venueReturnScreen, 'venueScreen');
+  } catch (e) {
+    console.warn('venue load failed', e);
+    showToast('장소 정보를 불러올 수 없습니다');
+  }
+}
+
+function goFromVenue() {
+  const toId = venueReturnScreen || 'mainScreen';
+  const venue = document.getElementById('venueScreen');
+  if (venue) {
+    venue.classList.remove('active');
+    venue.classList.add('hidden');
+  }
+  const to = document.getElementById(toId);
+  if (!to) {
+    goMain();
+    return;
+  }
+  to.classList.remove('hidden', 'slide-left');
+  to.classList.add('active');
+  to.scrollTop = 0;
 }
 
 /* ═══════════════════════════════════════
@@ -1662,7 +1881,7 @@ async function loadSavedDiagnosisChip() {
 function enterMain(fromFirstDiagnosis) {
   markOnboardingDone();
   resetDiagnosisView();
-  reloadSpots().then(() => {
+  reloadSpotAndVenueData().then(() => {
     const ob = document.getElementById('onboardScreen');
     const main = document.getElementById('mainScreen');
     ob.classList.remove('active');
@@ -1670,7 +1889,7 @@ function enterMain(fromFirstDiagnosis) {
     main.classList.remove('hidden', 'slide-left');
     main.classList.add('active');
     prevScreen = 'mainScreen';
-    renderCards(getDisplayedSpots());
+    renderCards(getDisplayedVenues());
     loadSavedDiagnosisChip();
     if (fromFirstDiagnosis) {
       promptLoginAfterOnboarding();
@@ -1719,8 +1938,16 @@ function renderCards(data) {
     document.getElementById('resultCount').textContent = 0;
     return;
   }
-  document.getElementById('cardList').innerHTML = data.map(a => renderSpotCardHtml(a)).join('');
+  document.getElementById('cardList').innerHTML = data.map(v => renderVenueCardHtml(v)).join('');
   document.getElementById('resultCount').textContent = data.length;
+}
+
+function sortVenues(f) {
+  const d = [...VENUES];
+  if (f === 'thrill') d.sort((a,b) => b._th - a._th);
+  else if (f === 'fear') d.sort((a,b) => b._fe - a._fe);
+  else if (f === 'speed') d.sort((a,b) => b._sp - a._sp);
+  return d;
 }
 
 function sortSpots(f) {
@@ -1739,7 +1966,7 @@ document.getElementById('filterRow').addEventListener('click', e => {
   const f = btn.dataset.f;
   const labels = {thrill:'스릴 지수 높은 순', fear:'공포도 높은 순', speed:'최고 속도 높은 순'};
   document.getElementById('sortInfo').textContent = labels[f];
-  renderCards(getDisplayedSpots());
+  renderCards(getDisplayedVenues());
 });
 
 document.getElementById('searchInput').addEventListener('input', () => {
@@ -1779,6 +2006,7 @@ function renderDetailView(a, fromReview=false, returnTo=null) {
     <div class="d-hero" style="background:${a.bg}">
       <div class="d-hero-ov"></div>
       ${spotHeroMedia(a)}
+      ${a.br ? `<p class="d-hero-cap">${a.br}</p>` : ''}
       <div class="d-hero-ct">
         <span class="chip ${chipClass(a)}" style="margin-bottom:6px;display:inline-flex">${a.tl}</span>
         <p class="d-title">${a.name}</p>
@@ -1786,7 +2014,11 @@ function renderDetailView(a, fromReview=false, returnTo=null) {
       </div>
     </div>
     <div class="d-body d-body-desktop-grid">
-      <div class="d-sec">
+      ${a.br ? `<div class="d-sec d-sec-intro" style="padding-top:12px">
+        <p class="sec-label">이곳은?</p>
+        <p class="d-desc">${a.br}</p>
+      </div>` : ''}
+      <div class="d-sec d-sec-gauge">
         <p class="sec-label">스릴 지수 분석</p>
         <div class="gauge-row">
           <div class="gauge-lbl"><span class="gauge-name">🔴 공포도</span><span class="gauge-val" style="color:var(--red)">${a.fp}%</span></div>
@@ -1806,14 +2038,14 @@ function renderDetailView(a, fromReview=false, returnTo=null) {
           <span class="stars-num">${a.th}.0</span>
         </div>
       </div>
-      <div class="d-sec">
+      <div class="d-sec d-sec-guide">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
           <span style="font-size:13px;font-weight:700;color:var(--red)">💀 생존 가이드</span>
           <span style="background:#2a0000;color:#ff6666;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #4a0000">MUST READ</span>
         </div>
         ${wHTML}
       </div>
-      <div class="d-sec" style="border-bottom:none">
+      <div class="d-sec d-sec-reviews" style="border-bottom:none">
         <p class="sec-label" style="margin-bottom:11px">생존 리뷰 ${(a.reviews || []).length}개</p>
         ${rHTML || '<p style="font-size:12px;color:var(--text-muted)">아직 리뷰가 없습니다. 첫 생존자가 되어 보세요.</p>'}
       </div>
@@ -2314,14 +2546,14 @@ function goMap() {
 ═══════════════════════════════════════ */
 async function bootApp() {
   migrateLegacyDiagnosisStorage();
-  await reloadSpots();
+  await reloadSpotAndVenueData();
   await refreshAuth();
 
   const onboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
   if (!onboardingDone) {
     startOnboardingFlow();
   } else {
-    renderCards(getDisplayedSpots());
+    renderCards(getDisplayedVenues());
     await loadSavedDiagnosisChip();
   }
 

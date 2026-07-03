@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from server.migrations.runner import apply_pending_migrations
+
 
 def _resolve_data_dir() -> Path:
     raw = os.getenv("DOPAMINE_DATA_DIR", "").strip()
@@ -101,9 +103,11 @@ def init_db() -> None:
         )
         conn.commit()
 
+    apply_pending_migrations(DB_PATH)
+
 
 def row_to_spot(row: sqlite3.Row) -> dict:
-    return {
+    spot = {
         "id": row["id"],
         "name": row["name"],
         "addr": row["addr"],
@@ -132,6 +136,9 @@ def row_to_spot(row: sqlite3.Row) -> dict:
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
     }
+    if "venue_id" in row.keys():
+        spot["venueId"] = row["venue_id"]
+    return spot
 
 
 def row_to_spot_summary(row: sqlite3.Row) -> dict:

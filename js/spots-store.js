@@ -431,6 +431,14 @@
     return apiFetch("/api/spots");
   }
 
+  async function fetchAllVenues() {
+    return apiFetch("/api/venues");
+  }
+
+  async function fetchVenueById(id) {
+    return apiFetch("/api/venues/" + Number(id));
+  }
+
   async function verifyAdminPassword(adminPassword) {
     await apiFetch("/api/admin/verify", {
       method: "POST",
@@ -555,6 +563,8 @@
     upsertCustomSpot,
     deleteCustomSpot,
     fetchAllSpots,
+    fetchAllVenues,
+    fetchVenueById,
     fetchSpotById,
     fetchAuthMe,
     recordVisit,
