@@ -1,0 +1,37 @@
+[
+  {
+    "name": "인제엑스게임리조트",
+    "representative_id": 261,
+    "spot_ids": [261, 265, 68]
+  },
+  {
+    "name": "하동알프스레포츠(금오산)",
+    "representative_id": 262,
+    "spot_ids": [262, 53]
+  },
+  {
+    "name": "제천청풍랜드",
+    "representative_id": 72,
+    "spot_ids": [72, 263]
+  },
+  {
+    "name": "대천짚트랙타워",
+    "representative_id": 271,
+    "spot_ids": [271, 273, 272]
+  },
+  {
+    "name": "단양만천하스카이워크",
+    "representative_id": 17,
+    "spot_ids": [17, 20, 23, 25, 57]
+  },
+  {
+    "name": "해남땅끝마을스카이워크",
+    "representative_id": 21,
+    "spot_ids": [21, 26]
+  },
+  {
+    "name": "거제바람의(도장포)",
+    "representative_id": 241,
+    "spot_ids": [241, 259]
+  }
+]
