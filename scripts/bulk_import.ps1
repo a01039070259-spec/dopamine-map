@@ -50,10 +50,9 @@ foreach ($k in $typeMetaRaw.PSObject.Properties.Name) {
 function Get-ExistingSpotNames {
   for ($try = 1; $try -le 8; $try++) {
     try {
-      $text = Invoke-CurlJson -Method "GET" -Url ($base + "/api/spots")
-      if (-not $text -or $text.Trim().Length -lt 2) { throw "empty response" }
+      $list = Invoke-RestMethod -Uri ($base + "/api/spots") -TimeoutSec 90
       $names = @{}
-      foreach ($s in ($text | ConvertFrom-Json)) { $names[[string]$s.name] = $true }
+      foreach ($s in @($list)) { $names[[string]$s.name] = $true }
       return $names
     } catch {
       if ($try -ge 8) { throw "failed to load existing spots: $_" }

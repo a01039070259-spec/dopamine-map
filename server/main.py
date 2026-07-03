@@ -25,6 +25,7 @@ from server.database import (
     create_spot,
     delete_spot,
     get_admin_stats,
+    get_persistence_info,
     get_spot,
     get_spot_detail,
     get_user_by_id,
@@ -97,7 +98,8 @@ def on_startup() -> None:
 
 @app.get("/api/health")
 def health():
-    return {"ok": True}
+    info = get_persistence_info()
+    return {"ok": True, **info}
 
 
 @app.post("/api/admin/verify")

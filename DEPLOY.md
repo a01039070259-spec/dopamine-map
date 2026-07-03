@@ -80,6 +80,17 @@ Blueprint 생성 시 `render-free.yaml` 파일을 `render.yaml`로 복사해 커
 `render.yaml`은 **Starter 플랜 + 1GB 디스크**(`/app/data`)를 사용합니다.  
 무료 플랜만 쓰면 재배포 시 SQLite가 초기화될 수 있습니다.
 
+**Render 대시보드에서 꼭 확인:**
+
+1. [dashboard.render.com](https://dashboard.render.com) → **dopamine-map** 서비스
+2. **Settings** → **Instance Type** = **Starter** (Free 아님)
+3. **Disks** → `dopamine-data` · mount `/app/data` · **Attached**
+4. Blueprint 변경 후 **Sync** 버튼이 보이면 클릭 → Apply
+
+**디스크 연결 확인:** `https://YOUR-APP.onrender.com/api/health`  
+`dataDirWritable: true`, `spotCount` > 0 이면 정상.  
+재배포 후 `spotCount: 0` 이면 디스크 미연결 → `scripts\deploy_restore.ps1` 실행.
+
 ---
 
 ## 3. 배포 후 사용법
@@ -89,7 +100,7 @@ Blueprint 생성 시 `render-free.yaml` 파일을 `render.yaml`로 복사해 커
 3. 스팟 등록 → DB 저장 → 사용자 화면에 즉시 반영
 4. `/admin.html` URL은 외부에 공유하지 마세요
 
-헬스 체크: `https://YOUR-APP.onrender.com/api/health` → `{"ok":true}`
+헬스 체크: `https://YOUR-APP.onrender.com/api/health` → `ok`, `spotCount`, `dataDirWritable` 확인
 
 ---
 

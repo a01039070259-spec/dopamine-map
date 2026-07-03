@@ -1,14 +1,24 @@
 # Render Starter + Persistent Disk — SQLite 유지 (월 약 $7)
 # 무료 플랜(render-free.yaml)은 재배포 시 DB 초기화됨
+#
+# Blueprint 동기화 후 Render 대시보드에서 확인:
+#   Settings → Instance Type = Starter
+#   Disks → dopamine-data @ /app/data = Attached
 services:
   - type: web
     name: dopamine-map
     runtime: docker
     plan: starter
+    region: singapore
     healthCheckPath: /api/health
+    autoDeployTrigger: commit
     envVars:
       - key: ADMIN_PASSWORD
         sync: false
+      - key: DOPAMINE_DATA_DIR
+        value: /app/data
+      - key: APP_BASE_URL
+        value: https://dopamine-map.onrender.com
     disk:
       name: dopamine-data
       mountPath: /app/data

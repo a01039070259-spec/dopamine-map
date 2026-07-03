@@ -1,10 +1,20 @@
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "dopamine.db"
+
+def _resolve_data_dir() -> Path:
+    raw = os.getenv("DOPAMINE_DATA_DIR", "").strip()
+    if raw:
+        return Path(raw)
+    return Path(__file__).resolve().parent.parent / "data"
+
+
+DATA_DIR = _resolve_data_dir()
+DB_PATH = DATA_DIR / "dopamine.db"
 
 
 def now_iso() -> str:
@@ -16,7 +26,7 @@ def today_utc() -> str:
 
 
 def get_conn() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -381,6 +391,30 @@ def record_visit(user_id: Optional[int] = None) -> None:
             (user_id, now_iso()),
         )
         conn.commit()
+
+
+def get_persistence_info() -> dict:
+    writable = False
+    probe = DATA_DIR / ".write_probe"
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        probe.write_text("ok", encoding="utf-8")
+        writable = probe.is_file()
+        probe.unlink(missing_ok=True)
+    except OSError:
+        writable = False
+
+    with get_conn() as conn:
+        spot_count = conn.execute("SELECT COUNT(*) AS c FROM spots").fetchone()["c"]
+
+    return {
+        "dataDir": str(DATA_DIR),
+        "dataDirWritable": writable,
+        "dbExists": DB_PATH.is_file(),
+        "dbPath": str(DB_PATH),
+        "spotCount": spot_count,
+        "persistentDiskExpected": str(DATA_DIR) == "/app/data",
+    }
 
 
 def get_admin_stats() -> dict:
