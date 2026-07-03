@@ -524,6 +524,13 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 </style>
 </head>
 <body>
+<noscript>
+  <div style="max-width:720px;margin:0 auto;padding:24px 20px 32px;background:#111;color:#ccc;font-family:'Noto Sans KR',sans-serif;line-height:1.7">
+    <h1 style="color:#39ff14;font-size:22px;margin-bottom:12px">도파민 지도 ⚡</h1>
+    <p>전국 짚라인·번지·패러글라이딩·제트보트·스피드보트·실탄사격·동굴탐험·행글라이더 등 하드코어 액티비티 스팟 정보, 스릴 지수, 생존 가이드, 지도 검색 서비스입니다.</p>
+    <p><a href="/sitemap.xml" style="color:#39ff14">사이트맵(sitemap.xml)</a> · JavaScript를 켜면 앱을 이용할 수 있습니다.</p>
+  </div>
+</noscript>
 <div class="app" id="app">
 
 <!-- ════════════ ① 자가진단 ════════════ -->
@@ -2376,7 +2383,7 @@ async function bootApp() {
 
   updateAppMenu();
 
-  const pendingDetail = sessionStorage.getItem(SS_PENDING_DETAIL) || params.get('openDetail');
+  const pendingDetail = sessionStorage.getItem(SS_PENDING_DETAIL) || params.get('openDetail') || params.get('spot');
   if (pendingDetail) {
     sessionStorage.removeItem(SS_PENDING_DETAIL);
     history.replaceState({}, '', location.pathname);

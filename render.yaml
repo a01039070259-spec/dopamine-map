@@ -19,6 +19,10 @@ services:
         value: /app/data
       - key: APP_BASE_URL
         value: https://dopamine-map.onrender.com
+      - key: GOOGLE_SITE_VERIFICATION
+        sync: false
+      - key: NAVER_SITE_VERIFICATION
+        sync: false
     disk:
       name: dopamine-data
       mountPath: /app/data

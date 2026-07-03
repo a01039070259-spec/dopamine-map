@@ -9,7 +9,7 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from server.auth import (
@@ -18,6 +18,12 @@ from server.auth import (
     get_user_from_request,
     require_user,
     set_auth_cookie,
+)
+from server.seo import (
+    build_robots_txt,
+    build_sitemap_xml,
+    build_spot_page_html,
+    inject_home_seo,
 )
 from server.database import (
     clear_all_login_data,
@@ -48,6 +54,8 @@ KAKAO_REDIRECT_URI = os.getenv(
     "https://dopamine-map.onrender.com/auth/kakao/callback",
 )
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://dopamine-map.onrender.com")
+GOOGLE_SITE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION", "")
+NAVER_SITE_VERIFICATION = os.getenv("NAVER_SITE_VERIFICATION", "")
 
 
 def login_fail_redirect(reason: str) -> RedirectResponse:
@@ -383,6 +391,48 @@ def api_get_diagnosis(request: Request):
     if not db_user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
     return {"result": db_user.get("diagnosisResult")}
+
+
+def _home_html() -> str:
+    index_path = ROOT / "index.html"
+    html_text = index_path.read_text(encoding="utf-8")
+    return inject_home_seo(
+        html_text,
+        APP_BASE_URL,
+        GOOGLE_SITE_VERIFICATION,
+        NAVER_SITE_VERIFICATION,
+    )
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+def robots_txt():
+    return PlainTextResponse(
+        build_robots_txt(APP_BASE_URL),
+        media_type="text/plain; charset=utf-8",
+    )
+
+
+@app.get("/sitemap.xml", response_class=PlainTextResponse)
+def sitemap_xml():
+    spots = list_spots()
+    return PlainTextResponse(
+        build_sitemap_xml(APP_BASE_URL, spots),
+        media_type="application/xml; charset=utf-8",
+    )
+
+
+@app.get("/spot/{spot_id}", response_class=HTMLResponse)
+def spot_landing(spot_id: int):
+    spot = get_spot(spot_id)
+    if not spot or not spot.get("approved", True):
+        raise HTTPException(status_code=404, detail="스팟을 찾을 수 없습니다")
+    return HTMLResponse(build_spot_page_html(spot, APP_BASE_URL))
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
+def serve_home():
+    return HTMLResponse(_home_html())
 
 
 app.mount("/", StaticFiles(directory=str(ROOT), html=True), name="site")

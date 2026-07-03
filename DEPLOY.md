@@ -136,6 +136,39 @@ docker run -p 8080:8080 -e ADMIN_PASSWORD=your-secret -v dopamine-data:/app/data
 
 ---
 
+## 6. Google · 네이버 검색 등록 (SEO)
+
+배포 후 아래 URL이 열려야 합니다.
+
+| URL | 용도 |
+|------|------|
+| `https://YOUR-APP.onrender.com/robots.txt` | 크롤러 허용 + 사이트맵 위치 |
+| `https://YOUR-APP.onrender.com/sitemap.xml` | 전체 페이지·스팟 URL 목록 |
+| `https://YOUR-APP.onrender.com/spot/1` | 스팟별 검색용 공개 페이지 (예시) |
+
+### Google Search Console
+
+1. [Google Search Console](https://search.google.com/search-console) → 속성 추가 → URL 접두어  
+   `https://dopamine-map.onrender.com`
+2. **HTML 태그** 방식 선택 → `content="..."` 값 복사
+3. Render **Environment** → `GOOGLE_SITE_VERIFICATION` 에 붙여넣기 → 재배포
+4. Search Console에서 **소유권 확인**
+5. **Sitemaps** → `https://dopamine-map.onrender.com/sitemap.xml` 제출
+6. **URL 검사** → `https://dopamine-map.onrender.com/` 색인 요청
+
+### 네이버 서치어드바이저
+
+1. [네이버 서치어드바이저](https://searchadvisor.naver.com/) → 사이트 등록  
+   `https://dopamine-map.onrender.com`
+2. **HTML 메타태그** 인증 → `content="..."` 값 복사
+3. Render **Environment** → `NAVER_SITE_VERIFICATION` 에 붙여넣기 → 재배포
+4. **사이트맵 제출** → `https://dopamine-map.onrender.com/sitemap.xml`
+5. **웹 페이지 수집 요청** (선택) → 메인 URL 요청
+
+> 색인까지 **수일~2주** 걸릴 수 있습니다. 스팟 페이지(`/spot/123`)가 많을수록 「짚라인 ○○」 같은 검색에 유리합니다.
+
+---
+
 ## 파일 구조
 
 ```
