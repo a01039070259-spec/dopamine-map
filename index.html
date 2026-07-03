@@ -486,8 +486,6 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .dopamine-marker.selected{transform:translateX(-50%) translateY(calc(-100% - 12px));z-index:500}
 .dopamine-marker.selected .dm-bubble{box-shadow:0 8px 22px rgba(0,0,0,.55),0 0 18px rgba(57,255,20,.4)}
 .dopamine-marker.selected .dm-bubble.skull{box-shadow:0 8px 22px rgba(0,0,0,.55),0 0 18px rgba(255,68,68,.4)}
-.dopamine-marker.selected .dm-hint{display:block}
-.dm-hint{display:none;margin-top:4px;font-size:9px;font-weight:700;color:var(--neon);letter-spacing:.02em;text-align:center;white-space:nowrap}
 .dm-bubble{background:#0a0a0a;border:2px solid var(--neon);border-radius:12px;padding:7px 9px;display:flex;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(0,0,0,.45),0 0 12px rgba(57,255,20,.25);transition:transform .15s,box-shadow .15s;max-width:168px}
 .dm-bubble:active{transform:scale(.97)}
 .dm-bubble.skull{border-color:var(--red);box-shadow:0 4px 16px rgba(0,0,0,.45),0 0 12px rgba(255,68,68,.25)}
@@ -1883,6 +1881,7 @@ function goFromDetail() {
   to.scrollTop = 0;
 
   if (toId === 'mapScreen' && kakaoMap) {
+    clearMapSpotSelection();
     setTimeout(() => {
       syncMapChromeHeight();
       kakaoMap.relayout();
@@ -2106,7 +2105,6 @@ function makeMarkerHTML(a) {
         <div class="dm-meta">
           <div class="dm-type">${a.tl || ''}</div>
           <div class="dm-name">${a.name}</div>
-          <div class="dm-hint">한 번 더 탭 → 상세</div>
         </div>
       </div>
     </div>`;
@@ -2118,7 +2116,6 @@ function makeMarkerHTML(a) {
         <div class="dm-meta">
           <div class="dm-type">${a.tl || ''}</div>
           <div class="dm-name">${a.name}</div>
-          <div class="dm-hint">한 번 더 탭 → 상세</div>
         </div>
       </div>
     </div>`;
@@ -2135,10 +2132,6 @@ function selectMapSpot(id, ev) {
     ev.stopPropagation();
     if (ev.preventDefault) ev.preventDefault();
   }
-  if (selectedMapSpotId === id) {
-    goDetail(id, false, 'mapScreen');
-    return;
-  }
   selectedMapSpotId = id;
   currentId = id;
   const a = getSpot(id);
@@ -2146,6 +2139,7 @@ function selectMapSpot(id, ev) {
     kakaoMap.panTo(new kakao.maps.LatLng(a.lat, a.lng));
   }
   renderKakaoMarkers(currentFilter || 'all');
+  goDetail(id, false, 'mapScreen');
 }
 
 function syncMapChromeHeight() {

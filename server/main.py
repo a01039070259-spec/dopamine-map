@@ -54,6 +54,7 @@ KAKAO_REDIRECT_URI = os.getenv(
     "https://dopamine-map.onrender.com/auth/kakao/callback",
 )
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://dopamine-map.onrender.com")
+# SEO: Search Console / 네이버 소유확인 — 코드 정리·리팩터 시 삭제 금지 (see .cursor/rules/seo-verification.mdc)
 GOOGLE_SITE_VERIFICATION = os.getenv(
     "GOOGLE_SITE_VERIFICATION",
     "myCeWNY3QMXhBpvuo_WKHnf6qCDLOx6gBNb2iNnqEdw",

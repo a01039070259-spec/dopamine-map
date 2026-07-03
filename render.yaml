@@ -19,6 +19,7 @@ services:
         value: /app/data
       - key: APP_BASE_URL
         value: https://dopamine-map.onrender.com
+      # SEO 소유확인 — 삭제 금지 (.cursor/rules/seo-verification.mdc)
       - key: GOOGLE_SITE_VERIFICATION
         value: myCeWNY3QMXhBpvuo_WKHnf6qCDLOx6gBNb2iNnqEdw
       - key: NAVER_SITE_VERIFICATION

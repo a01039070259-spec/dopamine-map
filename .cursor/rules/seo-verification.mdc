@@ -1,0 +1,28 @@
+---
+description: Preserve Google/Naver Search Console verification meta tags (DO NOT DELETE)
+globs: server/main.py,server/seo.py,render.yaml,index.html
+alwaysApply: true
+---
+
+# SEO site verification — do not remove
+
+Google Search Console and Naver Search Advisor ownership depend on meta tags injected on the homepage (`/` and `/index.html`).
+
+## Protected locations
+
+| File | What to keep |
+|------|----------------|
+| `server/main.py` | `GOOGLE_SITE_VERIFICATION`, `NAVER_SITE_VERIFICATION` env defaults + `_home_html()` / `serve_home()` |
+| `server/seo.py` | `inject_home_seo()` must emit both `<meta name="google-site-verification">` and `<meta name="naver-site-verification">` |
+| `render.yaml` | Both env var keys and values for production |
+
+## Current verification values (change only when re-verifying in consoles)
+
+- Google: `myCeWNY3QMXhBpvuo_WKHnf6qCDLOx6gBNb2iNnqEdw`
+- Naver: `7b004530b3cb9a6352464fe49a6958b2a6916670`
+
+## When refactoring
+
+- Do **not** delete verification constants, `inject_home_seo` meta lines, or `serve_home()` route.
+- Do **not** replace dynamic homepage serving with static-only `index.html` without re-injecting both tags.
+- If moving SEO code, move it — do not drop it during cleanup.

@@ -154,6 +154,7 @@ footer a{{color:#39ff14}}
 
 
 def inject_home_seo(html_text: str, base_url: str, google_verification: str = "", naver_verification: str = "") -> str:
+    # DO NOT REMOVE: google-site-verification / naver-site-verification meta tags (Search Console)
     base = base_url.rstrip("/")
     extra = []
     if google_verification:
