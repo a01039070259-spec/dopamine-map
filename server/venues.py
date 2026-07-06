@@ -52,10 +52,15 @@ def _row_to_venue(
     return venue
 
 
+def virtual_venue_id(spot_id: int) -> int:
+    """Negative id so ungrouped spots never collide with real venues.id (often 1..N)."""
+    return -int(spot_id)
+
+
 def _spot_to_virtual_venue(spot: dict, *, for_list: bool = False) -> dict:
-    """Ungrouped spot exposed as a venue using the same numeric id as the spot."""
+    """Ungrouped spot exposed as a venue; id is negative of spot id."""
     venue = {
-        "id": spot["id"],
+        "id": virtual_venue_id(spot["id"]),
         "virtual": True,
         "name": spot["name"],
         "address": spot["addr"],
@@ -128,7 +133,28 @@ def list_venues() -> list[dict]:
     return venues
 
 
+def _get_virtual_venue_by_spot_id(spot_id: int) -> Optional[dict]:
+    with get_conn() as conn:
+        has_venue_id = _spots_have_venue_id(conn)
+        spot_row = conn.execute(
+            "SELECT * FROM spots WHERE id = ?",
+            (spot_id,),
+        ).fetchone()
+        if not spot_row:
+            return None
+        if has_venue_id and spot_row["venue_id"] is not None:
+            return None
+        spot = row_to_spot_summary(spot_row)
+
+    venue = _spot_to_virtual_venue(spot, for_list=False)
+    venue["spots"] = [spot]
+    return venue
+
+
 def get_venue(venue_id: int) -> Optional[dict]:
+    if venue_id < 0:
+        return _get_virtual_venue_by_spot_id(-venue_id)
+
     with get_conn() as conn:
         if _venues_table_exists(conn):
             row = conn.execute(
@@ -159,17 +185,4 @@ def get_venue(venue_id: int) -> Optional[dict]:
                     venue["primarySpotId"] = None
                 return venue
 
-        has_venue_id = _spots_have_venue_id(conn)
-        spot_row = conn.execute(
-            "SELECT * FROM spots WHERE id = ?",
-            (venue_id,),
-        ).fetchone()
-        if not spot_row:
-            return None
-        if has_venue_id and spot_row["venue_id"] is not None:
-            return None
-        spot = row_to_spot_summary(spot_row)
-
-    venue = _spot_to_virtual_venue(spot, for_list=False)
-    venue["spots"] = [spot]
-    return venue
+    return _get_virtual_venue_by_spot_id(venue_id)

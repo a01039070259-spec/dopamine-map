@@ -1651,8 +1651,11 @@ function renderVenueCardHtml(v) {
     });
   }
   const tags = tagList.map((t) => `<span class="mc-tag">${t}</span>`).join('');
+  const clickAction = v.virtual && v.primarySpotId
+    ? `goDetail(${v.primarySpotId})`
+    : `goVenue(${v.id})`;
   return `
-    <div class="mc" onclick="goVenue(${v.id})">
+    <div class="mc" onclick="${clickAction}">
       <div class="mc-img" style="background:${bg}">
         ${venueCardMedia(v)}
         <div class="mc-ov"></div>
