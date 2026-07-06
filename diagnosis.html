@@ -16,8 +16,13 @@ body{min-height:100vh;background:var(--bg);color:#f0f0f0;font-family:'Noto Sans 
 h1{font-size:22px;font-weight:900;margin-bottom:8px}
 .sub{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:24px}
 .card{background:#141414;border:1px solid var(--border2);border-radius:14px;padding:24px;margin-bottom:16px}
-.grade{font-size:28px;font-weight:900;color:var(--neon);margin-bottom:8px}
+.grade{font-size:28px;font-weight:900;margin-bottom:8px;line-height:1.3}
+.grade-emoji{font-size:44px;margin:10px 0 14px}
+.grade-desc{font-size:13px;color:var(--text-dim);line-height:1.7;margin-top:10px}
+.grade-score{font-size:12px;color:var(--text-dim);margin-top:12px}
 .empty{color:var(--text-dim);font-size:14px;line-height:1.7}
+.notice{margin-top:14px;padding:12px 14px;border-radius:10px;border:1px solid #E8A31755;background:#E8A31712;font-size:12px;line-height:1.6;color:#ddd}
+.notice a{color:var(--neon);font-weight:700;text-decoration:none}
 .btn{display:inline-block;width:100%;text-align:center;padding:13px;border-radius:10px;font-size:14px;font-weight:800;font-family:'Noto Sans KR',sans-serif;text-decoration:none;cursor:pointer;border:none}
 .btn-kakao{background:#fee500;color:#191919;margin-bottom:10px}
 .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text-dim)}
@@ -28,13 +33,13 @@ h1{font-size:22px;font-weight:900;margin-bottom:8px}
 <body>
 <div class="wrap">
   <h1>도파민 자가진단 결과</h1>
-  <p class="sub">로그인하면 결과가 서버에 저장됩니다. 비로그인 시 브라우저에만 저장됩니다.</p>
+  <p class="sub">6문항 · 6지선다 · 동물 등급 (6~36점). 로그인하면 결과가 서버에 저장됩니다.</p>
   <div class="card" id="resultBox">
     <p class="empty">불러오는 중...</p>
   </div>
   <div class="actions">
     <a class="btn btn-neon" href="/index.html">지도로 돌아가기</a>
-    <a class="btn btn-ghost" href="/index.html">자가진단 다시 하기</a>
+    <a class="btn btn-ghost" href="/index.html#diagnosis">자가진단 다시 하기</a>
     <button class="btn btn-kakao" id="loginBtn" type="button">카카오로 로그인</button>
   </div>
 </div>
@@ -42,45 +47,121 @@ h1{font-size:22px;font-weight:900;margin-bottom:8px}
 <script>
 const LS_ONBOARDING_DONE = "dopamine_onboarding_done";
 const LS_RESULT_TYPE = "dopamine_result_type";
+const LS_RESULT_SCORE = "dopamine_result_score";
 const LEGACY_RESULT_KEY = "dopamine_diagnosis_result";
+const QUIZ_SCORE_MIN = 6;
+const QUIZ_SCORE_MAX = 36;
+const LEGACY_QUIZ_SCORE_MIN = 5;
+const LEGACY_QUIZ_SCORE_MAX = 20;
 
 const LEGACY_DIAGNOSIS_MAP = {
-  "하드코어 상급자": "지구인 아닌 것으로 추정",
-  "잠재적 도파민 중독자": "이미 정상 범주 이탈",
-  "도파민 입문자": "병아리 감별 필요",
-  "극한의 무서움": "지구인 아닌 것으로 추정",
-  "도파민 각성 직전": "국가대표급 허세",
-  "스릴 입문자": "병아리 감별 필요",
-  "핵불닭 · 통제불능": "지구인 아닌 것으로 추정",
-  "매운맛 · 상급자": "이미 정상 범주 이탈",
-  "중간맛 · 각성 직전": "국가대표급 허세",
-  "순한맛 · 입문자": "무서운데 계속 보는 사람",
-  "무맛 · 회전목마 단계": "병아리 감별 필요",
+  "하드코어 상급자": "매",
+  "잠재적 도파민 중독자": "표범",
+  "도파민 입문자": "햄스터",
+  "극한의 무서움": "매",
+  "도파민 각성 직전": "너구리",
+  "스릴 입문자": "햄스터",
+  "핵불닭 · 통제불능": "매",
+  "매운맛 · 상급자": "표범",
+  "중간맛 · 각성 직전": "너구리",
+  "순한맛 · 입문자": "토끼",
+  "무맛 · 회전목마 단계": "햄스터",
+  "병아리 감별 필요": "햄스터",
+  "무서운데 계속 보는 사람": "토끼",
+  "국가대표급 허세": "너구리",
+  "이미 정상 범주 이탈": "표범",
+  "지구인 아닌 것으로 추정": "매",
+  "🐣 병아리 감별 필요": "햄스터",
+  "🙈 무서운데 계속 보는 사람": "토끼",
+  "🫡 국가대표급 허세": "너구리",
+  "🧟 이미 정상 범주 이탈": "표범",
+  "👽 지구인 아닌 것으로 추정": "매",
 };
+
+const GRADES = [
+  { min:30, grade:"매", emoji:"🦅", color:"#4A90D9", desc:"지상의 공포는 이미 초월. 하늘에서 아래 내려다보는 게 익숙함." },
+  { min:24, grade:"표범", emoji:"🐆", color:"#E8A317", desc:"위험한 냄새 맡으면 오히려 눈빛 달라짐. 친구들 사이에서 이미 전설." },
+  { min:18, grade:"너구리", emoji:"🦝", color:"#78909C", desc:"'나 원래 잘함' 하지만 뒤에서는 심장 쿵쾅. 그래도 매번 또 옴." },
+  { min:12, grade:"토끼", emoji:"🐰", color:"#E8A0BF", desc:"겁은 많은데 호기심이 이김. 깡충깡충 뛰면서도 결국 다 해봄." },
+  { min:6, grade:"햄스터", emoji:"🐹", color:"#C4A882", desc:"쳇바퀴 밖은 위험한 곳. 근데 이 앱은 또 켜봄, 그게 반전 포인트." },
+];
 
 function normalizeResultType(name) {
   return LEGACY_DIAGNOSIS_MAP[name] || name || "";
 }
 
-function migrateLegacyDiagnosisStorage() {
-  const legacy = localStorage.getItem(LEGACY_RESULT_KEY);
-  if (!legacy) return;
-  if (!localStorage.getItem(LS_RESULT_TYPE)) {
-    localStorage.setItem(LS_RESULT_TYPE, normalizeResultType(legacy));
-    localStorage.setItem(LS_ONBOARDING_DONE, "true");
+function remapLegacyScore(score) {
+  const n = Number(score);
+  if (!Number.isFinite(n)) return null;
+  if (n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
+  if (n >= LEGACY_QUIZ_SCORE_MIN && n <= LEGACY_QUIZ_SCORE_MAX) {
+    const ratio = (n - LEGACY_QUIZ_SCORE_MIN) / (LEGACY_QUIZ_SCORE_MAX - LEGACY_QUIZ_SCORE_MIN);
+    return Math.round(QUIZ_SCORE_MIN + ratio * (QUIZ_SCORE_MAX - QUIZ_SCORE_MIN));
   }
-  localStorage.removeItem(LEGACY_RESULT_KEY);
+  return null;
 }
 
-function renderResult(text, source) {
+function findGradeByScore(total) {
+  const n = Number(total);
+  if (!Number.isFinite(n)) return null;
+  return GRADES.find(g => n >= g.min) || GRADES[GRADES.length - 1];
+}
+
+function findGradeByName(name) {
+  const norm = normalizeResultType(name);
+  return GRADES.find(g => g.grade === norm) || null;
+}
+
+function migrateLegacyDiagnosisStorage() {
+  const legacy = localStorage.getItem(LEGACY_RESULT_KEY);
+  if (legacy) {
+    if (!localStorage.getItem(LS_RESULT_TYPE)) {
+      localStorage.setItem(LS_RESULT_TYPE, normalizeResultType(legacy));
+      localStorage.setItem(LS_ONBOARDING_DONE, "true");
+    }
+    localStorage.removeItem(LEGACY_RESULT_KEY);
+  }
+  const local = localStorage.getItem(LS_RESULT_TYPE);
+  if (local) {
+    const norm = normalizeResultType(local);
+    if (norm !== local) localStorage.setItem(LS_RESULT_TYPE, norm);
+  }
+  const raw = localStorage.getItem(LS_RESULT_SCORE);
+  if (raw != null && raw !== "") {
+    const remapped = remapLegacyScore(Number(raw));
+    if (remapped != null && remapped !== Number(raw)) {
+      localStorage.setItem(LS_RESULT_SCORE, String(remapped));
+      const grade = findGradeByScore(remapped);
+      if (grade) localStorage.setItem(LS_RESULT_TYPE, grade.grade);
+      sessionStorage.setItem("dopamine_legacy_score_remapped", "1");
+    }
+  }
+}
+
+function renderResult(gradeName, score, source, legacyRemapped) {
+  const grade = findGradeByName(gradeName) || findGradeByScore(score);
+  const color = grade?.color || "var(--neon)";
+  const emoji = grade?.emoji || "🧪";
+  const label = grade?.grade || normalizeResultType(gradeName) || gradeName;
+  const desc = grade?.desc || "";
+  const scoreLine = score != null && Number.isFinite(Number(score))
+    ? `총점 ${score}점 / ${QUIZ_SCORE_MIN}~${QUIZ_SCORE_MAX}점`
+    : "";
+  const legacyNote = legacyRemapped
+    ? `<div class="notice">예전 5문항 진단 점수를 새 6문항 척도(6~36점)로 환산했어요. 더 정확한 동물 등급은 <a href="/index.html">자가진단 다시 하기</a>를 추천합니다.</div>`
+    : "";
   document.getElementById("resultBox").innerHTML =
-    `<div class="grade">${text}</div>` +
-    `<p class="empty" style="margin-top:8px">${source}</p>`;
+    `<div class="grade" style="color:${color}">${emoji} ${label}</div>` +
+    (desc ? `<p class="grade-desc">${desc}</p>` : "") +
+    (scoreLine ? `<p class="grade-score">${scoreLine}</p>` : "") +
+    `<p class="empty" style="margin-top:12px">${source}</p>` +
+    legacyNote;
 }
 
 async function boot() {
   DopamineStore.recordVisit().catch(() => {});
   migrateLegacyDiagnosisStorage();
+  const legacyRemapped = sessionStorage.getItem("dopamine_legacy_score_remapped") === "1";
 
   try {
     const auth = await DopamineStore.fetchAuthMe();
@@ -93,9 +174,11 @@ async function boot() {
       try {
         const data = await DopamineStore.fetchDiagnosis();
         if (data.result) {
-          localStorage.setItem(LS_RESULT_TYPE, data.result);
+          const norm = normalizeResultType(data.result);
+          localStorage.setItem(LS_RESULT_TYPE, norm);
           localStorage.setItem(LS_ONBOARDING_DONE, "true");
-          renderResult(data.result, "서버에 저장된 결과");
+          if (data.score != null) localStorage.setItem(LS_RESULT_SCORE, String(data.score));
+          renderResult(norm, data.score, "서버에 저장된 결과", legacyRemapped);
           return;
         }
       } catch (_) {}
@@ -103,12 +186,13 @@ async function boot() {
   } catch (_) {}
 
   const local = localStorage.getItem(LS_RESULT_TYPE);
+  const localScore = localStorage.getItem(LS_RESULT_SCORE);
   if (local) {
-    renderResult(local, "브라우저에 저장된 결과");
+    renderResult(local, localScore != null ? Number(localScore) : null, "브라우저에 저장된 결과", legacyRemapped);
     return;
   }
   document.getElementById("resultBox").innerHTML =
-    '<p class="empty">저장된 자가진단 결과가 없습니다.<br><a href="/index.html" style="color:var(--neon)">메인에서 진단</a>을 먼저 진행해 주세요.</p>';
+    '<p class="empty">저장된 자가진단 결과가 없습니다.<br><a href="/index.html" style="color:var(--neon)">메인에서 6문항 진단</a>을 먼저 진행해 주세요.</p>';
   document.getElementById("loginBtn").onclick = () => {
     location.href = DopamineStore.kakaoLoginUrl("/diagnosis.html");
   };

@@ -190,11 +190,11 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .qz-tag{font-size:10px;color:var(--neon);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
 .qz-q{font-size:17px;font-weight:900;color:#fff;line-height:1.4;letter-spacing:-.3px}
 .qz-body{flex:1;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
-.qz-opt{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:15px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:13px}
+.qz-opt{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:11px}
 .qz-opt:hover{border-color:var(--neon)}
 .qz-opt.selected{border-color:var(--neon);background:#0d2a06}
 .qz-opt-ico{font-size:22px;flex-shrink:0}
-.qz-opt-txt{font-size:14px;color:#ccc;font-weight:500;line-height:1.4}
+.qz-opt-txt{font-size:13px;color:#ccc;font-weight:500;line-height:1.45}
 .qz-opt.selected .qz-opt-txt{color:var(--neon);font-weight:700}
 .qz-footer{padding:14px 20px 18px;background:#050505;border-top:1px solid var(--border)}
 .qz-next{width:100%;background:var(--grade-accent,var(--neon));color:#0a0a0a;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;opacity:.3;transition:all .2s;pointer-events:none}
@@ -939,46 +939,67 @@ const QUIZ = [
   {
     q: "지금 당장 하나만 골라야 한다. 뭐 할래?",
     opts: [
-      {i:"🎡", t:"관람차 타고 앉아서 감자칩 먹기", score:1},
-      {i:"🦅", t:"짚라인 타다가 중간에 \"엄마\"라고 소리치기", score:2},
-      {i:"🤸", t:"63m 번지점프대에서 뛰어내리고 인스타 스토리부터 올리기", score:3},
-      {i:"🎯", t:"실탄사격장 가서 \"이거 게임 아니에요?\"라고 진지하게 묻기", score:4}
+      {i:"🎡", t:"그냥 관람차 타고 야경 보면서 사진이나 찍을래", score:1},
+      {i:"🦅", t:"짚라인 정도면 재밌게 탈 수 있을 듯", score:2},
+      {i:"🤸", t:"번지점프는 좀 무섭지만... 한 번쯤은 해볼 만함", score:3},
+      {i:"🔥", t:"63m 번지점프 뛰고 바로 한 번 더 타고 싶어질 듯", score:4},
+      {i:"🎯", t:"실탄사격 같은 거 왜 이제야 알았지 싶음", score:5},
+      {i:"💀", t:"이왕이면 제일 무섭고 위험해 보이는 거부터 가고 싶음", score:6}
     ]
   },
   {
-    q: "루지 타는 중 브레이크가 좀 헐거운 것 같다. 손끝이 미묘하게 걱정된다. 넌?",
+    q: "놀이기구/체험 타는데 안전벨트가 살짝 헐거운 느낌이 든다. 넌?",
     opts: [
-      {i:"🛠️", t:"직원 불러서 \"이거 원래 이래요?\" 물어봄", score:1},
-      {i:"📝", t:"\"괜찮겠지\" 하면서 속으로 유서 씀", score:2},
-      {i:"🏎️", t:"\"고장난 김에\" 하고 인생 최고 속도 찍어봄", score:3},
-      {i:"💨", t:"브레이크가 어디 붙어있는지도 모르는 상태로 완주", score:4}
+      {i:"🛠️", t:"바로 직원 불러서 확인받음", score:1},
+      {i:"🤏", t:"손으로 한 번 더 꽉 채우고 계속 탐", score:2},
+      {i:"😐", t:"신경 쓰이지만 그냥 참고 탐", score:3},
+      {i:"😎", t:"별생각 없이 그냥 즐김", score:4},
+      {i:"🔥", t:"오히려 그게 더 스릴 있다고 느낌", score:5},
+      {i:"🫠", t:"안전벨트 있는지도 확인 안 하고 탐", score:6}
     ]
   },
   {
-    q: "오프로드 타는데 차가 갑자기 30도로 기울어져서 옆사람 얼굴이 코앞이다. 넌?",
+    q: "오프로드/ATV 타는데 차가 갑자기 확 기울어진다. 넌?",
     opts: [
-      {i:"🤝", t:"옆사람 손을 무의식적으로 꽉 잡음", score:1},
-      {i:"😬", t:"\"저기요 손 좀...\" 이라고 하면서도 안 놓음", score:2},
-      {i:"📸", t:"이 와중에 \"우리 이거 사진 찍자\" 소리침", score:3},
-      {i:"✌️", t:"기울어진 김에 창밖으로 팔 뻗어서 브이 함", score:4}
+      {i:"😱", t:"놀라서 손잡이 꽉 잡고 소리 지름", score:1},
+      {i:"😬", t:"긴장되지만 그냥 버팀", score:2},
+      {i:"😅", t:"무섭기도 하고 재밌기도 함", score:3},
+      {i:"😆", t:"오히려 좋아서 웃음이 남", score:4},
+      {i:"🏎️", t:"이 정도는 더 심하게 타고 싶어짐", score:5},
+      {i:"📸", t:"사진 찍을 각도부터 생각남", score:6}
     ]
   },
   {
-    q: "스카이다이빙 직전, 비행기 문이 열리고 발밑엔 그냥 구름뿐이다. 강사가 카운트한다. 넌?",
+    q: "스카이다이빙/번지 같은 고공 체험 직전. 넌?",
     opts: [
-      {i:"😰", t:"\"저 사실 오늘 처음 듣는 얘긴데요\"라고 뒤늦게 말함", score:1},
-      {i:"🫳", t:"카운트 세는 강사 손을 은근슬쩍 붙잡음", score:2},
-      {i:"🪂", t:"강사보다 먼저 \"하나!\" 외치고 뛰어내림", score:3},
-      {i:"🤔", t:"뛰기 직전에 \"이거 몇 번째세요?\"라고 강사한테 물어봄", score:4}
+      {i:"😰", t:"이걸 왜 신청했나 후회부터 함", score:1},
+      {i:"💓", t:"심장이 터질 것 같지만 어떻게든 함", score:2},
+      {i:"🪂", t:"무섭긴 한데 여기까지 온 거 해야지 싶음", score:3},
+      {i:"⚡", t:"무섭다기보다 빨리 하고 싶어서 안달남", score:4},
+      {i:"🚀", t:"카운트 끝나기도 전에 몸이 먼저 나감", score:5},
+      {i:"🔁", t:"몇 번이고 계속하고 싶다는 생각뿐임", score:6}
     ]
   },
   {
-    q: "ATV로 산길 달리다 커다란 진흙 웅덩이를 발견했다. 피할 시간 충분하다. 넌?",
+    q: "씨워킹/스쿠버 같은 수중 체험 중 뭔가 예상과 다르다 (물이 좀 새거나 시야가 안 좋거나). 넌?",
     opts: [
-      {i:"🚧", t:"조심스럽게 돌아가면서 \"저건 코스가 아니겠지\"라고 되뇜", score:1},
-      {i:"🫠", t:"살짝 속도 줄이다가 결국 반쯤 처박힘", score:2},
-      {i:"💦", t:"있는 힘껏 돌진해서 뒷사람까지 진흙 세례 선물", score:3},
-      {i:"🔄", t:"웅덩이 발견하고 \"오 이거지\" 하며 유턴해서 한 번 더 감", score:4}
+      {i:"🆘", t:"바로 나가고 싶다는 신호부터 보냄", score:1},
+      {i:"🤿", t:"조금 불안하지만 강사 믿고 계속함", score:2},
+      {i:"🐠", t:"\"원래 이런가?\" 하면서 대수롭지 않게 넘김", score:3},
+      {i:"👀", t:"크게 신경 안 쓰고 구경하는 데만 집중함", score:4},
+      {i:"🌊", t:"오히려 이런 변수가 더 재밌게 느껴짐", score:5},
+      {i:"⬇️", t:"이 정도로는 성에 안 참, 더 깊은 데 가고 싶음", score:6}
+    ]
+  },
+  {
+    q: "지금까지 스릴 액티비티, 몇 개나 해봤어?",
+    opts: [
+      {i:"🎢", t:"놀이공원 롤러코스터가 전부임", score:1},
+      {i:"🦅", t:"짚라인이나 루지 정도는 한두 번 해봄", score:2},
+      {i:"🪂", t:"번지점프나 ATV 같은 것도 해봤음", score:3},
+      {i:"🪁", t:"스카이다이빙, 패러글라이딩까지 해봄", score:4},
+      {i:"🗺️", t:"웬만한 건 다 해봐서 새로운 거 찾는 중임", score:5},
+      {i:"📍", t:"이 앱에 있는 스팟, 절반 이상 이미 가봄", score:6}
     ]
   }
 ];
@@ -992,54 +1013,69 @@ const SS_PENDING_DETAIL = 'dopamine_pending_detail';
 const SS_LOGIN_NUDGE = 'dopamine_show_login_nudge';
 
 const LEGACY_DIAGNOSIS_MAP = {
-  "하드코어 상급자": "지구인 아닌 것으로 추정",
-  "잠재적 도파민 중독자": "이미 정상 범주 이탈",
-  "도파민 입문자": "병아리 감별 필요",
-  "극한의 무서움": "지구인 아닌 것으로 추정",
-  "도파민 각성 직전": "국가대표급 허세",
-  "스릴 입문자": "병아리 감별 필요",
-  "핵불닭 · 통제불능": "지구인 아닌 것으로 추정",
-  "매운맛 · 상급자": "이미 정상 범주 이탈",
-  "중간맛 · 각성 직전": "국가대표급 허세",
-  "순한맛 · 입문자": "무서운데 계속 보는 사람",
-  "무맛 · 회전목마 단계": "병아리 감별 필요",
+  "하드코어 상급자": "매",
+  "잠재적 도파민 중독자": "표범",
+  "도파민 입문자": "햄스터",
+  "극한의 무서움": "매",
+  "도파민 각성 직전": "너구리",
+  "스릴 입문자": "햄스터",
+  "핵불닭 · 통제불능": "매",
+  "매운맛 · 상급자": "표범",
+  "중간맛 · 각성 직전": "너구리",
+  "순한맛 · 입문자": "토끼",
+  "무맛 · 회전목마 단계": "햄스터",
+  "병아리 감별 필요": "햄스터",
+  "무서운데 계속 보는 사람": "토끼",
+  "국가대표급 허세": "너구리",
+  "이미 정상 범주 이탈": "표범",
+  "지구인 아닌 것으로 추정": "매",
+  "🐣 병아리 감별 필요": "햄스터",
+  "🙈 무서운데 계속 보는 사람": "토끼",
+  "🫡 국가대표급 허세": "너구리",
+  "🧟 이미 정상 범주 이탈": "표범",
+  "👽 지구인 아닌 것으로 추정": "매",
 };
+
+const QUIZ_SCORE_MIN = 6;
+const QUIZ_SCORE_MAX = 36;
+const LEGACY_QUIZ_SCORE_MIN = 5;
+const LEGACY_QUIZ_SCORE_MAX = 20;
 
 const GRADES = [
   {
-    min:18, grade:"지구인 아닌 것으로 추정", emoji:"👽", color:"#39ff14", colorSecondary:"#cc44ff", special:true,
-    thrillMin:85, thrillMax:100,
-    desc:"인류 진화 과정에서 공포 유전자가 통째로 삭제된 케이스. 강사가 안전교육 하는 동안 이미 뛰어내려서 스탭들 사이에서 전설로 통함. 도파민 지도 개발자도 이 사람 신고 받고 앱 만들었다는 설이 있음.",
-    stats:[{v:"MAX",l:"도파민 내성"},{v:"유전자삭제",l:"공포 반응"},{v:"0%",l:"포기 확률"}],
-    badges:["#교육중이탈","#스탭전설","#개발자도피","#지구인아님","#신고각"]
+    min:30, grade:"매", emoji:"🦅", color:"#4A90D9", colorSecondary:"#FFD700", special:true,
+    thrillMin:82, thrillMax:100,
+    desc:"지상의 공포는 이미 초월. 하늘에서 아래 내려다보는 게 익숙함. 인간계보다는 새 쪽에 더 가까운 존재.",
+    stats:[{v:"하늘",l:"거주 구역"},{v:"0%",l:"공포 잔량"},{v:"∞",l:"재도전 욕구"}],
+    badges:["#하늘뷰일상","#인간계졸업","#새쪽친구","#도파민면역","#전설그자체"]
   },
   {
-    min:15, grade:"이미 정상 범주 이탈", emoji:"🧟", color:"#FF3B30",
-    thrillMin:70, thrillMax:90,
-    desc:"브레이크 고장 소식에 '오 럭키비키' 시전할 사람. 친구들이 여행 계획 짤 때 은근슬쩍 빼는 이유 1순위. 병원 가면 의사가 먼저 안부 물어볼 듯.",
-    stats:[{v:"HIGH",l:"도파민 수치"},{v:"럭키비키",l:"위험 반응"},{v:"5%",l:"포기 확률"}],
-    badges:["#브레이크환영","#여행1순위제외","#의사먼저안부","#정상이탈","#진흙재탐색"]
+    min:24, grade:"표범", emoji:"🐆", color:"#E8A317",
+    thrillMin:65, thrillMax:88,
+    desc:"위험한 냄새 맡으면 오히려 눈빛 달라짐. 다른 사람들 도망갈 때 이 쪽으로 걸어감. 친구들 사이에서 이미 전설.",
+    stats:[{v:"MAX",l:"위험 추적력"},{v:"전설",l:"친구들 평"},{v:"3%",l:"포기 확률"}],
+    badges:["#위험향수","#역주행러","#친구전설","#눈빛변화","#표범족보"]
   },
   {
-    min:12, grade:"국가대표급 허세", emoji:"🫡", color:"#FF8C00",
-    thrillMin:55, thrillMax:75,
-    desc:"친구들 앞에서는 '이 정도쯤이야' 하고 정작 카운트다운 시작하면 눈 질끈 감는 타입. 근데 끝나고 나면 또 자랑함. SNS엔 웃는 사진만 올리지만 실제 표정은 저장 안 함.",
-    stats:[{v:"MID+",l:"도파민 수치"},{v:"허세MAX",l:"카운트다운"},{v:"25%",l:"포기 확률"}],
-    badges:["#이정도쯤이야","#끝나면자랑","#SNS웃는사진","#눈질끈","#국대급허세"]
+    min:18, grade:"너구리", emoji:"🦝", color:"#78909C",
+    thrillMin:48, thrillMax:72,
+    desc:"능청스럽게 '나 원래 잘함'이라고 하지만 뒤에서는 심장 쿵쾅거림. 그래도 매번 또 옴, 이상하게 중독성 있음.",
+    stats:[{v:"MID+",l:"도파민 수치"},{v:"쿵쾅",l:"심장 백그라운드"},{v:"20%",l:"포기 확률"}],
+    badges:["#나원래잘함","#심장쿵쾅","#또옴","#중독성있음","#능청MAX"]
   },
   {
-    min:9, grade:"무서운데 계속 보는 사람", emoji:"🙈", color:"#4ECB3D",
-    thrillMin:40, thrillMax:60,
-    desc:"공포영화 눈 가리고 손가락 사이로 다 보는 부류. 번지점프 유튜브 100개 정주행하고 정작 예약은 3년째 미루는 타입. 조만간 진짜 할 것처럼 말하지만 아무도 안 믿음.",
-    stats:[{v:"MID",l:"도파민 수치"},{v:"유튜브100",l:"예약 0"},{v:"45%",l:"포기 확률"}],
-    badges:["#손가락틈시청","#번지3년미룸","#아무도안믿음","#곧한다거짓","#계속보는사람"]
+    min:12, grade:"토끼", emoji:"🐰", color:"#E8A0BF",
+    thrillMin:32, thrillMax:58,
+    desc:"겁은 많은데 호기심이 이김. 깡충깡충 뛰면서도 결국 다 해봄. 도망갈 준비하면서 앞으로 감.",
+    stats:[{v:"MID",l:"도파민 수치"},{v:"깡충",l:"이동 패턴"},{v:"40%",l:"포기 확률"}],
+    badges:["#겁많은호기심","#깡충러","#결국해봄","#도망각준비","#토끼족"]
   },
   {
-    min:5, grade:"병아리 감별 필요", emoji:"🐣", color:"#8E8E93",
-    thrillMin:0, thrillMax:40,
-    desc:"엄마 손 잡고 놀이공원 온 5살 어린이 같은 존재감. 관람차 탔는데 흔들린다고 스탭 불렀을 타입. 근데 지금 이 앱 켜져 있는 거 보면 뭔가 숨겨진 야망이 있는 듯. 일단 순한맛부터 ㄱㄱ.",
-    stats:[{v:"LOW",l:"도파민 수치"},{v:"입문",l:"스릴 레벨"},{v:"80%",l:"포기 확률"}],
-    badges:["#관람차족","#감자칩필수","#스탭호출","#숨은야망","#순한맛부터"]
+    min:6, grade:"햄스터", emoji:"🐹", color:"#C4A882",
+    thrillMin:0, thrillMax:38,
+    desc:"쳇바퀴 밖은 위험한 곳. 작은 자극에도 화들짝 놀람. 근데 이 앱은 또 켜봄, 그게 반전 포인트.",
+    stats:[{v:"LOW",l:"도파민 수치"},{v:"화들짝",l:"놀람 반응"},{v:"75%",l:"포기 확률"}],
+    badges:["#쳇바퀴존","#화들짝","#앱또켬","#반전포인트","#순한맛부터"]
   }
 ];
 
@@ -1372,12 +1408,14 @@ async function syncDiagnosisAfterLogin() {
   }
 
   if (serverGrade) {
-    persistLocalDiagnosis(serverGrade, serverScore);
-    currentUser.diagnosisResult = serverGrade;
-    lastDiagnosisResult = serverGrade;
-    lastDiagnosisScore = serverScore;
-    updateDiagnosisChip(serverGrade);
-    applyGradeTheme(findGradeByName(serverGrade));
+    const norm = normalizeDiagnosisGradeName(serverGrade);
+    const score = serverScore != null ? (remapLegacyScore(serverScore) ?? serverScore) : null;
+    persistLocalDiagnosis(norm, score);
+    currentUser.diagnosisResult = norm;
+    lastDiagnosisResult = norm;
+    lastDiagnosisScore = score;
+    updateDiagnosisChip(norm);
+    applyGradeTheme(findGradeByName(norm));
     refreshMainListIfVisible();
   }
 }
@@ -1929,6 +1967,24 @@ function nextQ() {
   else showResult();
 }
 
+function findGradeByScore(total) {
+  const n = Number(total);
+  if (!Number.isFinite(n)) return null;
+  return GRADES.find(g => n >= g.min) || GRADES[GRADES.length - 1];
+}
+
+function remapLegacyScore(score) {
+  const n = Number(score);
+  if (!Number.isFinite(n)) return null;
+  if (n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
+  if (n >= LEGACY_QUIZ_SCORE_MIN && n <= LEGACY_QUIZ_SCORE_MAX) {
+    const span = LEGACY_QUIZ_SCORE_MAX - LEGACY_QUIZ_SCORE_MIN;
+    const ratio = (n - LEGACY_QUIZ_SCORE_MIN) / span;
+    return Math.round(QUIZ_SCORE_MIN + ratio * (QUIZ_SCORE_MAX - QUIZ_SCORE_MIN));
+  }
+  return null;
+}
+
 function findGradeByName(name) {
   if (!name) return null;
   const normalized = normalizeDiagnosisGradeName(name);
@@ -1941,15 +1997,19 @@ function normalizeDiagnosisGradeName(name) {
   return LEGACY_DIAGNOSIS_MAP[text] || text;
 }
 
-function renderGradeResult(grade) {
+function renderGradeResult(grade, totalScore) {
   if (!grade) return;
   const wrap = document.querySelector('#resultPhase .rs-wrap');
   if (wrap) wrap.classList.toggle('special-tier', !!grade.special);
   const gradeColorStyle = grade.special
     ? `background:linear-gradient(135deg,${grade.color},${grade.colorSecondary || '#cc44ff'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text`
     : `color:${grade.color}`;
+  const scoreLine = totalScore != null && Number.isFinite(Number(totalScore))
+    ? `<div class="rs-nickname" style="${grade.special ? gradeColorStyle : `color:${grade.color}`}">${totalScore}점 · ${QUIZ_SCORE_MIN}~${QUIZ_SCORE_MAX}점 척도</div>`
+    : '';
   document.getElementById('rsGrade').innerHTML =
     `당신의 등급<br><span style="${gradeColorStyle}">${grade.grade}</span>` +
+    scoreLine +
     (grade.nickname ? `<div class="rs-nickname" style="${gradeColorStyle}">「${grade.nickname}」</div>` : '');
   document.getElementById('rsEmoji').textContent = grade.emoji;
   document.getElementById('rsDesc').textContent = grade.desc;
@@ -2007,7 +2067,7 @@ function setupResultActions(mode) {
 
 function openSavedDiagnosis(resultName) {
   const name = resultName || getEffectiveDiagnosisResult() || document.getElementById('diagChipText')?.textContent;
-  const grade = findGradeByName(name);
+  const grade = findGradeByName(name) || findGradeByScore(getLocalResultScore());
   if (!grade) {
     openDiagnosis();
     return;
@@ -2017,7 +2077,7 @@ function openSavedDiagnosis(resultName) {
   document.getElementById('diagSkipIntro')?.classList.add('hidden');
   document.getElementById('quizPhase')?.classList.remove('active');
   document.getElementById('resultPhase')?.classList.add('active');
-  renderGradeResult(grade);
+  renderGradeResult(grade, getLocalResultScore());
   setupResultActions(currentUser ? 'saved' : 'review');
   showScreen('onboardScreen');
 }
@@ -2025,10 +2085,10 @@ function openSavedDiagnosis(resultName) {
 async function showResult() {
   const wasOnboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
   const total = scores.reduce((a,b) => a + (b < 0 ? 0 : b), 0);
-  const grade = GRADES.find(g => total >= g.min);
+  const grade = findGradeByScore(total);
   document.getElementById('quizPhase').classList.remove('active');
   document.getElementById('resultPhase').classList.add('active');
-  renderGradeResult(grade);
+  renderGradeResult(grade, total);
   await saveDiagnosisResult(grade.grade, total);
   updateDiagnosisChip(grade.grade);
   setupResultActions(wasOnboardingDone ? 'retake' : 'onboarding');
@@ -2152,6 +2212,19 @@ function migrateLegacyDiagnosisStorage() {
   if (lastDiagnosisResult) {
     lastDiagnosisResult = normalizeDiagnosisGradeName(lastDiagnosisResult);
   }
+  ['localStorage', 'sessionStorage'].forEach((kind) => {
+    const store = kind === 'localStorage' ? localStorage : sessionStorage;
+    const scoreKey = kind === 'localStorage' ? LS_RESULT_SCORE : SS_RESULT_SCORE;
+    const typeKey = kind === 'localStorage' ? LS_RESULT_TYPE : SS_RESULT_TYPE;
+    const raw = store.getItem(scoreKey);
+    if (raw == null || raw === '') return;
+    const remapped = remapLegacyScore(Number(raw));
+    if (remapped == null || remapped === Number(raw)) return;
+    store.setItem(scoreKey, String(remapped));
+    const grade = findGradeByScore(remapped);
+    if (grade) store.setItem(typeKey, grade.grade);
+    if (kind === 'localStorage') sessionStorage.setItem('dopamine_legacy_score_remapped', '1');
+  });
 }
 
 function ensureMainScreenVisible() {
@@ -2885,6 +2958,11 @@ async function bootApp() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeAppMenu();
   });
+
+  if (location.hash === '#diagnosis') {
+    history.replaceState({}, '', location.pathname + location.search);
+    if (localStorage.getItem(LS_ONBOARDING_DONE) === 'true') openDiagnosis();
+  }
 
   updateAppMenu();
 
