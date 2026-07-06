@@ -32,6 +32,7 @@ from server.database import (
     create_spot,
     delete_spot,
     get_admin_stats,
+    get_admin_referrer_stats,
     get_persistence_info,
     get_spot,
     get_spot_detail,
@@ -132,6 +133,11 @@ def admin_verify(_: None = Depends(verify_admin)):
 @app.get("/api/admin/stats")
 def api_admin_stats(_: None = Depends(verify_admin)):
     return get_admin_stats()
+
+
+@app.get("/api/admin/stats/referrers")
+def api_admin_referrer_stats(date: str = "today", _: None = Depends(verify_admin)):
+    return get_admin_referrer_stats(date)
 
 
 @app.post("/api/admin/clear-login-data")
@@ -326,9 +332,24 @@ def auth_logout(response: Response):
 
 
 @app.post("/api/visits")
-def api_record_visit(request: Request):
+def api_record_visit(payload: dict, request: Request):
     user = get_user_from_request(request)
-    record_visit(user["id"] if user else None)
+
+    def _opt(key: str) -> str | None:
+        val = payload.get(key)
+        if val is None:
+            return None
+        text = str(val).strip()
+        return text or None
+
+    record_visit(
+        user["id"] if user else None,
+        referrer=_opt("referrer"),
+        utm_source=_opt("utm_source"),
+        utm_medium=_opt("utm_medium"),
+        utm_campaign=_opt("utm_campaign"),
+        landing_page=_opt("landing_page"),
+    )
     return {"ok": True}
 
 

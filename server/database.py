@@ -3,7 +3,7 @@ import json
 import os
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -27,6 +27,50 @@ def now_iso() -> str:
 
 def today_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+KST = timezone(timedelta(hours=9))
+
+
+def today_kst() -> str:
+    return datetime.now(KST).strftime("%Y-%m-%d")
+
+
+def kst_day_utc_bounds(date_str: str) -> tuple[str, str]:
+    start_kst = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=KST)
+    end_kst = start_kst + timedelta(days=1) - timedelta(seconds=1)
+    start_utc = start_kst.astimezone(timezone.utc).replace(microsecond=0).isoformat()
+    end_utc = end_kst.astimezone(timezone.utc).replace(microsecond=0).isoformat()
+    return start_utc, end_utc
+
+
+def classify_visit_source(
+    referrer: str | None, utm_source: str | None
+) -> tuple[str, str | None]:
+    ref = (referrer or "").strip().lower()
+    utm = (utm_source or "").strip().lower()
+    if (not ref or ref == "direct") and not utm:
+        return "직접 유입", None
+    hay = f"{ref} {utm}"
+    if "threads.com" in hay or "threads.net" in hay:
+        return "스레드", None
+    if "instagram.com" in hay or "instagr.am" in hay:
+        return "인스타그램", None
+    if "naver.com" in hay:
+        return "네이버", None
+    if "google.com" in hay or "google.co.kr" in hay:
+        return "구글 검색", None
+    if "kakao.com" in hay or "kakaotalk" in hay or "/talk" in hay:
+        return "카카오톡", None
+    raw = (referrer or utm_source or "").strip()
+    if not raw or raw.lower() == "direct":
+        raw = utm_source or referrer or "unknown"
+    return "기타", raw[:200] if raw else None
+
+
+def _visits_has_tracking_columns(conn: sqlite3.Connection) -> bool:
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(visits)")}
+    return "referrer" in cols
 
 
 def get_conn() -> sqlite3.Connection:
@@ -497,13 +541,123 @@ def create_review(payload: dict, user_id: int, nickname: str) -> dict:
     return review_row_to_dict(row)
 
 
-def record_visit(user_id: Optional[int] = None) -> None:
+def record_visit(
+    user_id: Optional[int] = None,
+    *,
+    referrer: str | None = None,
+    utm_source: str | None = None,
+    utm_medium: str | None = None,
+    utm_campaign: str | None = None,
+    landing_page: str | None = None,
+) -> None:
+    visited_at = now_iso()
     with get_conn() as conn:
-        conn.execute(
-            "INSERT INTO visits (user_id, visited_at) VALUES (?, ?)",
-            (user_id, now_iso()),
-        )
+        if _visits_has_tracking_columns(conn):
+            conn.execute(
+                """
+                INSERT INTO visits (
+                    user_id, visited_at, referrer, utm_source,
+                    utm_medium, utm_campaign, landing_page
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    user_id,
+                    visited_at,
+                    (referrer or None),
+                    (utm_source or None),
+                    (utm_medium or None),
+                    (utm_campaign or None),
+                    (landing_page or None),
+                ),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO visits (user_id, visited_at) VALUES (?, ?)",
+                (user_id, visited_at),
+            )
         conn.commit()
+
+
+def get_admin_stats() -> dict:
+    today = today_kst()
+    start, end = kst_day_utc_bounds(today)
+    with get_conn() as conn:
+        total_visits = conn.execute("SELECT COUNT(*) AS c FROM visits").fetchone()["c"]
+        today_visits = conn.execute(
+            "SELECT COUNT(*) AS c FROM visits WHERE visited_at >= ? AND visited_at <= ?",
+            (start, end),
+        ).fetchone()["c"]
+        logged_in_visits = conn.execute(
+            "SELECT COUNT(*) AS c FROM visits WHERE user_id IS NOT NULL"
+        ).fetchone()["c"]
+        total_users = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
+        total_reviews = conn.execute("SELECT COUNT(*) AS c FROM reviews").fetchone()["c"]
+    return {
+        "totalVisits": total_visits,
+        "todayVisits": today_visits,
+        "todayDate": today,
+        "todayTimezone": "Asia/Seoul",
+        "loggedInVisits": logged_in_visits,
+        "totalUsers": total_users,
+        "totalReviews": total_reviews,
+    }
+
+
+def get_admin_referrer_stats(date: str | None = None) -> dict:
+    target = today_kst() if not date or date == "today" else date.strip()
+    start, end = kst_day_utc_bounds(target)
+    buckets: dict[str, int] = {}
+    other_details: dict[str, int] = {}
+
+    with get_conn() as conn:
+        if not _visits_has_tracking_columns(conn):
+            return {"date": target, "timezone": "Asia/Seoul", "breakdown": []}
+        rows = conn.execute(
+            """
+            SELECT referrer, utm_source
+            FROM visits
+            WHERE visited_at >= ? AND visited_at <= ?
+            """,
+            (start, end),
+        ).fetchall()
+
+    for row in rows:
+        category, detail = classify_visit_source(row["referrer"], row["utm_source"])
+        buckets[category] = buckets.get(category, 0) + 1
+        if category == "기타" and detail:
+            other_details[detail] = other_details.get(detail, 0) + 1
+
+    order = [
+        "스레드",
+        "인스타그램",
+        "네이버",
+        "구글 검색",
+        "카카오톡",
+        "직접 유입",
+        "기타",
+    ]
+
+    def sort_key(item: tuple[str, int]) -> tuple[int, int]:
+        name, count = item
+        try:
+            idx = order.index(name)
+        except ValueError:
+            idx = len(order)
+        return (-count, idx)
+
+    breakdown = []
+    for name, count in sorted(buckets.items(), key=sort_key):
+        entry: dict = {"source": name, "count": count}
+        if name == "기타" and other_details:
+            entry["detail"] = [
+                f"{label} ({cnt})"
+                for label, cnt in sorted(
+                    other_details.items(), key=lambda x: (-x[1], x[0])
+                )[:10]
+            ]
+        breakdown.append(entry)
+
+    return {"date": target, "timezone": "Asia/Seoul", "breakdown": breakdown}
 
 
 def get_persistence_info() -> dict:
@@ -527,28 +681,6 @@ def get_persistence_info() -> dict:
         "dbPath": str(DB_PATH),
         "spotCount": spot_count,
         "persistentDiskExpected": str(DATA_DIR) == "/app/data",
-    }
-
-
-def get_admin_stats() -> dict:
-    today = today_utc()
-    with get_conn() as conn:
-        total_visits = conn.execute("SELECT COUNT(*) AS c FROM visits").fetchone()["c"]
-        today_visits = conn.execute(
-            "SELECT COUNT(*) AS c FROM visits WHERE substr(visited_at, 1, 10) = ?",
-            (today,),
-        ).fetchone()["c"]
-        logged_in_visits = conn.execute(
-            "SELECT COUNT(*) AS c FROM visits WHERE user_id IS NOT NULL"
-        ).fetchone()["c"]
-        total_users = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
-        total_reviews = conn.execute("SELECT COUNT(*) AS c FROM reviews").fetchone()["c"]
-    return {
-        "totalVisits": total_visits,
-        "todayVisits": today_visits,
-        "loggedInVisits": logged_in_visits,
-        "totalUsers": total_users,
-        "totalReviews": total_reviews,
     }
 
 

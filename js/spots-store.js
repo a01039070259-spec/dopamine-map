@@ -473,8 +473,23 @@
     return apiFetch("/api/auth/me");
   }
 
+  function collectVisitPayload() {
+    const params = new URLSearchParams(window.location.search || "");
+    const landing = window.location.pathname + (window.location.search || "");
+    return {
+      referrer: document.referrer ? document.referrer : "direct",
+      utm_source: params.get("utm_source") || "",
+      utm_medium: params.get("utm_medium") || "",
+      utm_campaign: params.get("utm_campaign") || "",
+      landing_page: landing || "/",
+    };
+  }
+
   async function recordVisit() {
-    return apiFetch("/api/visits", { method: "POST", body: "{}" });
+    return apiFetch("/api/visits", {
+      method: "POST",
+      body: JSON.stringify(collectVisitPayload()),
+    });
   }
 
   async function submitReview(payload) {
@@ -507,6 +522,13 @@
 
   async function fetchAdminStats(adminPassword) {
     return apiFetch("/api/admin/stats", {
+      headers: { "X-Admin-Password": adminPassword || "" },
+    });
+  }
+
+  async function fetchAdminReferrerStats(adminPassword, date) {
+    const q = date ? "?date=" + encodeURIComponent(date) : "?date=today";
+    return apiFetch("/api/admin/stats/referrers" + q, {
       headers: { "X-Admin-Password": adminPassword || "" },
     });
   }
@@ -593,11 +615,13 @@
     fetchSpotById,
     fetchAuthMe,
     recordVisit,
+    collectVisitPayload,
     submitReview,
     saveDiagnosis,
     fetchDiagnosis,
     logoutAuth,
     fetchAdminStats,
+    fetchAdminReferrerStats,
     clearLoginDataFromApi,
     adminGeocode,
     kakaoLoginUrl,

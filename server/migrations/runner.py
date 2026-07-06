@@ -11,12 +11,14 @@ logger = logging.getLogger(__name__)
 MIGRATIONS_DIR = Path(__file__).resolve().parent
 MIGRATION_001_SQL = MIGRATIONS_DIR / "001_add_venues.sql"
 MIGRATION_002_SQL = MIGRATIONS_DIR / "002_map_venues.sql"
+MIGRATION_VISIT_TRACKING_SQL = MIGRATIONS_DIR / "003_add_visit_tracking.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
 VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
 BACKUP_SUFFIX_002 = ".backup_pre_venue_data"
 BACKUP_SUFFIX_003 = ".backup_pre_venue_data_003"
 BACKUP_SUFFIX_004 = ".backup_pre_venue_data_004"
+BACKUP_SUFFIX_VISIT_TRACKING = ".backup_pre_visit_tracking"
 MIGRATION_002_VENUE_NAMES = (
     "인제엑스게임리조트",
     "하동알프스레포츠(금오산)",
@@ -404,8 +406,74 @@ def apply_004_map_venues(db_path: Path) -> None:
     )
 
 
+def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    cols = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+    return column in cols
+
+
+def apply_003_add_visit_tracking(db_path: Path) -> None:
+    """Add referrer/UTM columns to visits. Idempotent via referrer column check."""
+    migration_name = "003_add_visit_tracking"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    if not MIGRATION_VISIT_TRACKING_SQL.is_file():
+        raise RuntimeError(
+            f"migration {migration_name}: SQL file missing at {MIGRATION_VISIT_TRACKING_SQL}"
+        )
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "visits"):
+            logger.info("migration %s: skip (visits table missing)", migration_name)
+            return
+        if _column_exists(conn, "visits", "referrer"):
+            logger.info("migration %s: skip (referrer column already exists)", migration_name)
+            return
+    finally:
+        conn.close()
+
+    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_VISIT_TRACKING)
+    if backup_path.exists():
+        logger.info(
+            "migration %s: backup already exists at %s",
+            migration_name,
+            backup_path,
+        )
+    else:
+        shutil.copy2(db_path, backup_path)
+        logger.info("migration %s: backup created at %s", migration_name, backup_path)
+
+    sql = MIGRATION_VISIT_TRACKING_SQL.read_text(encoding="utf-8")
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.executescript(sql)
+        conn.commit()
+    finally:
+        conn.close()
+
+    conn = sqlite3.connect(db_path)
+    try:
+        visit_count = conn.execute("SELECT COUNT(*) FROM visits").fetchone()[0]
+        null_referrer = conn.execute(
+            "SELECT COUNT(*) FROM visits WHERE referrer IS NULL"
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+    logger.info(
+        "migration %s: applied successfully (visits=%s legacy_null_referrer=%s)",
+        migration_name,
+        visit_count,
+        null_referrer,
+    )
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
     apply_003_map_venues(db_path)
     apply_004_map_venues(db_path)
+    apply_003_add_visit_tracking(db_path)

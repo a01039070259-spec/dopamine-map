@@ -115,6 +115,78 @@
     .addr-layer-inner{background:#fff;border-radius:12px;width:100%;max-width:520px;height:500px;max-height:82vh;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.45)}
     .addr-layer-close{position:absolute;top:10px;right:10px;z-index:2;background:#111;color:#fff;border:none;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer}
     #postcodeEmbed{flex:1;min-height:0}
+
+    /* ── Admin dashboard / accordion ── */
+    .admin-section{
+      background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+      margin-bottom:12px;overflow:hidden;
+    }
+    .admin-section-head{
+      width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;background:var(--bg3);border:none;border-bottom:1px solid transparent;
+      color:#f0f0f0;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;
+      cursor:pointer;text-align:left;transition:background .15s,border-color .15s;
+    }
+    .admin-section-head:hover{background:#1a1a1a}
+    .admin-section.open .admin-section-head{border-bottom-color:var(--border)}
+    .admin-section-title{display:flex;align-items:center;gap:8px;min-width:0}
+    .admin-section-title .ico{font-size:16px;flex-shrink:0}
+    .admin-section-meta{font-size:11px;font-weight:500;color:var(--text-muted);white-space:nowrap}
+    .admin-section-chevron{
+      flex-shrink:0;width:28px;height:28px;border-radius:8px;border:1px solid var(--border2);
+      display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim);
+      transition:transform .2s,background .15s;
+    }
+    .admin-section.open .admin-section-chevron{transform:rotate(180deg);background:#1a1a1a}
+    .admin-section-body{display:none;padding:16px}
+    .admin-section.open .admin-section-body{display:block}
+    .admin-subsection{
+      margin-top:14px;padding-top:14px;border-top:1px dashed var(--border2);
+    }
+    .admin-sub-head{
+      width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:10px 12px;background:#0f0f0f;border:1px solid var(--border2);border-radius:10px;
+      color:#ddd;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;
+      cursor:pointer;text-align:left;
+    }
+    .admin-sub-head:hover{border-color:#333}
+    .admin-sub.open .admin-sub-chevron{transform:rotate(180deg)}
+    .admin-sub-body{display:none;margin-top:10px}
+    .admin-sub.open .admin-sub-body{display:block}
+    .admin-sub-chevron{font-size:10px;color:var(--text-muted);transition:transform .2s}
+
+    .stats-hero{
+      display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+    }
+    .stats-hero-main{
+      flex:1;min-width:200px;background:linear-gradient(135deg,#0d2a06,#111);
+      border:1px solid #1a4a1a;border-radius:12px;padding:18px 20px;
+    }
+    .stats-hero-label{font-size:12px;color:#8fbc8f;font-weight:600;margin-bottom:6px}
+    .stats-hero-value{font-size:42px;font-weight:900;color:var(--neon);line-height:1}
+    .stats-hero-sub{font-size:11px;color:var(--text-dim);margin-top:8px}
+    .stats-grid{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;
+    }
+    .stat-card{
+      background:#111;border:1px solid var(--border2);border-radius:10px;padding:12px 14px;
+    }
+    .stat-card-label{font-size:11px;color:var(--text-dim);margin-bottom:4px}
+    .stat-card-value{font-size:22px;font-weight:900;line-height:1.1}
+    .stat-card-value.neon{color:var(--neon)}
+    .stat-card-value.gold{color:#fee500}
+    .stat-card-value.purple{color:#cc44ff}
+    .ref-list{display:flex;flex-direction:column;gap:8px}
+    .ref-row{display:grid;grid-template-columns:88px 1fr 36px;align-items:center;gap:10px;font-size:12px}
+    .ref-name{color:#ddd;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ref-bar-track{height:8px;background:#1a1a1a;border-radius:4px;overflow:hidden}
+    .ref-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#39ff14,#2a9d0a);min-width:2px}
+    .ref-count{color:#aaa;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+    .ref-empty{font-size:12px;color:var(--text-muted);line-height:1.6;padding:8px 0}
+    .ref-detail{margin-top:4px;font-size:10px;color:#666;padding-left:98px;line-height:1.5}
+    .stats-actions{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+    .danger-btn{border-color:#4a1a1a !important;color:#f87171 !important}
+    .panel-flat{background:transparent;border:none;padding:0}
   </style>
 </head>
 <body>
@@ -153,7 +225,41 @@
         등록된 스팟은 <strong>서버 DB</strong>에 저장되며 모든 사용자 지도에 표시됩니다.
       </div>
 
-      <div class="panel">
+      <section class="admin-section open" data-section="stats" id="secStats">
+        <button type="button" class="admin-section-head" aria-expanded="true" data-toggle-section="stats">
+          <span class="admin-section-title"><span class="ico">📊</span> 방문 통계</span>
+          <span class="admin-section-meta" id="statsHeadMeta">불러오는 중…</span>
+          <span class="admin-section-chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="admin-section-body">
+          <div id="statsBox" class="hint">통계를 불러옵니다…</div>
+          <div class="admin-subsection admin-sub" id="subReferrers" data-subsection="referrers">
+            <button type="button" class="admin-sub-head" aria-expanded="false" data-toggle-sub="referrers">
+              <span>🔗 유입처 breakdown</span>
+              <span class="admin-sub-chevron">▼</span>
+            </button>
+            <div class="admin-sub-body" id="referrerBox">
+              <p class="ref-empty">유입처 데이터를 불러옵니다…</p>
+            </div>
+          </div>
+          <div class="stats-actions">
+            <button type="button" class="ghost-btn danger-btn" id="clearLoginDataBtn">
+              로그인·방문 기록 전체 삭제
+            </button>
+            <p class="hint" style="margin-top:8px">
+              카카오 가입 사용자 · 방문 로그 · 로그인 리뷰가 삭제됩니다. (스팟 데이터는 유지)
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" data-section="register" id="secRegister">
+        <button type="button" class="admin-section-head" aria-expanded="false" data-toggle-section="register">
+          <span class="admin-section-title"><span class="ico">➕</span> 스팟 등록 · 수정</span>
+          <span class="admin-section-meta">폼 접기/펼치기</span>
+          <span class="admin-section-chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="admin-section-body panel-flat">
         <form id="registerForm">
           <p class="form-mode" id="formMode">➕ 새 스팟 등록</p>
           <div class="sec">
@@ -237,35 +343,36 @@
             <button type="button" class="ghost-btn" id="resetBtn">초기화</button>
           </div>
         </form>
-      </div>
-
-      <div class="panel" style="margin-top:20px">
-        <p class="sec-label">등록된 스팟 관리</p>
-        <span class="hint" style="display:block;margin-bottom:12px">수정 · 삭제는 아래 목록에서 할 수 있습니다.</span>
-        <div id="customList"></div>
-      </div>
-
-      <div class="panel" style="margin-top:20px">
-        <p class="sec-label">방문 통계</p>
-        <div id="statsBox" class="hint">로그인 후 통계를 불러옵니다.</div>
-        <div class="actions" style="margin-top:12px">
-          <button type="button" class="ghost-btn" id="clearLoginDataBtn" style="border-color:#ff4444;color:#ff8888">
-            로그인 기록 전체 삭제
-          </button>
         </div>
-        <span class="hint" style="display:block;margin-top:8px">
-          카카오 가입 사용자 · 방문 로그 · 로그인 리뷰가 모두 삭제됩니다. (스팟 데이터는 유지)
-        </span>
-      </div>
+      </section>
 
-      <div class="panel" style="margin-top:20px">
-        <p class="sec-label">비밀번호 변경</p>
-        <div class="field">
-          <label for="newPass">새 관리자 비밀번호</label>
-          <input id="newPass" type="password" minlength="4" placeholder="4자 이상" />
+      <section class="admin-section" data-section="spots" id="secSpots">
+        <button type="button" class="admin-section-head" aria-expanded="false" data-toggle-section="spots">
+          <span class="admin-section-title"><span class="ico">📋</span> 등록된 스팟 관리</span>
+          <span class="admin-section-meta" id="spotsHeadMeta">0개</span>
+          <span class="admin-section-chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="admin-section-body panel-flat">
+          <span class="hint" style="display:block;margin-bottom:12px">수정 · 삭제는 아래 목록에서 할 수 있습니다.</span>
+          <div id="customList"></div>
         </div>
-        <button type="button" class="ghost-btn" id="changePassBtn">비밀번호 저장</button>
-      </div>
+      </section>
+
+      <section class="admin-section" data-section="settings" id="secSettings">
+        <button type="button" class="admin-section-head" aria-expanded="false" data-toggle-section="settings">
+          <span class="admin-section-title"><span class="ico">⚙️</span> 설정</span>
+          <span class="admin-section-meta">비밀번호</span>
+          <span class="admin-section-chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="admin-section-body panel-flat">
+          <p class="sec-label">비밀번호 변경</p>
+          <div class="field">
+            <label for="newPass">새 관리자 비밀번호</label>
+            <input id="newPass" type="password" minlength="4" placeholder="4자 이상" />
+          </div>
+          <button type="button" class="ghost-btn" id="changePassBtn">비밀번호 저장</button>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -489,6 +596,12 @@
       setSpotPhoto(spot.img || "");
       document.getElementById("regWarns").value = DopamineStore.formatWarnsForInput(spot.warns);
       setFormMode(true, spot.name);
+      const regSec = document.getElementById("secRegister");
+      if (regSec && !regSec.classList.contains("open")) {
+        regSec.classList.add("open");
+        saveSectionPref("register", true);
+        regSec.querySelector(".admin-section-head")?.setAttribute("aria-expanded", "true");
+      }
       document.getElementById("registerForm").scrollIntoView({ behavior: "smooth", block: "start" });
       showToast(`「${spot.name}」 불러옴 — 수정 후 저장`, 2200);
     }
@@ -551,35 +664,162 @@
       sessionStorage.removeItem(ADMIN_SESSION_KEY);
     }
 
+    const ADMIN_SECTION_KEY = "dopamine_admin_sections";
+
+    function getSectionPrefs() {
+      try {
+        return JSON.parse(localStorage.getItem(ADMIN_SECTION_KEY) || "{}") || {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function saveSectionPref(id, open) {
+      const prefs = getSectionPrefs();
+      prefs[id] = !!open;
+      localStorage.setItem(ADMIN_SECTION_KEY, JSON.stringify(prefs));
+    }
+
+    function initAdminSections() {
+      const prefs = getSectionPrefs();
+      const defaults = { stats: true, register: false, spots: false, settings: false, referrers: false };
+
+      document.querySelectorAll(".admin-section[data-section]").forEach((sec) => {
+        const id = sec.dataset.section;
+        const open = prefs[id] != null ? prefs[id] : defaults[id];
+        sec.classList.toggle("open", open);
+        const head = sec.querySelector(".admin-section-head");
+        if (head) head.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      document.querySelectorAll(".admin-sub[data-subsection]").forEach((sub) => {
+        const id = sub.dataset.subsection;
+        const open = prefs["sub_" + id] != null ? prefs["sub_" + id] : defaults[id];
+        sub.classList.toggle("open", open);
+        const head = sub.querySelector(".admin-sub-head");
+        if (head) head.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      document.querySelectorAll("[data-toggle-section]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const sec = btn.closest(".admin-section");
+          if (!sec) return;
+          const open = !sec.classList.contains("open");
+          sec.classList.toggle("open", open);
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+          saveSectionPref(sec.dataset.section, open);
+        });
+      });
+
+      document.querySelectorAll("[data-toggle-sub]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const sub = btn.closest(".admin-sub");
+          if (!sub) return;
+          const open = !sub.classList.contains("open");
+          sub.classList.toggle("open", open);
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+          saveSectionPref("sub_" + sub.dataset.subsection, open);
+          if (open && sub.dataset.subsection === "referrers") {
+            renderReferrers();
+          }
+        });
+      });
+    }
+
+    function renderReferrerBreakdown(breakdown) {
+      if (!breakdown || !breakdown.length) {
+        return '<p class="ref-empty">오늘 유입 데이터가 아직 없습니다.</p>';
+      }
+      const max = Math.max(...breakdown.map((b) => b.count || 0), 1);
+      const rows = breakdown
+        .map((item) => {
+          const pct = Math.round(((item.count || 0) / max) * 100);
+          let detail = "";
+          if (item.detail && item.detail.length) {
+            detail = `<div class="ref-detail">${item.detail
+              .slice(0, 5)
+              .map((d) => escapeHtml(String(d)))
+              .join(" · ")}</div>`;
+          }
+          return `
+            <div class="ref-row-wrap">
+              <div class="ref-row">
+                <span class="ref-name" title="${escapeHtml(item.source)}">${escapeHtml(item.source)}</span>
+                <div class="ref-bar-track"><div class="ref-bar-fill" style="width:${pct}%"></div></div>
+                <span class="ref-count">${item.count || 0}</span>
+              </div>
+              ${detail}
+            </div>`;
+        })
+        .join("");
+      return `<div class="ref-list">${rows}</div>`;
+    }
+
+    async function renderReferrers() {
+      const box = document.getElementById("referrerBox");
+      if (!box) return;
+      box.innerHTML = '<p class="ref-empty">유입처 데이터를 불러옵니다…</p>';
+      try {
+        const data = await DopamineStore.fetchAdminReferrerStats(getAdminPass(), "today");
+        const tz = data.timezone === "Asia/Seoul" ? "KST" : (data.timezone || "");
+        const dateLabel = data.date ? ` (${data.date}${tz ? " " + tz : ""})` : "";
+        box.innerHTML =
+          `<p class="hint" style="margin-bottom:10px">오늘 기준 유입처${dateLabel}</p>` +
+          renderReferrerBreakdown(data.breakdown || []);
+      } catch (err) {
+        box.innerHTML =
+          err.status === 401
+            ? '<p class="ref-empty">유입처 조회 인증 실패</p>'
+            : '<p class="ref-empty">유입처 데이터를 불러올 수 없습니다.</p>';
+      }
+    }
+
     async function renderStats() {
       const box = document.getElementById("statsBox");
+      const meta = document.getElementById("statsHeadMeta");
       if (!box) return;
       try {
         const s = await DopamineStore.fetchAdminStats(getAdminPass());
+        const today = s.todayVisits || 0;
+        const total = s.totalVisits || 0;
+        const dateTag = s.todayDate ? ` · ${s.todayDate} KST` : "";
+        if (meta) meta.textContent = `오늘 ${today} · 전체 ${total}${dateTag}`;
         box.innerHTML = `
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-            <div style="background:#111;border:1px solid var(--border2);border-radius:10px;padding:12px">
-              <div style="font-size:11px;color:var(--text-dim)">전체 방문</div>
-              <div style="font-size:22px;font-weight:900;color:var(--neon)">${s.totalVisits || 0}</div>
+          <div class="stats-hero">
+            <div class="stats-hero-main">
+              <div class="stats-hero-label">오늘 방문${s.todayDate ? ` · ${s.todayDate} (KST)` : ""}</div>
+              <div class="stats-hero-value">${today}</div>
+              <div class="stats-hero-sub">페이지 로드 1회 = 1건 · 전체 누적 ${total}건</div>
             </div>
-            <div style="background:#111;border:1px solid var(--border2);border-radius:10px;padding:12px">
-              <div style="font-size:11px;color:var(--text-dim)">오늘 방문</div>
-              <div style="font-size:22px;font-weight:900;color:#fff">${s.todayVisits || 0}</div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-label">전체 방문</div>
+              <div class="stat-card-value neon">${total}</div>
             </div>
-            <div style="background:#111;border:1px solid var(--border2);border-radius:10px;padding:12px">
-              <div style="font-size:11px;color:var(--text-dim)">로그인 방문</div>
-              <div style="font-size:22px;font-weight:900;color:#fee500">${s.loggedInVisits || 0}</div>
+            <div class="stat-card">
+              <div class="stat-card-label">오늘 방문</div>
+              <div class="stat-card-value">${today}</div>
             </div>
-            <div style="background:#111;border:1px solid var(--border2);border-radius:10px;padding:12px">
-              <div style="font-size:11px;color:var(--text-dim)">가입 사용자</div>
-              <div style="font-size:22px;font-weight:900;color:#fff">${s.totalUsers || 0}</div>
+            <div class="stat-card">
+              <div class="stat-card-label">로그인 방문</div>
+              <div class="stat-card-value gold">${s.loggedInVisits || 0}</div>
             </div>
-            <div style="background:#111;border:1px solid var(--border2);border-radius:10px;padding:12px">
-              <div style="font-size:11px;color:var(--text-dim)">리뷰 수</div>
-              <div style="font-size:22px;font-weight:900;color:var(--purple)">${s.totalReviews || 0}</div>
+            <div class="stat-card">
+              <div class="stat-card-label">가입 사용자</div>
+              <div class="stat-card-value">${s.totalUsers || 0}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">리뷰 수</div>
+              <div class="stat-card-value purple">${s.totalReviews || 0}</div>
             </div>
           </div>`;
+        const subRef = document.getElementById("subReferrers");
+        if (subRef && subRef.classList.contains("open")) {
+          await renderReferrers();
+        }
       } catch (err) {
+        if (meta) meta.textContent = "조회 실패";
         box.textContent = err.status === 401 ? "통계 조회 인증 실패" : "통계를 불러올 수 없습니다";
       }
     }
@@ -587,6 +827,7 @@
     async function showAdmin() {
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("adminView").classList.remove("hidden");
+      initAdminSections();
       await renderCustomList();
       await renderStats();
     }
@@ -647,6 +888,9 @@
       try {
         const result = await DopamineStore.clearLoginDataFromApi(getAdminPass());
         await renderStats();
+        if (document.getElementById("subReferrers")?.classList.contains("open")) {
+          await renderReferrers();
+        }
         showToast(
           `삭제 완료 — 사용자 ${result.deletedUsers || 0}명 · 방문 ${result.deletedVisits || 0}건 · 리뷰 ${result.deletedReviews || 0}건`,
           4000
@@ -765,16 +1009,19 @@
 
     async function renderCustomList() {
       const box = document.getElementById("customList");
+      const meta = document.getElementById("spotsHeadMeta");
       try {
         spotsCache = await DopamineStore.fetchAllSpots();
       } catch (err) {
         spotsCache = [];
+        if (meta) meta.textContent = "연결 실패";
         box.innerHTML =
           '<p class="empty">서버에 연결할 수 없습니다.<br><code>python -m uvicorn server.main:app --port 8080</code> 실행 후 새로고침하세요.</p>';
         return;
       }
+      if (meta) meta.textContent = `${spotsCache.length}개`;
       if (!spotsCache.length) {
-        box.innerHTML = '<p class="empty">등록된 스팟이 없습니다. 위 폼에서 새로 추가하세요.</p>';
+        box.innerHTML = '<p class="empty">등록된 스팟이 없습니다. 「스팟 등록 · 수정」 섹션을 펼쳐 추가하세요.</p>';
         return;
       }
       box.innerHTML = spotsCache
