@@ -193,7 +193,13 @@
   }
 
   function hasSpotImage(spot) {
-    return !!(spot && spot.img && String(spot.img).indexOf("data:image") === 0);
+    if (!spot) return false;
+    if (spot.img && String(spot.img).indexOf("data:image") === 0) return true;
+    return !!spot.hasImage;
+  }
+
+  function spotImageUrl(id) {
+    return "/api/spots/" + Number(id) + "/image";
   }
 
   function compressImageFile(file, maxW, maxH, quality) {
@@ -551,6 +557,7 @@
     parseRegisterWarns,
     nextSpotId,
     hasSpotImage,
+    spotImageUrl,
     compressImageFile,
     normalizeTypeLabel,
     resolveTypeInfo,

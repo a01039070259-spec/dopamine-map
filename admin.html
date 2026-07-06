@@ -785,7 +785,7 @@
         <div class="item${editingSpotId === s.id ? " edit-mode" : ""}" style="${editingSpotId === s.id ? "border-color:#4a3a0a" : ""}">
           ${
             DopamineStore.hasSpotImage(s)
-              ? `<img src="${s.img}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0" />`
+              ? `<img src="${DopamineStore.spotImageUrl(s.id)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy" />`
               : `<span style="font-size:22px">${escapeHtml(s.em || "🔥")}</span>`
           }
           <div class="item-main">

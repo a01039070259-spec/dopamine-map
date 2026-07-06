@@ -37,7 +37,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   --bg:#0a0a0a;
   --bg2:#111;
   --bg3:#161616;
-  --border:#1e1e1e;
+  --border:#1e1e
   --border2:#2a2a2a;
   --text-muted:#555;
   --text-dim:#888;
@@ -828,16 +828,16 @@ function reloadVenues() {
 }
 
 function reloadSpotAndVenueData() {
-  return reloadSpots().then(() => reloadVenues());
+  return Promise.all([reloadSpots(), reloadVenues()]);
 }
 
 function enrichVenues(list) {
   return list.map((v) => {
     const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
     return Object.assign({}, v, {
-      _th: spot ? spot.th : 3,
-      _fe: spot ? spot.fe : 3,
-      _sp: spot ? spot.sp : 0,
+      _th: spot ? spot.th : (v.th != null ? v.th : 3),
+      _fe: spot ? spot.fe : (v.fe != null ? v.fe : 3),
+      _sp: spot ? spot.sp : (v.sp != null ? v.sp : 0),
     });
   });
 }
@@ -1015,6 +1015,15 @@ function matchVenueSearch(v, query) {
   if (v.spotCount === 1 && v.primarySpotId) {
     const spot = getSpot(v.primarySpotId);
     if (spot) return DopamineStore.matchSpotSearch(spot, query);
+    return DopamineStore.matchSpotSearch({
+      name: v.name || '',
+      addr: v.address || '',
+      br: v.description || '',
+      tags: v.tags || [],
+      tl: v.tl || '',
+      type: '',
+      rank: v.rank || '',
+    }, query);
   }
   const members = getVenueMemberSpots(v);
   if (members.length) {
@@ -1354,6 +1363,23 @@ function spotHasImg(a) {
   return DopamineStore.hasSpotImage(a);
 }
 
+function spotImageSrc(a) {
+  if (!a) return "";
+  if (a.img && String(a.img).indexOf("data:image") === 0) return a.img;
+  if (a.hasImage && a.id) return DopamineStore.spotImageUrl(a.id);
+  if (a.hasImage && a.primarySpotId) return DopamineStore.spotImageUrl(a.primarySpotId);
+  return "";
+}
+
+function venueImageSrc(v) {
+  if (!v) return "";
+  if (v.mainImage && DopamineStore.hasSpotImage({ img: v.mainImage })) return v.mainImage;
+  if (v.hasImage && v.primarySpotId) return DopamineStore.spotImageUrl(v.primarySpotId);
+  if (v.hasImage && v.id && v.spotCount === 1) return DopamineStore.spotImageUrl(v.id);
+  const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+  return spotImageSrc(spot);
+}
+
 function escAttr(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
@@ -1362,23 +1388,26 @@ function escAttr(s) {
 }
 
 function spotCardMedia(a) {
-  if (spotHasImg(a)) {
-    return `<img class="spot-cover-img" src="${a.img}" alt="${escAttr(a.name)}"/>`;
+  const src = spotImageSrc(a);
+  if (src) {
+    return `<img class="spot-cover-img" src="${src}" alt="${escAttr(a.name)}" loading="lazy" decoding="async"/>`;
   }
   return `<span class="spot-emoji">${a.em}</span>`;
 }
 
 function spotHeroMedia(a) {
-  if (spotHasImg(a)) {
-    return `<img class="spot-hero-img" src="${a.img}" alt="${escAttr(a.name)}"/>`;
+  const src = spotImageSrc(a);
+  if (src) {
+    return `<img class="spot-hero-img" src="${src}" alt="${escAttr(a.name)}" decoding="async"/>`;
   }
   return `<span class="d-hero-em">${a.em}</span>`;
 }
 
 function spotThumbMedia(a, size) {
   const px = size || 44;
-  if (spotHasImg(a)) {
-    return `<img class="spot-thumb-img" src="${a.img}" alt="" width="${px}" height="${px}"/>`;
+  const src = spotImageSrc(a);
+  if (src) {
+    return `<img class="spot-thumb-img" src="${src}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async"/>`;
   }
   return `<span class="bs-em" style="font-size:${Math.round(px * 0.65)}px">${a.em}</span>`;
 }
@@ -1417,40 +1446,45 @@ function renderSpotCardHtml(a, opts) {
 }
 
 function venueCardMedia(v) {
-  const img = v.mainImage || '';
-  if (img && DopamineStore.hasSpotImage({ img: img })) {
-    return `<img class="spot-cover-img" src="${img}" alt="${escAttr(v.name)}"/>`;
+  const src = venueImageSrc(v);
+  if (src) {
+    return `<img class="spot-cover-img" src="${src}" alt="${escAttr(v.name)}" loading="lazy" decoding="async"/>`;
   }
   const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
-  if (spot && spotHasImg(spot)) {
-    return `<img class="spot-cover-img" src="${spot.img}" alt="${escAttr(v.name)}"/>`;
-  }
-  return `<span class="spot-emoji">${spot && spot.em ? spot.em : '📍'}</span>`;
+  return `<span class="spot-emoji">${spot && spot.em ? spot.em : (v.em || '📍')}</span>`;
 }
 
 /** VenueCard — 메인 리스트용 */
 function renderVenueCardHtml(v) {
   const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
-  const bg = spot && spot.bg ? spot.bg : '#1a0a2e';
+  const bg = (spot && spot.bg) ? spot.bg : (v.bg || '#1a0a2e');
   const badge = v.spotCount > 1
     ? `<div class="mc-venue-badge">${v.spotCount}개 체험</div>`
     : '';
-  const tl = v.spotCount > 1 ? '복합 체험장' : (spot && spot.tl ? spot.tl : '액티비티');
+  const tl = v.spotCount > 1 ? '복합 체험장' : ((spot && spot.tl) ? spot.tl : (v.tl || '액티비티'));
   const chip = spot ? chipClass(spot) : 't-custom';
-  const ts = spot && v.spotCount === 1 ? (spot.ts || '') : '';
-  const rank = spot && v.spotCount === 1 ? (spot.rank || '') : '';
+  const ts = (spot && v.spotCount === 1) ? (spot.ts || v.ts || '') : '';
+  const rank = (spot && v.spotCount === 1) ? (spot.rank || v.rank || '') : '';
   const th = v._th || (spot ? spot.th : 3);
-  const desc = spot && v.spotCount === 1 ? (spot.br || '') : (v.description || '');
+  const desc = v.spotCount === 1
+    ? ((spot && spot.br) || v.description || '')
+    : (v.description || '');
   const cap = desc
     ? `<div class="mc-img-cap"><div class="mc-img-cap-tl">이곳은?</div><div class="mc-img-cap-tx">${desc}</div></div>`
     : '';
   const memberSpots = getVenueMemberSpots(v);
   const tagList = [];
-  memberSpots.forEach((s) => {
-    (s.tags || []).forEach((t) => {
+  if (memberSpots.length) {
+    memberSpots.forEach((s) => {
+      (s.tags || []).forEach((t) => {
+        if (tagList.indexOf(t) === -1) tagList.push(t);
+      });
+    });
+  } else if (v.tags && v.tags.length) {
+    v.tags.forEach((t) => {
       if (tagList.indexOf(t) === -1) tagList.push(t);
     });
-  });
+  }
   const tags = tagList.map((t) => `<span class="mc-tag">${t}</span>`).join('');
   return `
     <div class="mc" onclick="goVenue(${v.id})">
@@ -1499,8 +1533,10 @@ function renderVenueDetailView(venue) {
     <div class="d-hero" style="background:#1a0a2e;min-height:180px">
       <div class="d-hero-ov"></div>
       ${venue.mainImage && DopamineStore.hasSpotImage({ img: venue.mainImage })
-        ? `<img class="spot-hero-img" src="${venue.mainImage}" alt="${escAttr(venue.name)}"/>`
-        : `<span class="d-hero-em">📍</span>`}
+        ? `<img class="spot-hero-img" src="${venue.mainImage}" alt="${escAttr(venue.name)}" decoding="async"/>`
+        : venueImageSrc(venue)
+          ? `<img class="spot-hero-img" src="${venueImageSrc(venue)}" alt="${escAttr(venue.name)}" decoding="async"/>`
+          : `<span class="d-hero-em">📍</span>`}
       <div class="d-hero-ct">
         <span class="chip t-custom" style="margin-bottom:6px;display:inline-flex">${venue.spotCount}개 체험</span>
         <p class="d-title">${venue.name}</p>
@@ -2307,16 +2343,17 @@ function isCompactMapMarkers() {
 }
 
 function markerThumbHTML(a, compact) {
+  const src = spotImageSrc(a);
   if (compact) {
     const th = Number(a.th) || 0;
-    const icon = spotHasImg(a) ? '' : (a.em || (th >= 5 ? '💀' : '🔥'));
-    if (spotHasImg(a)) {
-      return `<img class="dm-thumb" src="${a.img}" alt=""/>`;
+    const icon = src ? '' : (a.em || (th >= 5 ? '💀' : '🔥'));
+    if (src) {
+      return `<img class="dm-thumb" src="${src}" alt="" loading="lazy"/>`;
     }
     return `<span class="dm-fallback">${icon}</span>`;
   }
-  if (spotHasImg(a)) {
-    return `<img class="dm-thumb" src="${a.img}" alt=""/>`;
+  if (src) {
+    return `<img class="dm-thumb" src="${src}" alt="" loading="lazy"/>`;
   }
   return `<span class="dm-fallback">${a.em || '🔥'}</span>`;
 }
@@ -2546,8 +2583,8 @@ function goMap() {
 ═══════════════════════════════════════ */
 async function bootApp() {
   migrateLegacyDiagnosisStorage();
-  await reloadSpotAndVenueData();
-  await refreshAuth();
+  const spotsPromise = reloadSpots();
+  await reloadVenues();
 
   const onboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
   if (!onboardingDone) {
@@ -2556,6 +2593,14 @@ async function bootApp() {
     renderCards(getDisplayedVenues());
     await loadSavedDiagnosisChip();
   }
+
+  await spotsPromise;
+  VENUES = enrichVenues(VENUES);
+  if (onboardingDone) {
+    renderCards(getDisplayedVenues());
+  }
+
+  await refreshAuth();
 
   if (location.protocol !== 'file:') {
     DopamineStore.recordVisit().catch(() => {});

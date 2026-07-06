@@ -9,8 +9,9 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 
 from server.auth import (
     clear_auth_cookie,
@@ -34,6 +35,7 @@ from server.database import (
     get_persistence_info,
     get_spot,
     get_spot_detail,
+    get_spot_image_data,
     get_user_by_id,
     init_db,
     list_spots,
@@ -80,6 +82,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 def verify_admin(
@@ -340,6 +343,19 @@ def api_get_venue(venue_id: int):
     if not venue:
         raise HTTPException(status_code=404, detail="장소를 찾을 수 없습니다")
     return venue
+
+
+@app.get("/api/spots/{spot_id}/image")
+def api_spot_image(spot_id: int):
+    data = get_spot_image_data(spot_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="이미지가 없습니다")
+    content, media_type = data
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=604800, immutable"},
+    )
 
 
 @app.get("/api/spots/{spot_id}")

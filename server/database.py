@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -141,11 +143,34 @@ def row_to_spot(row: sqlite3.Row) -> dict:
     return spot
 
 
+def spot_has_image(img: str) -> bool:
+    return bool(img and str(img).startswith("data:image"))
+
+
 def row_to_spot_summary(row: sqlite3.Row) -> dict:
     spot = row_to_spot(row)
     spot.pop("reviews", None)
     spot.pop("warns", None)
+    img = spot.pop("img", "") or ""
+    spot["hasImage"] = spot_has_image(img)
     return spot
+
+
+def get_spot_image_data(spot_id: int) -> Optional[tuple[bytes, str]]:
+    with get_conn() as conn:
+        row = conn.execute("SELECT img FROM spots WHERE id = ?", (spot_id,)).fetchone()
+    if not row:
+        return None
+    img = row["img"] or ""
+    if not spot_has_image(img):
+        return None
+    match = re.match(r"data:(image/[^;]+);base64,(.+)", img, re.DOTALL)
+    if not match:
+        return None
+    try:
+        return base64.b64decode(match.group(2)), match.group(1)
+    except (ValueError, TypeError):
+        return None
 
 
 def review_row_to_dict(row: sqlite3.Row) -> dict:

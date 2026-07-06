@@ -41,22 +41,33 @@ def _row_to_venue(row: sqlite3.Row, spot_count: int) -> dict:
     }
 
 
-def _spot_to_virtual_venue(spot: dict) -> dict:
+def _spot_to_virtual_venue(spot: dict, *, for_list: bool = False) -> dict:
     """Ungrouped spot exposed as a venue using the same numeric id as the spot."""
-    return {
+    venue = {
         "id": spot["id"],
         "virtual": True,
         "name": spot["name"],
         "address": spot["addr"],
         "description": spot.get("br") or "",
-        "mainImage": spot.get("img") or "",
+        "mainImage": "" if for_list else (spot.get("img") or ""),
+        "hasImage": bool(spot.get("hasImage")),
         "region": extract_region(spot.get("addr") or ""),
         "spotCount": 1,
         "lat": spot.get("lat"),
         "lng": spot.get("lng"),
         "primarySpotId": spot["id"],
         "createdAt": spot.get("createdAt"),
+        "th": spot.get("th"),
+        "fe": spot.get("fe"),
+        "sp": spot.get("sp"),
+        "em": spot.get("em"),
+        "bg": spot.get("bg"),
+        "tl": spot.get("tl"),
+        "rank": spot.get("rank"),
+        "ts": spot.get("ts"),
+        "tags": spot.get("tags") or [],
     }
+    return venue
 
 
 def list_venues() -> list[dict]:
@@ -91,7 +102,7 @@ def list_venues() -> list[dict]:
 
     for row in spot_rows:
         spot = row_to_spot_summary(row)
-        venues.append(_spot_to_virtual_venue(spot))
+        venues.append(_spot_to_virtual_venue(spot, for_list=True))
 
     return venues
 
@@ -134,6 +145,6 @@ def get_venue(venue_id: int) -> Optional[dict]:
             return None
         spot = row_to_spot_summary(spot_row)
 
-    venue = _spot_to_virtual_venue(spot)
+    venue = _spot_to_virtual_venue(spot, for_list=False)
     venue["spots"] = [spot]
     return venue
