@@ -48,6 +48,9 @@ h1{font-size:22px;font-weight:900;margin-bottom:8px}
 const LS_ONBOARDING_DONE = "dopamine_onboarding_done";
 const LS_RESULT_TYPE = "dopamine_result_type";
 const LS_RESULT_SCORE = "dopamine_result_score";
+const LS_QUIZ_VERSION = "dopamine_quiz_version";
+const CURRENT_QUIZ_VERSION = "6x6";
+const LEGACY_MIGRATED_QUIZ_VERSION = "legacy-migrated";
 const LEGACY_RESULT_KEY = "dopamine_diagnosis_result";
 const QUIZ_SCORE_MIN = 6;
 const QUIZ_SCORE_MAX = 36;
@@ -90,14 +93,20 @@ function normalizeResultType(name) {
   return LEGACY_DIAGNOSIS_MAP[name] || name || "";
 }
 
+function scoreUsesCurrentQuizScale() {
+  const v = localStorage.getItem(LS_QUIZ_VERSION);
+  return v === CURRENT_QUIZ_VERSION || v === LEGACY_MIGRATED_QUIZ_VERSION;
+}
+
 function remapLegacyScore(score) {
   const n = Number(score);
   if (!Number.isFinite(n)) return null;
-  if (n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
+  if (scoreUsesCurrentQuizScale() && n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
   if (n >= LEGACY_QUIZ_SCORE_MIN && n <= LEGACY_QUIZ_SCORE_MAX) {
     const ratio = (n - LEGACY_QUIZ_SCORE_MIN) / (LEGACY_QUIZ_SCORE_MAX - LEGACY_QUIZ_SCORE_MIN);
     return Math.round(QUIZ_SCORE_MIN + ratio * (QUIZ_SCORE_MAX - QUIZ_SCORE_MIN));
   }
+  if (n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
   return null;
 }
 
@@ -133,6 +142,7 @@ function migrateLegacyDiagnosisStorage() {
       localStorage.setItem(LS_RESULT_SCORE, String(remapped));
       const grade = findGradeByScore(remapped);
       if (grade) localStorage.setItem(LS_RESULT_TYPE, grade.grade);
+      localStorage.setItem(LS_QUIZ_VERSION, LEGACY_MIGRATED_QUIZ_VERSION);
       sessionStorage.setItem("dopamine_legacy_score_remapped", "1");
     }
   }

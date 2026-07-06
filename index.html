@@ -1005,6 +1005,9 @@ const QUIZ = [
 ];
 
 const LS_ONBOARDING_DONE = 'dopamine_onboarding_done';
+const LS_QUIZ_VERSION = 'dopamine_quiz_version';
+const CURRENT_QUIZ_VERSION = '6x6';
+const LEGACY_MIGRATED_QUIZ_VERSION = 'legacy-migrated';
 const LS_RESULT_TYPE = 'dopamine_result_type';
 const LS_RESULT_SCORE = 'dopamine_result_score';
 const SS_RESULT_TYPE = 'dopamine_session_result_type';
@@ -1409,8 +1412,11 @@ async function syncDiagnosisAfterLogin() {
 
   if (serverGrade) {
     const norm = normalizeDiagnosisGradeName(serverGrade);
-    const score = serverScore != null ? (remapLegacyScore(serverScore) ?? serverScore) : null;
-    persistLocalDiagnosis(norm, score);
+    let score = serverScore;
+    if (score != null && !scoreUsesCurrentQuizScale()) {
+      score = remapLegacyScore(serverScore) ?? serverScore;
+    }
+    persistLocalDiagnosis(norm, score, LEGACY_MIGRATED_QUIZ_VERSION);
     currentUser.diagnosisResult = norm;
     lastDiagnosisResult = norm;
     lastDiagnosisScore = score;
@@ -1445,11 +1451,12 @@ function getLocalResultType() {
   return localStorage.getItem(LS_RESULT_TYPE) || '';
 }
 
-function persistLocalDiagnosis(grade, score) {
+function persistLocalDiagnosis(grade, score, quizVersion) {
   const normalized = normalizeDiagnosisGradeName(grade);
   lastDiagnosisResult = normalized;
   lastDiagnosisScore = score != null ? score : null;
   localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+  if (quizVersion) localStorage.setItem(LS_QUIZ_VERSION, quizVersion);
   sessionStorage.setItem(SS_RESULT_TYPE, normalized);
   if (score != null) sessionStorage.setItem(SS_RESULT_SCORE, String(score));
   if (currentUser) {
@@ -1460,7 +1467,7 @@ function persistLocalDiagnosis(grade, score) {
 }
 
 async function saveDiagnosisResult(grade, score) {
-  persistLocalDiagnosis(grade, score);
+  persistLocalDiagnosis(grade, score, CURRENT_QUIZ_VERSION);
   applyGradeTheme(findGradeByName(grade));
   if (currentUser) {
     try {
@@ -1973,15 +1980,21 @@ function findGradeByScore(total) {
   return GRADES.find(g => n >= g.min) || GRADES[GRADES.length - 1];
 }
 
+function scoreUsesCurrentQuizScale() {
+  const v = localStorage.getItem(LS_QUIZ_VERSION);
+  return v === CURRENT_QUIZ_VERSION || v === LEGACY_MIGRATED_QUIZ_VERSION;
+}
+
 function remapLegacyScore(score) {
   const n = Number(score);
   if (!Number.isFinite(n)) return null;
-  if (n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
+  if (scoreUsesCurrentQuizScale() && n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
   if (n >= LEGACY_QUIZ_SCORE_MIN && n <= LEGACY_QUIZ_SCORE_MAX) {
     const span = LEGACY_QUIZ_SCORE_MAX - LEGACY_QUIZ_SCORE_MIN;
     const ratio = (n - LEGACY_QUIZ_SCORE_MIN) / span;
     return Math.round(QUIZ_SCORE_MIN + ratio * (QUIZ_SCORE_MAX - QUIZ_SCORE_MIN));
   }
+  if (n >= QUIZ_SCORE_MIN && n <= QUIZ_SCORE_MAX) return n;
   return null;
 }
 
@@ -2223,7 +2236,10 @@ function migrateLegacyDiagnosisStorage() {
     store.setItem(scoreKey, String(remapped));
     const grade = findGradeByScore(remapped);
     if (grade) store.setItem(typeKey, grade.grade);
-    if (kind === 'localStorage') sessionStorage.setItem('dopamine_legacy_score_remapped', '1');
+    if (kind === 'localStorage') {
+      localStorage.setItem(LS_QUIZ_VERSION, LEGACY_MIGRATED_QUIZ_VERSION);
+      sessionStorage.setItem('dopamine_legacy_score_remapped', '1');
+    }
   });
 }
 
