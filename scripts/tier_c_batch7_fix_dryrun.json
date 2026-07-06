@@ -1,0 +1,191 @@
+[
+  {
+    "id": 15,
+    "name": "동해 도째비골 스카이밸리",
+    "note": null,
+    "geocode_query": "강원특별자치도 동해시 묵호진동 2-109",
+    "before": {
+      "addr": "강원특별자치도 동해시 망상동 300",
+      "lat": 37.587753596651,
+      "lng": 129.082119698547,
+      "venueId": null
+    },
+    "after": {
+      "addr": "강원특별자치도 동해시 묵호진동 2-109",
+      "lat": 37.5552546,
+      "lng": 129.1191309
+    },
+    "geocode_label": "강원특별자치도 동해시 묵호진동 2-109",
+    "geocode_source": "search/address.json",
+    "geocode_raw": "강원특별자치도 동해시 묵호진동 2-109",
+    "reverse_verify": "강원특별자치도 동해시 묵호진동 2-109"
+  },
+  {
+    "id": 19,
+    "name": "무등산 모노레일",
+    "note": null,
+    "geocode_query": "광주광역시 동구 지산유원지",
+    "before": {
+      "addr": "광주광역시 동구 지호동 100",
+      "lat": 35.1489270247463,
+      "lng": 126.947442160022,
+      "venueId": null
+    },
+    "after": {
+      "addr": "광주광역시 동구 지산동 지산유원지",
+      "lat": 35.1494,
+      "lng": 126.9491012
+    },
+    "geocode_label": "지산유원지",
+    "geocode_source": "search/keyword.json",
+    "geocode_raw": "전남광주통합특별시 동구 지산동 산 56-1",
+    "reverse_verify": "전남광주통합특별시 동구 지호로164번길 35-1 | 전남광주통합특별시 동구 지산동 산 56-1"
+  },
+  {
+    "id": 24,
+    "name": "포항 환호공원 스페이스워크",
+    "note": null,
+    "geocode_query": "경상북도 포항시 북구 환호공원길 30",
+    "before": {
+      "addr": "경상북도 포항시 북구 흥해읍 대임리 100",
+      "lat": 36.065137652747694,
+      "lng": 129.3903862441959,
+      "venueId": null
+    },
+    "after": {
+      "addr": "경상북도 포항시 북구 환호공원길 30",
+      "lat": 36.0677158,
+      "lng": 129.3930474
+    },
+    "geocode_label": "경북 포항시 북구 환호공원길 30",
+    "geocode_source": "search/address.json",
+    "geocode_raw": "경북 포항시 북구 환호공원길 30",
+    "reverse_verify": "경상북도 포항시 북구 환호공원길 30 | 포항시공원시설관리사무소 | 경북 포항시 북구 환호동 산 63-1"
+  },
+  {
+    "id": 27,
+    "name": "홍성 남당항 네트어드벤처",
+    "note": null,
+    "geocode_query": "충청남도 홍성군 서부면 남당항로 171",
+    "before": {
+      "addr": "충청남도 홍성군 서부면 남당리 100",
+      "lat": 36.5352842093705,
+      "lng": 126.482554553699,
+      "venueId": null
+    },
+    "after": {
+      "addr": "충청남도 홍성군 서부면 남당항로 171",
+      "lat": 36.5373888,
+      "lng": 126.4763246
+    },
+    "geocode_label": "충남 홍성군 서부면 남당항로 171",
+    "geocode_source": "search/address.json",
+    "geocode_raw": "충남 홍성군 서부면 남당항로 171",
+    "reverse_verify": "충청남도 홍성군 서부면 남당항로 171 | 충남 홍성군 서부면 남당리 864"
+  },
+  {
+    "id": 14,
+    "name": "함안 입곡군립공원 하늘자전거",
+    "note": "칠원읍 아님 — 실제는 산인면 입곡저수지 일대",
+    "geocode_query": "함안 입곡군립공원",
+    "before": {
+      "addr": "경상남도 함안군 칠원읍 입곡리 200",
+      "lat": 35.26502288952252,
+      "lng": 128.44760360968058,
+      "venueId": null
+    },
+    "after": {
+      "addr": "경상남도 함안군 산인면 입곡리 1181-1",
+      "lat": 35.2657813,
+      "lng": 128.4503478
+    },
+    "geocode_label": "입곡군립공원",
+    "geocode_source": "search/keyword.json",
+    "geocode_raw": "경남 함안군 산인면 입곡리",
+    "reverse_verify": "경남 함안군 산인면 입곡리 산 59"
+  },
+  {
+    "id": 6,
+    "name": "공주 비행마을",
+    "note": null,
+    "geocode_query": "충청남도 공주시 의당면 수촌리 945",
+    "before": {
+      "addr": "충청남도 공주시 반포면 반포리 100",
+      "lat": 36.5211,
+      "lng": 127.1364,
+      "venueId": null
+    },
+    "after": {
+      "addr": "충청남도 공주시 의당면 수촌리 945",
+      "lat": 36.514279,
+      "lng": 127.1251548
+    },
+    "geocode_label": "충남 공주시 의당면 수촌리 945",
+    "geocode_source": "search/address.json",
+    "geocode_raw": "충남 공주시 의당면 수촌리 945",
+    "reverse_verify": "충남 공주시 의당면 수촌리 945"
+  },
+  {
+    "id": 10,
+    "name": "담양 에어로마스터",
+    "note": "금성면 석현리 640 = 동일 시설",
+    "geocode_query": "에어로마스터 담양비행장",
+    "before": {
+      "addr": "전라남도 담양군 담양읍 담양리 500",
+      "lat": 35.343416513390125,
+      "lng": 127.02992020348309,
+      "venueId": null
+    },
+    "after": {
+      "addr": "전라남도 담양군 금성면 담순로 156-46",
+      "lat": 35.3434165,
+      "lng": 127.0299202
+    },
+    "geocode_label": "에어로마스터 담양비행장",
+    "geocode_source": "search/keyword.json",
+    "geocode_raw": "전남광주통합특별시 담양군 금성면 석현리 640",
+    "reverse_verify": "전남광주통합특별시 담양군 금성면 영산강자전거길 427 | 전남광주통합특별시 담양군 금성면 석현리 640"
+  },
+  {
+    "id": 9,
+    "name": "원주 성주항공",
+    "note": "핀은 기존과 동일, 주소 placeholder 보정",
+    "geocode_query": "강원특별자치도 원주시 문막읍 견훤로 941-21",
+    "before": {
+      "addr": "강원특별자치도 원주시 소초면 소초리 400",
+      "lat": 37.27639097435341,
+      "lng": 127.79073879905688,
+      "venueId": null
+    },
+    "after": {
+      "addr": "강원특별자치도 원주시 문막읍 견훤로 941-21",
+      "lat": 37.2764009,
+      "lng": 127.7907425
+    },
+    "geocode_label": "강원특별자치도 원주시 문막읍 견훤로 941-21",
+    "geocode_source": "search/address.json",
+    "geocode_raw": "강원특별자치도 원주시 문막읍 견훤로 941-21",
+    "reverse_verify": "강원특별자치도 원주시 문막읍 견훤로 941-21 | 강원특별자치도 원주시 문막읍 후용리 805-31"
+  },
+  {
+    "id": 246,
+    "name": "엑스포마린 제트보트",
+    "note": "여수 베네치아 호텔 앞 선착장",
+    "geocode_query": "전라남도 여수시 오동도로 61-13",
+    "before": {
+      "addr": "전라남도 여수시 수정동 781",
+      "lat": 34.7437238885155,
+      "lng": 127.75236769235,
+      "venueId": null
+    },
+    "after": {
+      "addr": "전라남도 여수시 오동도로 61-13",
+      "lat": 34.7458139,
+      "lng": 127.7518579
+    },
+    "geocode_label": "전남광주통합특별시 여수시 오동도로 61-13",
+    "geocode_source": "search/address.json",
+    "geocode_raw": "전남광주통합특별시 여수시 오동도로 61-13",
+    "reverse_verify": "전남광주통합특별시 여수시 오동도로 61-13 | 여수 베네치아 호텔 앤 리조트 | 전남광주통합특별시 여수시 수정동 774-4"
+  }
+]
