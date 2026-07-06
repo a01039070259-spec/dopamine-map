@@ -12,9 +12,11 @@ MIGRATIONS_DIR = Path(__file__).resolve().parent
 MIGRATION_001_SQL = MIGRATIONS_DIR / "001_add_venues.sql"
 MIGRATION_002_SQL = MIGRATIONS_DIR / "002_map_venues.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
+VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
 BACKUP_SUFFIX_002 = ".backup_pre_venue_data"
 BACKUP_SUFFIX_003 = ".backup_pre_venue_data_003"
+BACKUP_SUFFIX_004 = ".backup_pre_venue_data_004"
 MIGRATION_002_VENUE_NAMES = (
     "인제엑스게임리조트",
     "하동알프스레포츠(금오산)",
@@ -226,7 +228,7 @@ def _should_skip_group(conn: sqlite3.Connection, group: dict) -> bool:
     return False
 
 
-def _migration_003_applied(conn: sqlite3.Connection, groups: list[dict]) -> bool:
+def _migration_batch_applied(conn: sqlite3.Connection, groups: list[dict]) -> bool:
     """Done when every group has its venue row or is explicitly skipped."""
     for group in groups:
         venue_name = group["name"]
@@ -238,20 +240,21 @@ def _migration_003_applied(conn: sqlite3.Connection, groups: list[dict]) -> bool
     return True
 
 
-def apply_003_map_venues(db_path: Path) -> None:
-    """Create batch-003 venue rows and link spots by name. Idempotent."""
-    migration_name = "003_map_venues"
-
+def _apply_batch_venue_groups(
+    db_path: Path,
+    *,
+    migration_name: str,
+    groups_json: Path,
+    backup_suffix: str,
+) -> None:
     if not db_path.is_file():
         logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
         return
 
-    if not VENUE_GROUPS_003_JSON.is_file():
-        raise RuntimeError(
-            f"migration {migration_name}: config missing at {VENUE_GROUPS_003_JSON}"
-        )
+    if not groups_json.is_file():
+        raise RuntimeError(f"migration {migration_name}: config missing at {groups_json}")
 
-    groups = json.loads(VENUE_GROUPS_003_JSON.read_text(encoding="utf-8"))
+    groups = json.loads(groups_json.read_text(encoding="utf-8"))
 
     conn = sqlite3.connect(db_path)
     try:
@@ -261,7 +264,7 @@ def apply_003_map_venues(db_path: Path) -> None:
                 migration_name,
             )
             return
-        if _migration_003_applied(conn, groups):
+        if _migration_batch_applied(conn, groups):
             venue_count = conn.execute("SELECT COUNT(*) FROM venues").fetchone()[0]
             spots_with_venue = conn.execute(
                 "SELECT COUNT(*) FROM spots WHERE venue_id IS NOT NULL"
@@ -276,7 +279,7 @@ def apply_003_map_venues(db_path: Path) -> None:
     finally:
         conn.close()
 
-    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_003)
+    backup_path = db_path.with_name(db_path.name + backup_suffix)
     if backup_path.exists():
         logger.info(
             "migration %s: backup already exists at %s",
@@ -299,7 +302,11 @@ def apply_003_map_venues(db_path: Path) -> None:
                 "SELECT id FROM venues WHERE name = ?", (venue_name,)
             ).fetchone()
             if existing:
-                logger.info("migration %s: venue exists, skip insert: %s", migration_name, venue_name)
+                logger.info(
+                    "migration %s: venue exists, skip insert: %s",
+                    migration_name,
+                    venue_name,
+                )
                 venue_id = int(existing[0])
             elif _should_skip_group(conn, group):
                 logger.info(
@@ -377,7 +384,28 @@ def apply_003_map_venues(db_path: Path) -> None:
     )
 
 
+def apply_003_map_venues(db_path: Path) -> None:
+    """Create batch-003 venue rows and link spots by name. Idempotent."""
+    _apply_batch_venue_groups(
+        db_path,
+        migration_name="003_map_venues",
+        groups_json=VENUE_GROUPS_003_JSON,
+        backup_suffix=BACKUP_SUFFIX_003,
+    )
+
+
+def apply_004_map_venues(db_path: Path) -> None:
+    """Create batch-004 venue rows and link spots by name. Idempotent."""
+    _apply_batch_venue_groups(
+        db_path,
+        migration_name="004_map_venues",
+        groups_json=VENUE_GROUPS_004_JSON,
+        backup_suffix=BACKUP_SUFFIX_004,
+    )
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
     apply_003_map_venues(db_path)
+    apply_004_map_venues(db_path)
