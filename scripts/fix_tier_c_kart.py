@@ -47,6 +47,13 @@ UPDATES = [
         "geocode_query": "강원특별자치도 정선군 화암면 소금강로 973",
     },
     {
+        "id": 35,
+        "name": "송악 카트체험장",
+        "addr": "제주특별자치도 서귀포시 대정읍 송악산",
+        "geocode_query": "제주특별자치도 서귀포시 대정읍 송악산",
+        "note": "송악산 인근 - 상모리 산 2",
+    },
+    {
         "id": 36,
         "name": "왜관 카트체험장",
         "addr": "경상북도 칠곡군 왜관읍 강변대로 807",
@@ -246,6 +253,7 @@ def apply_delete(client: httpx.Client, spot_id: int) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--spot-id", type=int, default=None, help="Apply only this spot id")
     args = parser.parse_args()
 
     if not KAKAO_KEY:
@@ -254,6 +262,12 @@ def main() -> None:
     with httpx.Client() as client:
         spots = fetch_spots(client)
         plan = build_plan(client, spots)
+
+    if args.spot_id is not None:
+        plan["updates"] = [r for r in plan["updates"] if r["id"] == args.spot_id]
+        plan["deletes"] = [r for r in plan["deletes"] if r["id"] == args.spot_id]
+        if not plan["updates"] and not plan["deletes"]:
+            raise SystemExit(f"spot-id {args.spot_id} not in Tier C kart plan")
 
     out = ROOT / "scripts" / "tier_c_kart_fix_dryrun.json"
     out.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -308,7 +322,7 @@ def main() -> None:
         print("Done.")
     else:
         print(f"\nDry-run saved: {out}")
-        print("Apply with: python scripts/fix_tier_c_kart.py --apply")
+        print("Apply with: python scripts/fix_tier_c_kart.py --apply [--spot-id ID]")
 
 
 if __name__ == "__main__":
