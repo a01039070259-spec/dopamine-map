@@ -31,6 +31,8 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 /* ── TOKENS ── */
 :root{
   --neon:#39ff14;
+  --grade-accent:var(--neon);
+  --grade-accent-secondary:var(--purple);
   --red:#ff4444;
   --orange:#ff8800;
   --purple:#cc44ff;
@@ -113,7 +115,7 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
   font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;cursor:pointer;
 }
 .app-drawer-auth.login{background:#fee500;color:#191919}
-.app-drawer-auth.logout{background:transparent;border:1px solid var(--border2);color:var(--neon)}
+.app-drawer-auth.logout{background:transparent;border:1px solid var(--border2);color:var(--grade-accent,var(--neon))}
 .sec-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
 .chip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px}
 .t-roller{background:#1f0a30;color:#c084fc;border:1px solid #3b1a5c}
@@ -183,8 +185,8 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .qz-back:hover{border-color:var(--neon);color:var(--neon)}
 .qz-steps{display:flex;gap:6px;margin-bottom:12px}
 .qz-dot{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s}
-.qz-dot.done{background:var(--neon)}
-.qz-dot.active{background:rgba(57,255,20,.4)}
+.qz-dot.done{background:var(--grade-accent,var(--neon))}
+.qz-dot.active{background:color-mix(in srgb,var(--grade-accent,var(--neon)) 42%,transparent)}
 .qz-tag{font-size:10px;color:var(--neon);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
 .qz-q{font-size:17px;font-weight:900;color:#fff;line-height:1.4;letter-spacing:-.3px}
 .qz-body{flex:1;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
@@ -195,7 +197,8 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .qz-opt-txt{font-size:14px;color:#ccc;font-weight:500;line-height:1.4}
 .qz-opt.selected .qz-opt-txt{color:var(--neon);font-weight:700}
 .qz-footer{padding:14px 20px 18px;background:#050505;border-top:1px solid var(--border)}
-.qz-next{width:100%;background:var(--neon);color:#0a0a0a;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;opacity:.3;transition:all .2s;pointer-events:none}
+.qz-next{width:100%;background:var(--grade-accent,var(--neon));color:#0a0a0a;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;opacity:.3;transition:all .2s;pointer-events:none}
+.grade-theme-special .qz-next{background:linear-gradient(135deg,var(--grade-accent),var(--grade-accent-secondary));box-shadow:0 0 20px rgba(57,255,20,.15)}
 .qz-next.on{opacity:1;pointer-events:all}
 .qz-next.on:active{transform:scale(.97)}
 
@@ -221,7 +224,8 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .rs-kakao-btn:active{transform:scale(.97)}
 .rs-skip-btn{background:transparent;color:var(--text-dim);border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-size:12px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:100%;transition:all .15s}
 .rs-skip-btn:hover{border-color:#444;color:#aaa}
-.rs-back-btn{background:var(--neon);color:#0a0a0a;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:100%;box-shadow:0 0 30px rgba(57,255,20,.2)}
+.rs-back-btn{background:var(--grade-accent,var(--neon));color:#0a0a0a;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:100%;box-shadow:0 0 30px color-mix(in srgb,var(--grade-accent,var(--neon)) 22%,transparent)}
+.grade-theme-special .rs-back-btn{background:linear-gradient(135deg,var(--grade-accent),var(--grade-accent-secondary))}
 
 /* ══════════════════════════════
    ② MAIN
@@ -229,9 +233,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .m-header{background:var(--bg);padding:20px clamp(16px,4vw,48px) 14px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
 .m-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:nowrap}
 .m-header-top .m-logo-row{flex:1;min-width:0}
-.m-diag-chip{display:none!important}
+.m-diag-chip{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);font-size:12px;line-height:1.45;transition:border-color .2s,background .2s,box-shadow .2s}
 .m-diag-chip b{font-weight:900;transition:color .2s}
-.m-diag-chip-prompt{color:var(--neon);cursor:pointer;font-weight:700;transition:opacity .15s}
+.m-diag-chip-prompt{background:transparent;border:none;padding:0;color:var(--grade-accent,var(--neon));cursor:pointer;font-weight:700;font-family:'Noto Sans KR',sans-serif;font-size:12px;transition:opacity .15s;text-align:left;width:100%}
 .m-diag-chip-prompt:hover{opacity:.85}
 .m-login-nudge{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid #2a4a1a;background:linear-gradient(135deg,#0d2a06,#111);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .m-login-nudge p{font-size:12px;color:#aaa;line-height:1.45;margin:0;flex:1;min-width:180px}
@@ -255,8 +259,9 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .m-filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .m-filter-row::-webkit-scrollbar{display:none}
 .mfb{flex-shrink:0;background:var(--bg3);border:1px solid var(--border2);color:var(--text-dim);font-size:12px;font-family:'Noto Sans KR',sans-serif;padding:6px 13px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .15s;font-weight:500}
-.mfb.active{background:var(--neon);border-color:var(--neon);color:#0a0a0a;font-weight:700}
-.mfb:hover:not(.active){border-color:var(--neon);color:var(--neon)}
+.mfb.active{background:var(--grade-accent,var(--neon));border-color:var(--grade-accent,var(--neon));color:#0a0a0a;font-weight:700}
+.grade-theme-special .mfb.active{background:linear-gradient(135deg,var(--grade-accent),var(--grade-accent-secondary));border-color:transparent}
+.mfb:hover:not(.active){border-color:var(--grade-accent,var(--neon));color:var(--grade-accent,var(--neon))}
 .m-rh{padding:12px clamp(16px,4vw,48px) 5px;display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;width:100%}
 .m-rc{font-size:12px;color:var(--text-muted)}
 .m-rc b{color:var(--neon)}
@@ -283,6 +288,10 @@ html,body{min-height:100%;background:#0a0a0a;font-family:'Noto Sans KR',sans-ser
 .mc-img-cap-tl{font-size:9px;font-weight:700;color:var(--neon);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
 .mc-img-cap-tx{font-size:11px;color:#eee;line-height:1.45;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
 .mc-venue-badge{position:absolute;top:10px;left:10px;z-index:3;background:rgba(10,10,10,.88);border:1px solid rgba(57,255,20,.45);color:var(--neon);font-size:10px;font-weight:800;padding:4px 9px;border-radius:6px;backdrop-filter:blur(4px);letter-spacing:-.2px}
+.mc-level-badge{position:absolute;top:10px;right:10px;z-index:4;font-size:10px;font-weight:800;padding:4px 9px;border-radius:6px;backdrop-filter:blur(4px);letter-spacing:-.2px;background:rgba(10,10,10,.88)}
+.mc-level-badge.match{border:1px solid color-mix(in srgb,var(--grade-accent,var(--neon)) 55%,transparent);color:var(--grade-accent,var(--neon))}
+.mc-level-badge.next{border:1px solid rgba(255,140,0,.55);color:#FF8C00}
+.grade-theme-special .mc-level-badge.match{border:1px solid color-mix(in srgb,var(--grade-accent-secondary) 55%,transparent);color:var(--grade-accent-secondary,var(--purple))}
 .venue-spot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:0 16px 24px}
 .d-desc{font-size:14px;color:#ccc;line-height:1.65;font-weight:500;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;border-left:3px solid var(--neon)}
 .d-hero-cap{position:absolute;left:12px;right:12px;bottom:52px;z-index:2;font-size:11px;color:#ddd;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;text-shadow:0 1px 6px rgba(0,0,0,.9)}
@@ -828,18 +837,89 @@ function reloadVenues() {
 }
 
 function reloadSpotAndVenueData() {
-  return Promise.all([reloadSpots(), reloadVenues()]);
+  return reloadSpots().then(() => reloadVenues());
 }
 
 function enrichVenues(list) {
   return list.map((v) => {
     const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+    const thrillPct = getVenueThrillPct(v);
     return Object.assign({}, v, {
       _th: spot ? spot.th : (v.th != null ? v.th : 3),
       _fe: spot ? spot.fe : (v.fe != null ? v.fe : 3),
       _sp: spot ? spot.sp : (v.sp != null ? v.sp : 0),
+      _thrillPct: thrillPct,
     });
   });
+}
+
+function getSpotThrillPct(spot) {
+  if (!spot) return 50;
+  const fp = Number(spot.fp);
+  const sp2 = Number(spot.sp2);
+  const ap = Number(spot.ap);
+  const vals = [
+    Number.isFinite(fp) ? fp : 50,
+    Number.isFinite(sp2) ? sp2 : 50,
+    Number.isFinite(ap) ? ap : 50,
+  ];
+  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+}
+
+function getVenueThrillPct(v) {
+  const members = getVenueMemberSpots(v);
+  if (members.length) {
+    return Math.max(...members.map(getSpotThrillPct));
+  }
+  const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+  return getSpotThrillPct(spot);
+}
+
+function isThrillInGradeRange(pct, grade) {
+  if (!grade || pct == null) return false;
+  return pct >= grade.thrillMin && pct <= grade.thrillMax;
+}
+
+function getEffectiveUserGrade() {
+  const result = getEffectiveDiagnosisResult();
+  return result ? findGradeByName(result) : null;
+}
+
+function getSpotGradeBadgeKind(pct, userGrade) {
+  if (!userGrade || pct == null) return null;
+  if (isThrillInGradeRange(pct, userGrade)) return 'match';
+  if (pct > userGrade.thrillMax) return 'next';
+  return null;
+}
+
+function gradeLevelBadgeHtml(kind) {
+  if (!kind) return '';
+  const label = kind === 'match' ? '딱 네 레벨' : '다음 레벨';
+  return `<div class="mc-level-badge ${kind}">${label}</div>`;
+}
+
+function applyGradeTheme(grade) {
+  const root = document.documentElement;
+  if (!grade) {
+    root.style.removeProperty('--grade-accent');
+    root.style.removeProperty('--grade-accent-secondary');
+    root.classList.remove('grade-theme-special');
+    return;
+  }
+  root.style.setProperty('--grade-accent', grade.color);
+  if (grade.colorSecondary) {
+    root.style.setProperty('--grade-accent-secondary', grade.colorSecondary);
+  } else {
+    root.style.removeProperty('--grade-accent-secondary');
+  }
+  root.classList.toggle('grade-theme-special', !!grade.special);
+}
+
+function refreshMainListIfVisible() {
+  const main = document.getElementById('mainScreen');
+  if (main?.classList.contains('active')) {
+    renderCards(getDisplayedVenues());
+  }
 }
 
 function getVenue(id) {
@@ -905,6 +985,9 @@ const QUIZ = [
 
 const LS_ONBOARDING_DONE = 'dopamine_onboarding_done';
 const LS_RESULT_TYPE = 'dopamine_result_type';
+const LS_RESULT_SCORE = 'dopamine_result_score';
+const SS_RESULT_TYPE = 'dopamine_session_result_type';
+const SS_RESULT_SCORE = 'dopamine_session_result_score';
 const SS_PENDING_DETAIL = 'dopamine_pending_detail';
 const SS_LOGIN_NUDGE = 'dopamine_show_login_nudge';
 
@@ -924,31 +1007,36 @@ const LEGACY_DIAGNOSIS_MAP = {
 
 const GRADES = [
   {
-    min:18, grade:"지구인 아닌 것으로 추정", emoji:"👽", color:"#39ff14", special:true,
+    min:18, grade:"지구인 아닌 것으로 추정", emoji:"👽", color:"#39ff14", colorSecondary:"#cc44ff", special:true,
+    thrillMin:85, thrillMax:100,
     desc:"인류 진화 과정에서 공포 유전자가 통째로 삭제된 케이스. 강사가 안전교육 하는 동안 이미 뛰어내려서 스탭들 사이에서 전설로 통함. 도파민 지도 개발자도 이 사람 신고 받고 앱 만들었다는 설이 있음.",
     stats:[{v:"MAX",l:"도파민 내성"},{v:"유전자삭제",l:"공포 반응"},{v:"0%",l:"포기 확률"}],
     badges:["#교육중이탈","#스탭전설","#개발자도피","#지구인아님","#신고각"]
   },
   {
-    min:15, grade:"이미 정상 범주 이탈", emoji:"🧟", color:"#DC2626",
+    min:15, grade:"이미 정상 범주 이탈", emoji:"🧟", color:"#FF3B30",
+    thrillMin:70, thrillMax:90,
     desc:"브레이크 고장 소식에 '오 럭키비키' 시전할 사람. 친구들이 여행 계획 짤 때 은근슬쩍 빼는 이유 1순위. 병원 가면 의사가 먼저 안부 물어볼 듯.",
     stats:[{v:"HIGH",l:"도파민 수치"},{v:"럭키비키",l:"위험 반응"},{v:"5%",l:"포기 확률"}],
     badges:["#브레이크환영","#여행1순위제외","#의사먼저안부","#정상이탈","#진흙재탐색"]
   },
   {
-    min:12, grade:"국가대표급 허세", emoji:"🫡", color:"#F97316",
+    min:12, grade:"국가대표급 허세", emoji:"🫡", color:"#FF8C00",
+    thrillMin:55, thrillMax:75,
     desc:"친구들 앞에서는 '이 정도쯤이야' 하고 정작 카운트다운 시작하면 눈 질끈 감는 타입. 근데 끝나고 나면 또 자랑함. SNS엔 웃는 사진만 올리지만 실제 표정은 저장 안 함.",
     stats:[{v:"MID+",l:"도파민 수치"},{v:"허세MAX",l:"카운트다운"},{v:"25%",l:"포기 확률"}],
     badges:["#이정도쯤이야","#끝나면자랑","#SNS웃는사진","#눈질끈","#국대급허세"]
   },
   {
-    min:9, grade:"무서운데 계속 보는 사람", emoji:"🙈", color:"#A3E635",
+    min:9, grade:"무서운데 계속 보는 사람", emoji:"🙈", color:"#4ECB3D",
+    thrillMin:40, thrillMax:60,
     desc:"공포영화 눈 가리고 손가락 사이로 다 보는 부류. 번지점프 유튜브 100개 정주행하고 정작 예약은 3년째 미루는 타입. 조만간 진짜 할 것처럼 말하지만 아무도 안 믿음.",
     stats:[{v:"MID",l:"도파민 수치"},{v:"유튜브100",l:"예약 0"},{v:"45%",l:"포기 확률"}],
     badges:["#손가락틈시청","#번지3년미룸","#아무도안믿음","#곧한다거짓","#계속보는사람"]
   },
   {
-    min:5, grade:"병아리 감별 필요", emoji:"🐣", color:"#9CA3AF",
+    min:5, grade:"병아리 감별 필요", emoji:"🐣", color:"#8E8E93",
+    thrillMin:0, thrillMax:40,
     desc:"엄마 손 잡고 놀이공원 온 5살 어린이 같은 존재감. 관람차 탔는데 흔들린다고 스탭 불렀을 타입. 근데 지금 이 앱 켜져 있는 거 보면 뭔가 숨겨진 야망이 있는 듯. 일단 순한맛부터 ㄱㄱ.",
     stats:[{v:"LOW",l:"도파민 수치"},{v:"입문",l:"스릴 레벨"},{v:"80%",l:"포기 확률"}],
     badges:["#관람차족","#감자칩필수","#스탭호출","#숨은야망","#순한맛부터"]
@@ -1066,6 +1154,28 @@ let selectedMapSpotId = null;
 let currentUser = null;
 let pendingDetailId = null;
 let lastDiagnosisResult = '';
+let lastDiagnosisScore = null;
+
+function parseDiagnosisPayload(raw) {
+  if (raw == null || raw === '') return { grade: '', score: null };
+  if (typeof raw === 'object') {
+    const grade = raw.grade || raw.result || '';
+    const score = raw.score != null ? Number(raw.score) : null;
+    return { grade, score: Number.isFinite(score) ? score : null };
+  }
+  const text = String(raw).trim();
+  if (!text) return { grade: '', score: null };
+  if (text.startsWith('{')) {
+    try {
+      return parseDiagnosisPayload(JSON.parse(text));
+    } catch (_) {}
+  }
+  return { grade: LEGACY_DIAGNOSIS_MAP[text] || text, score: null };
+}
+
+function diagnosisGradeName(raw) {
+  return parseDiagnosisPayload(raw).grade;
+}
 
 /* ═══════════════════════════════════════
    UTILS
@@ -1236,49 +1346,89 @@ async function syncDiagnosisAfterLogin() {
   if (!currentUser) return;
 
   const local = getLocalResultType();
-  let serverResult = null;
+  const localScore = getLocalResultScore();
+  let serverGrade = '';
+  let serverScore = null;
   try {
     const data = await DopamineStore.fetchDiagnosis();
-    serverResult = data.result || null;
+    serverGrade = data.result || '';
+    serverScore = data.score != null ? Number(data.score) : null;
+    if (!Number.isFinite(serverScore)) serverScore = null;
   } catch (_) {}
 
   if (local) {
     lastDiagnosisResult = local;
+    lastDiagnosisScore = localScore;
     currentUser.diagnosisResult = local;
     updateDiagnosisChip(local);
-    if (local !== serverResult) {
+    applyGradeTheme(findGradeByName(local));
+    if (local !== serverGrade || (localScore != null && localScore !== serverScore)) {
       try {
-        await DopamineStore.saveDiagnosis(local);
+        await DopamineStore.saveDiagnosis({ result: local, score: localScore });
       } catch (_) {}
     }
+    refreshMainListIfVisible();
     return;
   }
 
-  if (serverResult) {
-    persistLocalDiagnosis(serverResult);
-    currentUser.diagnosisResult = serverResult;
-    lastDiagnosisResult = serverResult;
-    updateDiagnosisChip(serverResult);
+  if (serverGrade) {
+    persistLocalDiagnosis(serverGrade, serverScore);
+    currentUser.diagnosisResult = serverGrade;
+    lastDiagnosisResult = serverGrade;
+    lastDiagnosisScore = serverScore;
+    updateDiagnosisChip(serverGrade);
+    applyGradeTheme(findGradeByName(serverGrade));
+    refreshMainListIfVisible();
   }
 }
 
 function getEffectiveDiagnosisResult() {
-  return getLocalResultType() || lastDiagnosisResult || currentUser?.diagnosisResult || '';
+  return getLocalResultType() || lastDiagnosisResult || diagnosisGradeName(currentUser?.diagnosisResult) || '';
 }
 
-function detailButtonLabel() {
-  return currentUser ? '상세 보기 →' : '로그인하러가기 →';
+function getLocalResultScore() {
+  const sessionScore = sessionStorage.getItem(SS_RESULT_SCORE);
+  if (sessionScore != null && sessionScore !== '') {
+    const n = Number(sessionScore);
+    if (Number.isFinite(n)) return n;
+  }
+  const localScore = localStorage.getItem(LS_RESULT_SCORE);
+  if (localScore != null && localScore !== '') {
+    const n = Number(localScore);
+    if (Number.isFinite(n)) return n;
+  }
+  return lastDiagnosisScore;
 }
 
 function getLocalResultType() {
+  const sessionGrade = sessionStorage.getItem(SS_RESULT_TYPE);
+  if (sessionGrade) return sessionGrade;
   return localStorage.getItem(LS_RESULT_TYPE) || '';
 }
 
-function persistLocalDiagnosis(result) {
-  lastDiagnosisResult = result;
+function persistLocalDiagnosis(grade, score) {
+  lastDiagnosisResult = grade;
+  lastDiagnosisScore = score != null ? score : null;
   localStorage.setItem(LS_ONBOARDING_DONE, 'true');
-  localStorage.setItem(LS_RESULT_TYPE, result);
+  sessionStorage.setItem(SS_RESULT_TYPE, grade);
+  if (score != null) sessionStorage.setItem(SS_RESULT_SCORE, String(score));
+  if (currentUser) {
+    localStorage.setItem(LS_RESULT_TYPE, grade);
+    if (score != null) localStorage.setItem(LS_RESULT_SCORE, String(score));
+  }
   localStorage.removeItem('dopamine_diagnosis_result');
+}
+
+async function saveDiagnosisResult(grade, score) {
+  persistLocalDiagnosis(grade, score);
+  applyGradeTheme(findGradeByName(grade));
+  if (currentUser) {
+    try {
+      await DopamineStore.saveDiagnosis({ result: grade, score });
+      currentUser.diagnosisResult = grade;
+    } catch (_) {}
+  }
+  refreshMainListIfVisible();
 }
 
 function updateLoginNudge() {
@@ -1342,14 +1492,8 @@ async function handleAuthClick() {
   startKakaoLogin();
 }
 
-async function saveDiagnosisResult(result) {
-  persistLocalDiagnosis(result);
-  if (currentUser) {
-    try {
-      await DopamineStore.saveDiagnosis(result);
-      currentUser.diagnosisResult = result;
-    } catch (_) {}
-  }
+function detailButtonLabel() {
+  return currentUser ? '상세 보기 →' : '로그인하러가기 →';
 }
 
 function slide(fromId, toId) {
@@ -1432,11 +1576,14 @@ function renderSpotCardHtml(a, opts) {
   const bg = a.bg || '#1a0a2e';
   const tags = (a.tags || []).map(t => `<span class="mc-tag">${t}</span>`).join('');
   const click = (opts && opts.onClick) ? opts.onClick : `goDetail(${id})`;
+  const userGrade = getEffectiveUserGrade();
+  const levelBadge = gradeLevelBadgeHtml(getSpotGradeBadgeKind(getSpotThrillPct(a), userGrade));
   return `
     <div class="mc" onclick="${click}">
       <div class="mc-img" style="background:${bg}">
         ${spotCardMedia(a)}
         <div class="mc-ov"></div>
+        ${levelBadge}
         ${a.br ? `<div class="mc-img-cap"><div class="mc-img-cap-tl">이곳은?</div><div class="mc-img-cap-tx">${a.br}</div></div>` : ''}
         <div class="mc-rb">${a.rank || ''}</div>
         <div class="mc-tb">${a.ts || ''}</div>
@@ -1475,6 +1622,8 @@ function renderVenueCardHtml(v) {
   const badge = v.spotCount > 1
     ? `<div class="mc-venue-badge">${v.spotCount}개 체험</div>`
     : '';
+  const userGrade = getEffectiveUserGrade();
+  const levelBadge = gradeLevelBadgeHtml(getSpotGradeBadgeKind(v._thrillPct, userGrade));
   const tl = v.spotCount > 1 ? '복합 체험장' : ((spot && spot.tl) ? spot.tl : (v.tl || '액티비티'));
   const chip = spot ? chipClass(spot) : 't-custom';
   const ts = (spot && v.spotCount === 1) ? (spot.ts || v.ts || '') : '';
@@ -1506,6 +1655,7 @@ function renderVenueCardHtml(v) {
         ${venueCardMedia(v)}
         <div class="mc-ov"></div>
         ${badge}
+        ${levelBadge}
         ${cap}
         <div class="mc-rb">${rank}</div>
         <div class="mc-tb">${ts}</div>
@@ -1530,7 +1680,16 @@ function renderVenueCardHtml(v) {
 
 /** VenueDetail — venue 내부 액티비티 목록 */
 function renderVenueDetailView(venue) {
-  const spots = venue.spots || [];
+  const userGrade = getEffectiveUserGrade();
+  let spots = [...(venue.spots || [])];
+  if (userGrade) {
+    spots.sort((a, b) => {
+      const aMatch = isThrillInGradeRange(getSpotThrillPct(a), userGrade) ? 1 : 0;
+      const bMatch = isThrillInGradeRange(getSpotThrillPct(b), userGrade) ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+      return getSpotThrillPct(b) - getSpotThrillPct(a);
+    });
+  }
   const cards = spots.map((s) =>
     renderSpotCardHtml(s, { onClick: `goDetail(${s.id}, false, 'venueScreen')` })
   ).join('');
@@ -1775,9 +1934,12 @@ function renderGradeResult(grade) {
   if (!grade) return;
   const wrap = document.querySelector('#resultPhase .rs-wrap');
   if (wrap) wrap.classList.toggle('special-tier', !!grade.special);
+  const gradeColorStyle = grade.special
+    ? `background:linear-gradient(135deg,${grade.color},${grade.colorSecondary || '#cc44ff'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text`
+    : `color:${grade.color}`;
   document.getElementById('rsGrade').innerHTML =
-    `당신의 등급<br><span style="color:${grade.color}">${grade.grade}</span>` +
-    (grade.nickname ? `<div class="rs-nickname" style="color:${grade.color}">「${grade.nickname}」</div>` : '');
+    `당신의 등급<br><span style="${gradeColorStyle}">${grade.grade}</span>` +
+    (grade.nickname ? `<div class="rs-nickname" style="${gradeColorStyle}">「${grade.nickname}」</div>` : '');
   document.getElementById('rsEmoji').textContent = grade.emoji;
   document.getElementById('rsDesc').textContent = grade.desc;
   document.getElementById('rsStats').innerHTML = grade.stats.map(s =>
@@ -1856,7 +2018,7 @@ async function showResult() {
   document.getElementById('quizPhase').classList.remove('active');
   document.getElementById('resultPhase').classList.add('active');
   renderGradeResult(grade);
-  await saveDiagnosisResult(grade.grade);
+  await saveDiagnosisResult(grade.grade, total);
   updateDiagnosisChip(grade.grade);
   setupResultActions(wasOnboardingDone ? 'retake' : 'onboarding');
 }
@@ -1872,6 +2034,7 @@ function updateDiagnosisChip(result) {
   chip.classList.remove('is-hidden');
   if (result) {
     const grade = findGradeByName(result);
+    applyGradeTheme(grade);
     const color = grade?.color || '#39ff14';
     prompt?.classList.add('is-hidden');
     resultWrap?.classList.remove('is-hidden');
@@ -1899,6 +2062,7 @@ function updateDiagnosisChip(result) {
 }
 
 function showDiagnosisPrompt() {
+  applyGradeTheme(null);
   updateDiagnosisChip('');
 }
 
@@ -1911,8 +2075,8 @@ async function loadSavedDiagnosisChip() {
         const data = await DopamineStore.fetchDiagnosis();
         if (data.result) {
           result = data.result;
-          persistLocalDiagnosis(result);
-          currentUser.diagnosisResult = result;
+          persistLocalDiagnosis(data.result, data.score);
+          currentUser.diagnosisResult = data.result;
         }
       } catch (_) {}
     } else {
@@ -1920,9 +2084,14 @@ async function loadSavedDiagnosisChip() {
     }
   }
 
+  if (!result) result = getLocalResultType();
+
   if (result) {
     lastDiagnosisResult = result;
+    lastDiagnosisScore = getLocalResultScore();
     updateDiagnosisChip(result);
+    applyGradeTheme(findGradeByName(result));
+    refreshMainListIfVisible();
   } else {
     showDiagnosisPrompt();
   }
@@ -1990,13 +2159,39 @@ function renderCards(data) {
   }
   document.getElementById('cardList').innerHTML = data.map(v => renderVenueCardHtml(v)).join('');
   document.getElementById('resultCount').textContent = data.length;
+  updateSortInfoLabel(document.querySelector('.mfb.active')?.dataset.f || 'thrill');
+}
+
+function updateSortInfoLabel(f) {
+  const el = document.getElementById('sortInfo');
+  if (!el) return;
+  const labels = { thrill: '스릴 지수 높은 순', fear: '공포도 높은 순', speed: '최고 속도 높은 순' };
+  const base = labels[f] || labels.thrill;
+  const userGrade = getEffectiveUserGrade();
+  el.textContent = userGrade ? `내 레벨 맞춤 우선 · ${base}` : base;
 }
 
 function sortVenues(f) {
   const d = [...VENUES];
-  if (f === 'thrill') d.sort((a,b) => b._th - a._th);
-  else if (f === 'fear') d.sort((a,b) => b._fe - a._fe);
-  else if (f === 'speed') d.sort((a,b) => b._sp - a._sp);
+  const secondary = (a, b) => {
+    if (f === 'thrill') return b._th - a._th;
+    if (f === 'fear') return b._fe - a._fe;
+    if (f === 'speed') return b._sp - a._sp;
+    return 0;
+  };
+  const userGrade = getEffectiveUserGrade();
+  if (userGrade) {
+    d.sort((a, b) => {
+      const aMatch = isThrillInGradeRange(a._thrillPct, userGrade) ? 1 : 0;
+      const bMatch = isThrillInGradeRange(b._thrillPct, userGrade) ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+      const thrillDiff = (b._thrillPct || 0) - (a._thrillPct || 0);
+      if (thrillDiff !== 0) return thrillDiff;
+      return secondary(a, b);
+    });
+  } else {
+    d.sort(secondary);
+  }
   return d;
 }
 
@@ -2014,8 +2209,7 @@ document.getElementById('filterRow').addEventListener('click', e => {
   document.querySelectorAll('.mfb').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const f = btn.dataset.f;
-  const labels = {thrill:'스릴 지수 높은 순', fear:'공포도 높은 순', speed:'최고 속도 높은 순'};
-  document.getElementById('sortInfo').textContent = labels[f];
+  updateSortInfoLabel(f);
   renderCards(getDisplayedVenues());
 });
 

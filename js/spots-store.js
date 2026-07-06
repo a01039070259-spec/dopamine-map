@@ -484,10 +484,16 @@
     });
   }
 
-  async function saveDiagnosis(result) {
+  async function saveDiagnosis(payload) {
+    const body = typeof payload === "string"
+      ? { result: payload }
+      : {
+          result: payload.result || payload.grade || "",
+          score: payload.score,
+        };
     return apiFetch("/api/diagnosis", {
       method: "POST",
-      body: JSON.stringify({ result: result }),
+      body: JSON.stringify(body),
     });
   }
 

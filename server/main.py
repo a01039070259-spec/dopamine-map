@@ -45,6 +45,7 @@ from server.database import (
     update_user_diagnosis,
     update_venue,
     upsert_kakao_user,
+    parse_diagnosis_result,
 )
 from server.venues import get_venue, list_venues
 
@@ -216,12 +217,14 @@ def api_auth_me(request: Request):
         return {"loggedIn": False, "user": None}
     db_user = get_user_by_id(user["id"])
     if db_user:
+        parsed = parse_diagnosis_result(db_user.get("diagnosisResult"))
         return {
             "loggedIn": True,
             "user": {
                 "id": db_user["id"],
                 "nickname": db_user["nickname"],
-                "diagnosisResult": db_user.get("diagnosisResult"),
+                "diagnosisResult": parsed["result"],
+                "diagnosisScore": parsed["score"],
             },
         }
     return {"loggedIn": True, "user": user}
@@ -437,11 +440,21 @@ def api_create_review(payload: dict, request: Request):
 @app.post("/api/diagnosis")
 def api_save_diagnosis(payload: dict, request: Request):
     user = require_user(request)
-    result = (payload.get("result") or "").strip()
+    result = (payload.get("result") or payload.get("grade") or "").strip()
     if not result:
         raise HTTPException(status_code=400, detail="result가 필요합니다")
-    updated = update_user_diagnosis(user["id"], result)
-    return {"ok": True, "result": updated["diagnosisResult"] if updated else result}
+    score_raw = payload.get("score")
+    score = None
+    if score_raw is not None and score_raw != "":
+        try:
+            score = int(score_raw)
+        except (TypeError, ValueError):
+            score = None
+    updated = update_user_diagnosis(user["id"], result, score)
+    parsed = parse_diagnosis_result(
+        updated["diagnosisResult"] if updated else result
+    )
+    return {"ok": True, "result": parsed["result"], "score": parsed["score"]}
 
 
 @app.get("/api/diagnosis")
@@ -450,7 +463,8 @@ def api_get_diagnosis(request: Request):
     db_user = get_user_by_id(user["id"])
     if not db_user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
-    return {"result": db_user.get("diagnosisResult")}
+    parsed = parse_diagnosis_result(db_user.get("diagnosisResult"))
+    return {"result": parsed["result"], "score": parsed["score"]}
 
 
 def _home_html() -> str:

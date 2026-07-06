@@ -418,14 +418,36 @@ def upsert_kakao_user(kakao_id: str, nickname: str) -> dict:
     return user
 
 
-def update_user_diagnosis(user_id: int, result: str) -> Optional[dict]:
+def update_user_diagnosis(
+    user_id: int, result: str, score: int | None = None
+) -> Optional[dict]:
+    stored = result
+    if score is not None and result:
+        stored = json.dumps({"grade": result, "score": int(score)}, ensure_ascii=False)
     with get_conn() as conn:
         conn.execute(
             "UPDATE users SET diagnosis_result = ? WHERE id = ?",
-            (result, user_id),
+            (stored, user_id),
         )
         conn.commit()
     return get_user_by_id(user_id)
+
+
+def parse_diagnosis_result(raw: str | None) -> dict:
+    if not raw:
+        return {"result": None, "score": None}
+    text = str(raw).strip()
+    if text.startswith("{"):
+        try:
+            data = json.loads(text)
+            grade = data.get("grade") or data.get("result")
+            score = data.get("score")
+            if score is not None:
+                score = int(score)
+            return {"result": grade, "score": score}
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
+    return {"result": text, "score": None}
 
 
 def list_reviews_for_spot(spot_id: int) -> list[dict]:
