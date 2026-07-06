@@ -1383,7 +1383,8 @@ async function syncDiagnosisAfterLogin() {
 }
 
 function getEffectiveDiagnosisResult() {
-  return getLocalResultType() || lastDiagnosisResult || diagnosisGradeName(currentUser?.diagnosisResult) || '';
+  const raw = getLocalResultType() || lastDiagnosisResult || diagnosisGradeName(currentUser?.diagnosisResult) || '';
+  return normalizeDiagnosisGradeName(raw);
 }
 
 function getLocalResultScore() {
@@ -1407,13 +1408,14 @@ function getLocalResultType() {
 }
 
 function persistLocalDiagnosis(grade, score) {
-  lastDiagnosisResult = grade;
+  const normalized = normalizeDiagnosisGradeName(grade);
+  lastDiagnosisResult = normalized;
   lastDiagnosisScore = score != null ? score : null;
   localStorage.setItem(LS_ONBOARDING_DONE, 'true');
-  sessionStorage.setItem(SS_RESULT_TYPE, grade);
+  sessionStorage.setItem(SS_RESULT_TYPE, normalized);
   if (score != null) sessionStorage.setItem(SS_RESULT_SCORE, String(score));
   if (currentUser) {
-    localStorage.setItem(LS_RESULT_TYPE, grade);
+    localStorage.setItem(LS_RESULT_TYPE, normalized);
     if (score != null) localStorage.setItem(LS_RESULT_SCORE, String(score));
   }
   localStorage.removeItem('dopamine_diagnosis_result');
@@ -1926,8 +1928,14 @@ function nextQ() {
 
 function findGradeByName(name) {
   if (!name) return null;
-  const normalized = LEGACY_DIAGNOSIS_MAP[name] || name;
+  const normalized = normalizeDiagnosisGradeName(name);
   return GRADES.find(g => g.grade === normalized) || null;
+}
+
+function normalizeDiagnosisGradeName(name) {
+  if (!name) return '';
+  const text = String(name).trim();
+  return LEGACY_DIAGNOSIS_MAP[text] || text;
 }
 
 function renderGradeResult(grade) {
@@ -2039,7 +2047,8 @@ function updateDiagnosisChip(result) {
     prompt?.classList.add('is-hidden');
     resultWrap?.classList.remove('is-hidden');
     if (text) {
-      text.textContent = grade?.emoji ? `${grade.emoji} ${result}` : result;
+      const displayName = grade?.grade || normalizeDiagnosisGradeName(result);
+      text.textContent = grade?.emoji ? `${grade.emoji} ${displayName}` : displayName;
       text.style.color = color;
     }
     if (link) link.style.color = color;
@@ -2120,12 +2129,26 @@ function enterMain(fromFirstDiagnosis) {
 
 function migrateLegacyDiagnosisStorage() {
   const old = localStorage.getItem('dopamine_diagnosis_result');
-  if (!old) return;
-  if (!localStorage.getItem(LS_RESULT_TYPE)) {
-    localStorage.setItem(LS_RESULT_TYPE, LEGACY_DIAGNOSIS_MAP[old] || old);
-    localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+  if (old) {
+    if (!localStorage.getItem(LS_RESULT_TYPE)) {
+      localStorage.setItem(LS_RESULT_TYPE, normalizeDiagnosisGradeName(old));
+      localStorage.setItem(LS_ONBOARDING_DONE, 'true');
+    }
+    localStorage.removeItem('dopamine_diagnosis_result');
   }
-  localStorage.removeItem('dopamine_diagnosis_result');
+  const local = localStorage.getItem(LS_RESULT_TYPE);
+  if (local) {
+    const norm = normalizeDiagnosisGradeName(local);
+    if (norm !== local) localStorage.setItem(LS_RESULT_TYPE, norm);
+  }
+  const session = sessionStorage.getItem(SS_RESULT_TYPE);
+  if (session) {
+    const norm = normalizeDiagnosisGradeName(session);
+    if (norm !== session) sessionStorage.setItem(SS_RESULT_TYPE, norm);
+  }
+  if (lastDiagnosisResult) {
+    lastDiagnosisResult = normalizeDiagnosisGradeName(lastDiagnosisResult);
+  }
 }
 
 function ensureMainScreenVisible() {
