@@ -214,6 +214,7 @@ def _spot_ids_by_names(conn: sqlite3.Connection, names: list[str]) -> dict[str, 
 
 
 def _should_skip_group(conn: sqlite3.Connection, group: dict) -> bool:
+    """Skip only if an existing venue row matches (not spot names)."""
     skip_names = group.get("skip_if_names_exist") or []
     for token in skip_names:
         venue_hit = conn.execute(
@@ -222,28 +223,19 @@ def _should_skip_group(conn: sqlite3.Connection, group: dict) -> bool:
         ).fetchone()
         if venue_hit:
             return True
-        spot_hit = conn.execute(
-            "SELECT 1 FROM spots WHERE name LIKE ? LIMIT 1",
-            (f"%{token}%",),
-        ).fetchone()
-        if spot_hit:
-            return True
     return False
 
 
-def _migration_003_applied(conn: sqlite3.Connection) -> bool:
-    """Applied when all non-skipped target venues exist (at least 장생포 + 더스카이)."""
-    applied = 0
-    for name in MIGRATION_003_VENUE_NAMES:
-        row = conn.execute("SELECT 1 FROM venues WHERE name = ?", (name,)).fetchone()
-        if row:
-            applied += 1
-    # 강화 may be skipped; success if 장생포+더스카이 exist (2) or all 3
-    return applied >= 2 and conn.execute(
-        "SELECT 1 FROM venues WHERE name = ?", ("장생포고래문화마을",)
-    ).fetchone() and conn.execute(
-        "SELECT 1 FROM venues WHERE name = ?", ("더스카이184(청라하늘대교)",)
-    ).fetchone()
+def _migration_003_applied(conn: sqlite3.Connection, groups: list[dict]) -> bool:
+    """Done when every group has its venue row or is explicitly skipped."""
+    for group in groups:
+        venue_name = group["name"]
+        if conn.execute("SELECT 1 FROM venues WHERE name = ?", (venue_name,)).fetchone():
+            continue
+        if _should_skip_group(conn, group):
+            continue
+        return False
+    return True
 
 
 def apply_003_map_venues(db_path: Path) -> None:
@@ -269,7 +261,7 @@ def apply_003_map_venues(db_path: Path) -> None:
                 migration_name,
             )
             return
-        if _migration_003_applied(conn):
+        if _migration_003_applied(conn, groups):
             venue_count = conn.execute("SELECT COUNT(*) FROM venues").fetchone()[0]
             spots_with_venue = conn.execute(
                 "SELECT COUNT(*) FROM spots WHERE venue_id IS NOT NULL"
