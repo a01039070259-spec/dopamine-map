@@ -1384,8 +1384,12 @@ function spotImageSrc(a) {
 function venueImageSrc(v) {
   if (!v) return "";
   if (v.mainImage && DopamineStore.hasSpotImage({ img: v.mainImage })) return v.mainImage;
+  if (!v.virtual && DopamineStore.hasVenueImage(v)) return DopamineStore.venueImageUrl(v.id);
   if (v.hasImage && v.primarySpotId) return DopamineStore.spotImageUrl(v.primarySpotId);
   if (v.hasImage && v.id && v.spotCount === 1) return DopamineStore.spotImageUrl(v.id);
+  const members = getVenueMemberSpots(v);
+  const withImg = members.find((s) => spotHasImg(s));
+  if (withImg) return spotImageSrc(withImg);
   const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
   return spotImageSrc(spot);
 }

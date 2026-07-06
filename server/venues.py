@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from typing import Optional
 
-from server.database import get_conn, row_to_spot_summary
+from server.database import get_conn, row_to_spot_summary, venue_has_image
 
 
 def extract_region(address: str) -> str:
@@ -27,18 +27,29 @@ def _venues_table_exists(conn: sqlite3.Connection) -> bool:
     return row is not None
 
 
-def _row_to_venue(row: sqlite3.Row, spot_count: int) -> dict:
-    return {
+def _row_to_venue(
+    row: sqlite3.Row,
+    spot_count: int,
+    *,
+    for_list: bool = False,
+    primary_spot_id: Optional[int] = None,
+) -> dict:
+    main_image = row["main_image"] or ""
+    venue = {
         "id": row["id"],
         "virtual": False,
         "name": row["name"],
         "address": row["address"],
         "description": row["description"] or "",
-        "mainImage": row["main_image"] or "",
+        "mainImage": "" if for_list else main_image,
+        "hasImage": venue_has_image(main_image),
         "region": row["region"],
         "spotCount": spot_count,
         "createdAt": row["created_at"],
     }
+    if primary_spot_id:
+        venue["primarySpotId"] = primary_spot_id
+    return venue
 
 
 def _spot_to_virtual_venue(spot: dict, *, for_list: bool = False) -> dict:
@@ -77,7 +88,9 @@ def list_venues() -> list[dict]:
         if _venues_table_exists(conn):
             rows = conn.execute(
                 """
-                SELECT v.*, COUNT(s.id) AS spot_count
+                SELECT v.*,
+                       COUNT(s.id) AS spot_count,
+                       MIN(s.id) AS primary_spot_id
                 FROM venues v
                 LEFT JOIN spots s ON s.venue_id = v.id
                 GROUP BY v.id
@@ -85,7 +98,15 @@ def list_venues() -> list[dict]:
                 """
             ).fetchall()
             for row in rows:
-                venues.append(_row_to_venue(row, int(row["spot_count"] or 0)))
+                primary = row["primary_spot_id"]
+                venues.append(
+                    _row_to_venue(
+                        row,
+                        int(row["spot_count"] or 0),
+                        for_list=True,
+                        primary_spot_id=int(primary) if primary else None,
+                    )
+                )
 
         if _spots_have_venue_id(conn):
             spot_rows = conn.execute(
@@ -120,14 +141,18 @@ def get_venue(venue_id: int) -> Optional[dict]:
                     (venue_id,),
                 ).fetchall()
                 spot_count = len(spot_rows)
-                venue = _row_to_venue(row, spot_count)
+                primary_id = spot_rows[0]["id"] if spot_rows else None
+                venue = _row_to_venue(
+                    row,
+                    spot_count,
+                    for_list=True,
+                    primary_spot_id=primary_id,
+                )
                 venue["spots"] = [row_to_spot_summary(r) for r in spot_rows]
                 if spot_rows:
                     venue["lat"] = spot_rows[0]["lat"]
                     venue["lng"] = spot_rows[0]["lng"]
-                    venue["primarySpotId"] = (
-                        spot_rows[0]["id"] if spot_count == 1 else None
-                    )
+                    venue["primarySpotId"] = primary_id
                 else:
                     venue["lat"] = None
                     venue["lng"] = None

@@ -1,0 +1,62 @@
+{
+  "1": {
+    "name": "인제엑스게임리조트",
+    "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80&auto=format&fit=crop",
+    "label": "mountain resort adventure world"
+  },
+  "2": {
+    "name": "하동알프스레포츠(금오산)",
+    "url": "https://images.unsplash.com/photo-1745121485729-37b38a72f62d?w=1200&q=80&auto=format&fit=crop",
+    "label": "forest zipline theme valley"
+  },
+  "3": {
+    "name": "제천청풍랜드",
+    "url": "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&q=80&auto=format&fit=crop",
+    "label": "lake dam leisure park"
+  },
+  "4": {
+    "name": "대천짚트랙타워",
+    "url": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80&auto=format&fit=crop",
+    "label": "coastal thrill theme tower"
+  },
+  "5": {
+    "name": "단양만천하스카이워크",
+    "url": "https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=1200&q=80&auto=format&fit=crop",
+    "label": "canyon waterfall adventure"
+  },
+  "6": {
+    "name": "해남땅끝마을스카이워크",
+    "url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80&auto=format&fit=crop",
+    "label": "coastal edge skywalk"
+  },
+  "7": {
+    "name": "거제바람의(도장포)",
+    "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200&q=80&auto=format&fit=crop",
+    "label": "sea spray marine world"
+  },
+  "8": {
+    "name": "장생포고래문화마을",
+    "url": "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&q=80&auto=format&fit=crop",
+    "label": "whale coast theme village"
+  },
+  "9": {
+    "name": "더스카이184(청라하늘대교)",
+    "url": "https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=1200&q=80&auto=format&fit=crop",
+    "label": "sky bridge skyline world"
+  },
+  "10": {
+    "name": "강화레포츠파크(티앤림자연휴양림)",
+    "url": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80&auto=format&fit=crop",
+    "label": "forest adventure theme park"
+  },
+  "11": {
+    "name": "인제스피디움",
+    "url": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200&q=80&auto=format&fit=crop",
+    "label": "race circuit motorsport world"
+  },
+  "12": {
+    "name": "강촌 ATV·카트·서바이벌 체험장",
+    "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80&auto=format&fit=crop",
+    "label": "river valley leisure world"
+  }
+}

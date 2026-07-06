@@ -36,12 +36,14 @@ from server.database import (
     get_spot,
     get_spot_detail,
     get_spot_image_data,
+    get_venue_image_data,
     get_user_by_id,
     init_db,
     list_spots,
     record_visit,
     update_spot,
     update_user_diagnosis,
+    update_venue,
     upsert_kakao_user,
 )
 from server.venues import get_venue, list_venues
@@ -340,6 +342,27 @@ def api_list_venues():
 @app.get("/api/venues/{venue_id}")
 def api_get_venue(venue_id: int):
     venue = get_venue(venue_id)
+    if not venue:
+        raise HTTPException(status_code=404, detail="장소를 찾을 수 없습니다")
+    return venue
+
+
+@app.get("/api/venues/{venue_id}/image")
+def api_venue_image(venue_id: int):
+    data = get_venue_image_data(venue_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="이미지가 없습니다")
+    content, media_type = data
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=604800, immutable"},
+    )
+
+
+@app.put("/api/venues/{venue_id}")
+def api_update_venue(venue_id: int, payload: dict, _: None = Depends(verify_admin)):
+    venue = update_venue(venue_id, payload)
     if not venue:
         raise HTTPException(status_code=404, detail="장소를 찾을 수 없습니다")
     return venue

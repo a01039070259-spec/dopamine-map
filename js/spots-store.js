@@ -198,8 +198,18 @@
     return !!spot.hasImage;
   }
 
+  function hasVenueImage(venue) {
+    if (!venue) return false;
+    if (venue.mainImage && String(venue.mainImage).indexOf("data:image") === 0) return true;
+    return !!venue.hasImage;
+  }
+
   function spotImageUrl(id) {
     return "/api/spots/" + Number(id) + "/image";
+  }
+
+  function venueImageUrl(id) {
+    return "/api/venues/" + Number(id) + "/image";
   }
 
   function compressImageFile(file, maxW, maxH, quality) {
@@ -557,7 +567,9 @@
     parseRegisterWarns,
     nextSpotId,
     hasSpotImage,
+    hasVenueImage,
     spotImageUrl,
+    venueImageUrl,
     compressImageFile,
     normalizeTypeLabel,
     resolveTypeInfo,

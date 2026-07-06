@@ -147,6 +147,22 @@ def spot_has_image(img: str) -> bool:
     return bool(img and str(img).startswith("data:image"))
 
 
+def venue_has_image(img: str) -> bool:
+    return spot_has_image(img)
+
+
+def _decode_image_data_url(img: str) -> Optional[tuple[bytes, str]]:
+    if not spot_has_image(img):
+        return None
+    match = re.match(r"data:(image/[^;]+);base64,(.+)", img, re.DOTALL)
+    if not match:
+        return None
+    try:
+        return base64.b64decode(match.group(2)), match.group(1)
+    except (ValueError, TypeError):
+        return None
+
+
 def row_to_spot_summary(row: sqlite3.Row) -> dict:
     spot = row_to_spot(row)
     spot.pop("reviews", None)
@@ -161,16 +177,59 @@ def get_spot_image_data(spot_id: int) -> Optional[tuple[bytes, str]]:
         row = conn.execute("SELECT img FROM spots WHERE id = ?", (spot_id,)).fetchone()
     if not row:
         return None
-    img = row["img"] or ""
-    if not spot_has_image(img):
+    return _decode_image_data_url(row["img"] or "")
+
+
+def get_venue_image_data(venue_id: int) -> Optional[tuple[bytes, str]]:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT main_image FROM venues WHERE id = ?", (venue_id,)
+        ).fetchone()
+    if not row:
         return None
-    match = re.match(r"data:(image/[^;]+);base64,(.+)", img, re.DOTALL)
-    if not match:
+    return _decode_image_data_url(row["main_image"] or "")
+
+
+def update_venue(venue_id: int, payload: dict) -> Optional[dict]:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM venues WHERE id = ?", (venue_id,)).fetchone()
+        if not row:
+            return None
+        main_image = (
+            payload["mainImage"] if "mainImage" in payload else row["main_image"]
+        ) or ""
+        description = (
+            payload["description"] if "description" in payload else row["description"]
+        ) or ""
+        conn.execute(
+            """
+            UPDATE venues SET main_image = ?, description = ?
+            WHERE id = ?
+            """,
+            (main_image, description, venue_id),
+        )
+        conn.commit()
+        updated = conn.execute(
+            "SELECT * FROM venues WHERE id = ?", (venue_id,)
+        ).fetchone()
+    if not updated:
         return None
-    try:
-        return base64.b64decode(match.group(2)), match.group(1)
-    except (ValueError, TypeError):
-        return None
+    spot_count = 0
+    with get_conn() as conn:
+        spot_count = conn.execute(
+            "SELECT COUNT(*) FROM spots WHERE venue_id = ?", (venue_id,)
+        ).fetchone()[0]
+    return {
+        "id": updated["id"],
+        "name": updated["name"],
+        "address": updated["address"],
+        "description": updated["description"] or "",
+        "mainImage": updated["main_image"] or "",
+        "hasImage": venue_has_image(updated["main_image"] or ""),
+        "region": updated["region"],
+        "spotCount": int(spot_count or 0),
+        "createdAt": updated["created_at"],
+    }
 
 
 def review_row_to_dict(row: sqlite3.Row) -> dict:
