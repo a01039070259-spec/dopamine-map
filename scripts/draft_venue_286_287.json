@@ -1,0 +1,12 @@
+[
+  {
+    "name": "부산 스카이라인루지(기장해안로)",
+    "representative_name": "부산 스카이라인 루지",
+    "spot_names": [
+      "부산 스카이라인 루지",
+      "부산 기장 HyFly 짚라인"
+    ],
+    "_status": "applied via server/migrations/006_venue_286_287.sql",
+    "_alt_name_proposal": "부산 스카이라인 루지 & 하이플라이"
+  }
+]

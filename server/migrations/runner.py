@@ -13,6 +13,7 @@ MIGRATION_001_SQL = MIGRATIONS_DIR / "001_add_venues.sql"
 MIGRATION_002_SQL = MIGRATIONS_DIR / "002_map_venues.sql"
 MIGRATION_VISIT_TRACKING_SQL = MIGRATIONS_DIR / "003_add_visit_tracking.sql"
 MIGRATION_COORD_VERIFIED_SQL = MIGRATIONS_DIR / "005_add_coord_verified.sql"
+MIGRATION_006_VENUE_286_287_SQL = MIGRATIONS_DIR / "006_venue_286_287.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
 VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
@@ -21,6 +22,8 @@ BACKUP_SUFFIX_003 = ".backup_pre_venue_data_003"
 BACKUP_SUFFIX_004 = ".backup_pre_venue_data_004"
 BACKUP_SUFFIX_VISIT_TRACKING = ".backup_pre_visit_tracking"
 BACKUP_SUFFIX_COORD_VERIFIED = ".backup_pre_coord_verified"
+BACKUP_SUFFIX_006 = ".backup_pre_venue_286_287"
+VENUE_006_NAME = "부산 스카이라인루지(기장해안로)"
 MIGRATION_002_VENUE_NAMES = (
     "인제엑스게임리조트",
     "하동알프스레포츠(금오산)",
@@ -473,6 +476,82 @@ def apply_003_add_visit_tracking(db_path: Path) -> None:
     )
 
 
+def apply_006_venue_286_287(db_path: Path) -> None:
+    """Link #286/#287 into one composite venue. Idempotent via venue name."""
+    migration_name = "006_venue_286_287"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    if not MIGRATION_006_VENUE_286_287_SQL.is_file():
+        raise RuntimeError(
+            f"migration {migration_name}: SQL file missing at {MIGRATION_006_VENUE_286_287_SQL}"
+        )
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "venues"):
+            logger.info(
+                "migration %s: skip (venues table missing; run 001 first)",
+                migration_name,
+            )
+            return
+        existing = conn.execute(
+            "SELECT id FROM venues WHERE name = ?", (VENUE_006_NAME,)
+        ).fetchone()
+        if existing:
+            venue_id = int(existing[0])
+            linked = conn.execute(
+                "SELECT COUNT(*) FROM spots WHERE venue_id = ? AND id IN (286, 287)",
+                (venue_id,),
+            ).fetchone()[0]
+            if linked >= 2:
+                logger.info(
+                    "migration %s: skip (already applied; venue_id=%s)",
+                    migration_name,
+                    venue_id,
+                )
+                return
+    finally:
+        conn.close()
+
+    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_006)
+    if backup_path.exists():
+        logger.info(
+            "migration %s: backup already exists at %s",
+            migration_name,
+            backup_path,
+        )
+    else:
+        shutil.copy2(db_path, backup_path)
+        logger.info("migration %s: backup created at %s", migration_name, backup_path)
+
+    sql = MIGRATION_006_VENUE_286_287_SQL.read_text(encoding="utf-8")
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.executescript(sql)
+        conn.commit()
+        venue = conn.execute(
+            "SELECT id FROM venues WHERE name = ?", (VENUE_006_NAME,)
+        ).fetchone()
+        linked = 0
+        if venue:
+            linked = conn.execute(
+                "SELECT COUNT(*) FROM spots WHERE venue_id = ? AND id IN (286, 287)",
+                (int(venue[0]),),
+            ).fetchone()[0]
+    finally:
+        conn.close()
+
+    logger.info(
+        "migration %s: applied (venue=%s linked_spots=%s)",
+        migration_name,
+        VENUE_006_NAME,
+        linked,
+    )
+
+
 def apply_005_add_coord_verified(db_path: Path) -> None:
     """Add spots.coord_verified flag. Idempotent via column check."""
     migration_name = "005_add_coord_verified"
@@ -528,3 +607,4 @@ def apply_pending_migrations(db_path: Path) -> None:
     apply_004_map_venues(db_path)
     apply_003_add_visit_tracking(db_path)
     apply_005_add_coord_verified(db_path)
+    apply_006_venue_286_287(db_path)
