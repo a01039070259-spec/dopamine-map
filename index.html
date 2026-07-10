@@ -3011,7 +3011,9 @@
       const members = getVenueMemberSpots(v);
       const mappable = getMappableSpots(members);
       if (mappable.length) {
-        return { lat: Number(mappable[0].lat), lng: Number(mappable[0].lng) };
+        // 좌표 검증(coordVerified)된 멤버 스팟 우선, 없으면 첫 스팟 fallback
+        const rep = mappable.find((s) => s.coordVerified) || mappable[0];
+        return { lat: Number(rep.lat), lng: Number(rep.lng) };
       }
       const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
       if (spot) {

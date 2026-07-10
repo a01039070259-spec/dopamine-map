@@ -184,6 +184,8 @@ def row_to_spot(row: sqlite3.Row) -> dict:
     }
     if "venue_id" in row.keys():
         spot["venueId"] = row["venue_id"]
+    if "coord_verified" in row.keys():
+        spot["coordVerified"] = bool(row["coord_verified"])
     return spot
 
 
@@ -324,6 +326,7 @@ def spot_payload_to_columns(payload: dict) -> dict:
         "reviews": json.dumps(reviews, ensure_ascii=False),
         "custom": 1 if payload.get("custom", True) else 0,
         "approved": 1 if payload.get("approved", True) else 0,
+        "coord_verified": 1 if payload.get("coordVerified") else 0,
     }
 
 
@@ -360,12 +363,12 @@ def create_spot(payload: dict) -> dict:
                 name, addr, type, tl, em, bg, img, lat, lng,
                 th, fe, sp, fp, sp2, ap, rank, marker_type,
                 tags, br, ts, warns, reviews, custom, approved,
-                created_at, updated_at
+                coord_verified, created_at, updated_at
             ) VALUES (
                 :name, :addr, :type, :tl, :em, :bg, :img, :lat, :lng,
                 :th, :fe, :sp, :fp, :sp2, :ap, :rank, :marker_type,
                 :tags, :br, :ts, :warns, :reviews, :custom, :approved,
-                :created_at, :updated_at
+                :coord_verified, :created_at, :updated_at
             )
             """,
             {**cols, "created_at": created, "updated_at": updated},
@@ -382,6 +385,9 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
     if not existing:
         return None
     cols = spot_payload_to_columns(payload)
+    if "coordVerified" not in payload:
+        # 부분 업데이트에서 기존 검증 플래그가 초기화되지 않도록 유지
+        cols["coord_verified"] = 1 if existing.get("coordVerified") else 0
     created = payload.get("createdAt") or existing["createdAt"]
     updated = now_iso()
     with get_conn() as conn:
@@ -392,7 +398,7 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
                 lat=:lat, lng=:lng, th=:th, fe=:fe, sp=:sp, fp=:fp, sp2=:sp2, ap=:ap,
                 rank=:rank, marker_type=:marker_type, tags=:tags, br=:br, ts=:ts,
                 warns=:warns, reviews=:reviews, custom=:custom, approved=:approved,
-                created_at=:created_at, updated_at=:updated_at
+                coord_verified=:coord_verified, created_at=:created_at, updated_at=:updated_at
             WHERE id=:id
             """,
             {**cols, "created_at": created, "updated_at": updated, "id": spot_id},
