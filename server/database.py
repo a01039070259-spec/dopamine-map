@@ -186,6 +186,8 @@ def row_to_spot(row: sqlite3.Row) -> dict:
         spot["venueId"] = row["venue_id"]
     if "coord_verified" in row.keys():
         spot["coordVerified"] = bool(row["coord_verified"])
+    if "kakao_place_id" in row.keys():
+        spot["kakaoPlaceId"] = row["kakao_place_id"] or ""
     return spot
 
 
@@ -247,12 +249,13 @@ def update_venue(venue_id: int, payload: dict) -> Optional[dict]:
         description = (
             payload["description"] if "description" in payload else row["description"]
         ) or ""
+        name = (payload["name"] if "name" in payload else row["name"]) or ""
         conn.execute(
             """
-            UPDATE venues SET main_image = ?, description = ?
+            UPDATE venues SET name = ?, main_image = ?, description = ?
             WHERE id = ?
             """,
-            (main_image, description, venue_id),
+            (name, main_image, description, venue_id),
         )
         conn.commit()
         updated = conn.execute(
@@ -327,6 +330,7 @@ def spot_payload_to_columns(payload: dict) -> dict:
         "custom": 1 if payload.get("custom", True) else 0,
         "approved": 1 if payload.get("approved", True) else 0,
         "coord_verified": 1 if payload.get("coordVerified") else 0,
+        "kakao_place_id": (payload.get("kakaoPlaceId") or "") or None,
     }
 
 
@@ -363,12 +367,12 @@ def create_spot(payload: dict) -> dict:
                 name, addr, type, tl, em, bg, img, lat, lng,
                 th, fe, sp, fp, sp2, ap, rank, marker_type,
                 tags, br, ts, warns, reviews, custom, approved,
-                coord_verified, created_at, updated_at
+                coord_verified, kakao_place_id, created_at, updated_at
             ) VALUES (
                 :name, :addr, :type, :tl, :em, :bg, :img, :lat, :lng,
                 :th, :fe, :sp, :fp, :sp2, :ap, :rank, :marker_type,
                 :tags, :br, :ts, :warns, :reviews, :custom, :approved,
-                :coord_verified, :created_at, :updated_at
+                :coord_verified, :kakao_place_id, :created_at, :updated_at
             )
             """,
             {**cols, "created_at": created, "updated_at": updated},
@@ -388,6 +392,8 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
     if "coordVerified" not in payload:
         # 부분 업데이트에서 기존 검증 플래그가 초기화되지 않도록 유지
         cols["coord_verified"] = 1 if existing.get("coordVerified") else 0
+    if "kakaoPlaceId" not in payload:
+        cols["kakao_place_id"] = existing.get("kakaoPlaceId") or None
     created = payload.get("createdAt") or existing["createdAt"]
     updated = now_iso()
     with get_conn() as conn:
@@ -398,7 +404,8 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
                 lat=:lat, lng=:lng, th=:th, fe=:fe, sp=:sp, fp=:fp, sp2=:sp2, ap=:ap,
                 rank=:rank, marker_type=:marker_type, tags=:tags, br=:br, ts=:ts,
                 warns=:warns, reviews=:reviews, custom=:custom, approved=:approved,
-                coord_verified=:coord_verified, created_at=:created_at, updated_at=:updated_at
+                coord_verified=:coord_verified, kakao_place_id=:kakao_place_id,
+                created_at=:created_at, updated_at=:updated_at
             WHERE id=:id
             """,
             {**cols, "created_at": created, "updated_at": updated, "id": spot_id},

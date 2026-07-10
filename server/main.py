@@ -183,6 +183,48 @@ def api_admin_geocode(payload: dict, _: None = Depends(verify_admin)):
     raise HTTPException(status_code=404, detail="주소를 찾을 수 없습니다")
 
 
+@app.post("/api/admin/kakao-places")
+def api_admin_kakao_places(payload: dict, _: None = Depends(verify_admin)):
+    """Keyword search for admin place picker — returns candidate list."""
+    if not KAKAO_REST_API_KEY:
+        raise HTTPException(status_code=500, detail="KAKAO_REST_API_KEY가 설정되지 않았습니다")
+    query = str(payload.get("query") or "").strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="query가 필요합니다")
+    size = min(15, max(1, int(payload.get("size") or 10)))
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
+    try:
+        with httpx.Client(timeout=12.0) as client:
+            res = client.get(
+                "https://dapi.kakao.com/v2/local/search/keyword.json",
+                params={"query": query, "size": str(size)},
+                headers=headers,
+            )
+            if res.status_code >= 400:
+                raise HTTPException(status_code=502, detail="카카오 검색 실패")
+            docs = res.json().get("documents") or []
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"카카오 검색 오류: {e}") from e
+
+    places = []
+    for doc in docs:
+        try:
+            places.append(
+                {
+                    "id": str(doc.get("id") or ""),
+                    "placeName": doc.get("place_name") or "",
+                    "address": doc.get("road_address_name")
+                    or doc.get("address_name")
+                    or "",
+                    "lat": float(doc["y"]),
+                    "lng": float(doc["x"]),
+                    "category": doc.get("category_name") or "",
+                }
+            )
+        except (TypeError, ValueError, KeyError):
+            continue
+    return {"query": query, "places": places}
+
 def _kakao_geocode_query(
     client: httpx.Client,
     headers: dict[str, str],

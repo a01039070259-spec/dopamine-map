@@ -371,6 +371,8 @@
       reviews: existingSpot && existingSpot.reviews ? existingSpot.reviews : [],
       custom: true,
       approved: true,
+      kakaoPlaceId: data.kakaoPlaceId || "",
+      coordVerified: !data.noKakao && !!data.kakaoPlaceId,
       createdAt: existingSpot && existingSpot.createdAt ? existingSpot.createdAt : now,
       updatedAt: now,
     };
@@ -551,6 +553,14 @@
     });
   }
 
+  async function adminKakaoPlaces(query, adminPassword, size) {
+    return apiFetch("/api/admin/kakao-places", {
+      method: "POST",
+      headers: { "X-Admin-Password": adminPassword || "" },
+      body: JSON.stringify({ query: String(query || "").trim(), size: size || 10 }),
+    });
+  }
+
   function kakaoLoginUrl(nextPath) {
     const next = nextPath || "/index.html";
     return "/auth/kakao/login?next=" + encodeURIComponent(next);
@@ -624,6 +634,7 @@
     fetchAdminReferrerStats,
     clearLoginDataFromApi,
     adminGeocode,
+    adminKakaoPlaces,
     kakaoLoginUrl,
     verifyAdminPassword,
     saveSpotToApi,

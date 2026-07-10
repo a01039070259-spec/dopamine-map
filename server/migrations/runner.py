@@ -14,6 +14,8 @@ MIGRATION_002_SQL = MIGRATIONS_DIR / "002_map_venues.sql"
 MIGRATION_VISIT_TRACKING_SQL = MIGRATIONS_DIR / "003_add_visit_tracking.sql"
 MIGRATION_COORD_VERIFIED_SQL = MIGRATIONS_DIR / "005_add_coord_verified.sql"
 MIGRATION_006_VENUE_286_287_SQL = MIGRATIONS_DIR / "006_venue_286_287.sql"
+MIGRATION_007_RENAME_VENUE_13_SQL = MIGRATIONS_DIR / "007_rename_venue_13.sql"
+MIGRATION_008_KAKAO_PLACE_ID_SQL = MIGRATIONS_DIR / "008_add_kakao_place_id.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
 VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
@@ -23,7 +25,10 @@ BACKUP_SUFFIX_004 = ".backup_pre_venue_data_004"
 BACKUP_SUFFIX_VISIT_TRACKING = ".backup_pre_visit_tracking"
 BACKUP_SUFFIX_COORD_VERIFIED = ".backup_pre_coord_verified"
 BACKUP_SUFFIX_006 = ".backup_pre_venue_286_287"
+BACKUP_SUFFIX_007 = ".backup_pre_rename_venue_13"
+BACKUP_SUFFIX_008 = ".backup_pre_kakao_place_id"
 VENUE_006_NAME = "부산 스카이라인루지(기장해안로)"
+VENUE_006_NAME_NEW = "부산 스카이라인 루지 & 하이플라이"
 MIGRATION_002_VENUE_NAMES = (
     "인제엑스게임리조트",
     "하동알프스레포츠(금오산)",
@@ -498,7 +503,8 @@ def apply_006_venue_286_287(db_path: Path) -> None:
             )
             return
         existing = conn.execute(
-            "SELECT id FROM venues WHERE name = ?", (VENUE_006_NAME,)
+            "SELECT id FROM venues WHERE name IN (?, ?)",
+            (VENUE_006_NAME, VENUE_006_NAME_NEW),
         ).fetchone()
         if existing:
             venue_id = int(existing[0])
@@ -533,7 +539,8 @@ def apply_006_venue_286_287(db_path: Path) -> None:
         conn.executescript(sql)
         conn.commit()
         venue = conn.execute(
-            "SELECT id FROM venues WHERE name = ?", (VENUE_006_NAME,)
+            "SELECT id FROM venues WHERE name IN (?, ?)",
+            (VENUE_006_NAME, VENUE_006_NAME_NEW),
         ).fetchone()
         linked = 0
         if venue:
@@ -600,6 +607,103 @@ def apply_005_add_coord_verified(db_path: Path) -> None:
     logger.info("migration %s: applied successfully", migration_name)
 
 
+def apply_007_rename_venue_13(db_path: Path) -> None:
+    """Rename venue 13 display name. Idempotent via old/new name check."""
+    migration_name = "007_rename_venue_13"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    if not MIGRATION_007_RENAME_VENUE_13_SQL.is_file():
+        raise RuntimeError(
+            f"migration {migration_name}: SQL file missing at {MIGRATION_007_RENAME_VENUE_13_SQL}"
+        )
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "venues"):
+            logger.info("migration %s: skip (venues table missing)", migration_name)
+            return
+        if conn.execute(
+            "SELECT 1 FROM venues WHERE name = ?", (VENUE_006_NAME_NEW,)
+        ).fetchone():
+            logger.info("migration %s: skip (already renamed)", migration_name)
+            return
+        if not conn.execute(
+            "SELECT 1 FROM venues WHERE name = ?", (VENUE_006_NAME,)
+        ).fetchone():
+            logger.info(
+                "migration %s: skip (old venue name not found)", migration_name
+            )
+            return
+    finally:
+        conn.close()
+
+    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_007)
+    if not backup_path.exists():
+        shutil.copy2(db_path, backup_path)
+        logger.info("migration %s: backup created at %s", migration_name, backup_path)
+
+    sql = MIGRATION_007_RENAME_VENUE_13_SQL.read_text(encoding="utf-8")
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.executescript(sql)
+        conn.commit()
+    finally:
+        conn.close()
+
+    logger.info(
+        "migration %s: applied (%s -> %s)",
+        migration_name,
+        VENUE_006_NAME,
+        VENUE_006_NAME_NEW,
+    )
+
+
+def apply_008_add_kakao_place_id(db_path: Path) -> None:
+    """Add spots.kakao_place_id. Idempotent via column check."""
+    migration_name = "008_add_kakao_place_id"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    if not MIGRATION_008_KAKAO_PLACE_ID_SQL.is_file():
+        raise RuntimeError(
+            f"migration {migration_name}: SQL file missing at {MIGRATION_008_KAKAO_PLACE_ID_SQL}"
+        )
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "spots"):
+            logger.info("migration %s: skip (spots table missing)", migration_name)
+            return
+        if _column_exists(conn, "spots", "kakao_place_id"):
+            logger.info(
+                "migration %s: skip (kakao_place_id column already exists)",
+                migration_name,
+            )
+            return
+    finally:
+        conn.close()
+
+    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_008)
+    if not backup_path.exists():
+        shutil.copy2(db_path, backup_path)
+        logger.info("migration %s: backup created at %s", migration_name, backup_path)
+
+    sql = MIGRATION_008_KAKAO_PLACE_ID_SQL.read_text(encoding="utf-8")
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.executescript(sql)
+        conn.commit()
+    finally:
+        conn.close()
+
+    logger.info("migration %s: applied successfully", migration_name)
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
@@ -608,3 +712,5 @@ def apply_pending_migrations(db_path: Path) -> None:
     apply_003_add_visit_tracking(db_path)
     apply_005_add_coord_verified(db_path)
     apply_006_venue_286_287(db_path)
+    apply_007_rename_venue_13(db_path)
+    apply_008_add_kakao_place_id(db_path)
