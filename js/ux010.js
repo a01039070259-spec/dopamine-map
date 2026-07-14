@@ -3,7 +3,8 @@
  * Depends on globals from index.html: SPOTS, VENUES, kakaoMap, getVenue, getSpot, ...
  */
 (function (global) {
-  const MAP_LEVEL_L1 = 10; // level >= 10 → region bubbles
+  const MAP_LEVEL_L1 = 10; // level >= 10 → 도/광역시 버블
+  const MAP_LEVEL_CITY = 8; // level >= 8 && < L1 → 시/군/구 버블
   const MAP_LEVEL_L3 = 6; // level <= 6 → neighborhood (selected emphasis)
 
   let CATEGORY_GROUPS = [];
@@ -610,17 +611,11 @@
 
   let mapMiniClusters = []; // last rendered mini-clusters for click → sheet
 
-  function pinLabelText(v, spot) {
-    if (v && v.spotCount > 1 && !v.virtual) {
-      return `${v.spotCount}종`;
-    }
-    const raw = spot
-      ? spotLabel(spot)
-      : (v && (v.tl || v.categoryName)) || "액티비티";
-    return shortCatName(raw);
-  }
-
+  /** 단독일 때만 사진+이름 카드. 없으면 이모지 미니핀. */
   function makeMiniPinHTML(v) {
+    if (typeof makeMarkerHTML === "function") {
+      return makeMarkerHTML(v);
+    }
     const grade = venueMaxGrade(v);
     const hot = grade >= 4;
     const selected = selectedMapVenueId === v.id ? " selected" : "";
@@ -632,31 +627,56 @@
       v.spotCount > 1 && !v.virtual
         ? "📍"
         : spotIcon(primary) || "📍";
-    const label = pinLabelText(v, primary);
-    return `<div class="map-pin-wrap${selected}${hotClass}" onclick="Ux010.selectMapVenue(${v.id}, event)">
-      <div class="map-mini-pin${hotClass}"><span>${ico}</span></div>
-      <span class="map-pin-label">${label}</span>
-    </div>`;
+    return `<div class="map-mini-pin${selected}${hotClass}" onclick="Ux010.selectMapVenue(${v.id}, event)"><span>${ico}</span></div>`;
   }
 
-  function clusterPreviewLabel(venues) {
-    const list = venues || [];
-    if (!list.length) return "여러 곳";
-    const labels = list.map((v) => {
-      const s =
-        (typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v)[0] : null) ||
-        (v.primarySpotId ? getSpot(v.primarySpotId) : null);
-      return pinLabelText(v, s);
-    });
-    const uniq = [...new Set(labels.filter(Boolean))];
-    if (uniq.length === 1) return `${uniq[0]} ${list.length}`;
-    if (uniq.length === 2) return `${uniq[0]}·${uniq[1]}`;
-    return `${uniq[0]} 외${list.length - 1}`;
-  }
-
-  function makeRegionBubbleHTML(cluster) {
+  function makeRegionBubbleHTML(cluster, zoomFn) {
     const label = `${cluster.region} ${cluster.count}`;
-    return `<div class="map-region-bubble" onclick="Ux010.zoomToRegion(${cluster.lat}, ${cluster.lng}, event)"><span>${label}</span></div>`;
+    const fn = zoomFn || "zoomToRegion";
+    return `<div class="map-region-bubble" onclick="Ux010.${fn}(${cluster.lat}, ${cluster.lng}, event)"><span>${label}</span></div>`;
+  }
+
+  function venueCityLabel(v) {
+    const addr = ((v && (v.address || v.addr)) || "").trim();
+    const parts = addr.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const city = parts[1].replace(
+        /(특별자치시|광역시|특별시|자치시|시|군|구)$/,
+        ""
+      );
+      if (city) return city;
+      return parts[1];
+    }
+    if (v && v.region) {
+      return String(v.region)
+        .replace(/(특별자치시|광역시|특별시|자치시|도|시|군|구)$/, "")
+        .trim() || v.region;
+    }
+    return parts[0] || "지역";
+  }
+
+  function buildCityClusters(venues) {
+    const buckets = new Map();
+    (venues || []).forEach((v) => {
+      const c = getVenueMapCoords(v);
+      if (!c) return;
+      const city = venueCityLabel(v);
+      if (!buckets.has(city)) {
+        buckets.set(city, { region: city, count: 0, latSum: 0, lngSum: 0, venues: [] });
+      }
+      const b = buckets.get(city);
+      b.count += 1;
+      b.latSum += c.lat;
+      b.lngSum += c.lng;
+      b.venues.push(v);
+    });
+    return [...buckets.values()].map((b) => ({
+      region: b.region,
+      count: b.count,
+      lat: b.latSum / b.count,
+      lng: b.lngSum / b.count,
+      venues: b.venues,
+    }));
   }
 
   /** 같은 좌표(또는 극근접) 핀을 살짝 펼쳐 겹침 해소 */
@@ -703,7 +723,8 @@
     return out;
   }
 
-  /** 고배율: 격자 클러스터 끄고, 동일좌표만 펼침 */
+  /** 고배율: 격자 클러스터 끄고, 동일좌표만 펼침.
+   * 줌아웃할수록 셀이 커져 2→5→15처럼 숫자가 합쳐짐. */
   function buildPinItems(venues, level) {
     if (level <= 3) {
       const buckets = new Map();
@@ -721,7 +742,12 @@
       return out;
     }
     // Kakao level 작을수록 확대. 확대로 갈수록 셀을 줄여 숫자 클러스터가 풀리게.
-    const cell = level <= 5 ? 0.0022 : level <= 7 ? 0.006 : 0.018;
+    const cell =
+      level <= 4 ? 0.0018 :
+      level <= 5 ? 0.004 :
+      level <= 6 ? 0.01 :
+      level <= 7 ? 0.022 :
+      0.04;
     return clusterNearby(venues, cell);
   }
 
@@ -792,12 +818,13 @@
     const level = mapLevel();
     const counter = document.getElementById("mapCounter");
 
+    // L1: 도/광역시 — "경기 15"
     if (level >= MAP_LEVEL_L1) {
       const clusters = await fetchRegionClusters();
       clusters.forEach((cl) => {
         const overlay = new kakao.maps.CustomOverlay({
           position: new kakao.maps.LatLng(cl.lat, cl.lng),
-          content: makeRegionBubbleHTML(cl),
+          content: makeRegionBubbleHTML(cl, "zoomToRegion"),
           yAnchor: 0.5,
           xAnchor: 0.5,
           clickable: true,
@@ -814,24 +841,56 @@
     const visible = getFilteredMapVenues(filter);
     if (counter) counter.innerHTML = `<b>${visible.length}</b> 장소`;
 
+    // L2: 시/군/구 — "성남 5" (1곳만 있으면 바로 사진 핀)
+    if (level >= MAP_LEVEL_CITY) {
+      const cities = buildCityClusters(visible);
+      cities.forEach((cl) => {
+        if (cl.count === 1 && cl.venues[0]) {
+          const v = cl.venues[0];
+          const overlay = new kakao.maps.CustomOverlay({
+            position: new kakao.maps.LatLng(cl.lat, cl.lng),
+            content: makeMiniPinHTML(v),
+            yAnchor: 1.1,
+            clickable: true,
+            zIndex: 3,
+          });
+          overlay.setMap(kakaoMap);
+          mapPinOverlays.push(overlay);
+          if (typeof kakaoMarkers !== "undefined") kakaoMarkers.push(overlay);
+          return;
+        }
+        const overlay = new kakao.maps.CustomOverlay({
+          position: new kakao.maps.LatLng(cl.lat, cl.lng),
+          content: makeRegionBubbleHTML(cl, "zoomToCity"),
+          yAnchor: 0.5,
+          xAnchor: 0.5,
+          clickable: true,
+          zIndex: 2,
+        });
+        overlay.setMap(kakaoMap);
+        mapClusterOverlays.push(overlay);
+        if (typeof kakaoMarkers !== "undefined") kakaoMarkers.push(overlay);
+      });
+      return;
+    }
+
+    // L3+: 숫자 클러스터 → 1개 남으면 사진 마커
     const items = buildPinItems(visible, level);
     mapMiniClusters = items.filter((it) => it.type === "cluster");
     items.forEach((item) => {
       let html;
+      let yAnchor = 1.1;
       if (item.type === "cluster") {
         const idx = mapMiniClusters.indexOf(item);
-        const preview = clusterPreviewLabel(item.venues);
-        html = `<div class="map-cluster-wrap" onclick="Ux010.openMiniCluster(${idx}, ${item.lat}, ${item.lng}, event)">
-          <div class="map-mini-cluster"><span>${item.count}</span></div>
-          <span class="map-cluster-label">${preview}</span>
-        </div>`;
+        html = `<div class="map-mini-cluster" onclick="Ux010.openMiniCluster(${idx}, ${item.lat}, ${item.lng}, event)"><span>${item.count}</span></div>`;
+        yAnchor = 0.5;
       } else {
         html = makeMiniPinHTML(item.venue);
       }
       const overlay = new kakao.maps.CustomOverlay({
         position: new kakao.maps.LatLng(item.lat, item.lng),
         content: html,
-        yAnchor: 1.1,
+        yAnchor,
         clickable: true,
         zIndex: 3,
       });
@@ -847,7 +906,20 @@
       ev.preventDefault && ev.preventDefault();
     }
     if (!kakaoMap) return;
-    kakaoMap.setLevel(7);
+    // 도 → 시/군 단계
+    kakaoMap.setLevel(MAP_LEVEL_CITY);
+    kakaoMap.panTo(new kakao.maps.LatLng(lat, lng));
+    setTimeout(() => renderKakaoMarkersUx(currentFilter || "all"), 200);
+  }
+
+  function zoomToCity(lat, lng, ev) {
+    if (ev) {
+      ev.stopPropagation();
+      ev.preventDefault && ev.preventDefault();
+    }
+    if (!kakaoMap) return;
+    // 시 → 숫자 클러스터 단계
+    kakaoMap.setLevel(6);
     kakaoMap.panTo(new kakao.maps.LatLng(lat, lng));
     setTimeout(() => renderKakaoMarkersUx(currentFilter || "all"), 200);
   }
@@ -993,6 +1065,7 @@
 
   global.Ux010 = {
     MAP_LEVEL_L1,
+    MAP_LEVEL_CITY,
     MAP_LEVEL_L3,
     loadCategoryGroups,
     renderHomeHome,
@@ -1009,6 +1082,7 @@
     closeBottomSheet,
     renderKakaoMarkersUx,
     zoomToRegion,
+    zoomToCity,
     zoomIntoMiniCluster,
     openMiniCluster,
     researchThisArea,
