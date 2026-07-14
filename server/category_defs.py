@@ -17,7 +17,7 @@ CATEGORY_SEED: list[tuple[str, str, str, str, str, int]] = [
     ("hang-glider", "행글라이더", "sky", "하늘", "🪁", 80),
     # water
     ("rafting", "래프팅", "water", "물", "🛶", 10),
-    ("whitewater-kayak", "카약", "water", "물", "🛶", 20),
+    ("whitewater-kayak", "급류카약", "water", "물", "🛶", 20),
     ("jetboat", "제트보트", "water", "물", "🚤", 30),
     ("parasailing", "패러세일링", "water", "물", "🪂", 40),
     ("seawalk", "바닷속걷기", "water", "물", "🤿", 50),
@@ -32,7 +32,7 @@ CATEGORY_SEED: list[tuple[str, str, str, str, str, int]] = [
     ("high-ropes", "숲속모험", "land", "땅", "🪜", 70),
     ("survival-game", "서바이벌", "land", "땅", "🪖", 80),
     ("shooting", "실탄사격", "land", "땅", "🎯", 90),
-    ("animal-riding", "동물타기", "land", "땅", "🐴", 100),
+    ("animal-riding", "승마", "land", "땅", "🐴", 100),
     ("skywalk", "스카이워크", "land", "땅", "🌉", 110),
     ("slide", "슬라이드", "land", "땅", "🛝", 120),
     ("cave-explore", "동굴탐험", "land", "땅", "🦇", 130),
