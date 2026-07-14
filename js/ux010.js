@@ -72,12 +72,13 @@
       if (venueGroupSlug(v) !== selectedGroupSlug) return false;
     }
     if (selectedCategoryId != null) {
+      const want = Number(selectedCategoryId);
       const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
       if (!members.length) {
-        return venueCategoryId(v) === selectedCategoryId;
+        return Number(venueCategoryId(v)) === want;
       }
       return members.some(
-        (s) => s.categoryId === selectedCategoryId && isSpotPublishable(s)
+        (s) => Number(s.categoryId) === want && isSpotPublishable(s)
       );
     }
     return true;
@@ -91,6 +92,8 @@
     return c.lat >= b.swLat && c.lat <= b.neLat && c.lng >= b.swLng && c.lng <= b.neLng;
   }
 
+  let categoriesReady = false;
+
   async function loadCategoryGroups() {
     try {
       const [gRes, cRes] = await Promise.all([
@@ -103,9 +106,11 @@
         .filter((c) => c.spotCount > 0)
         .slice()
         .sort((a, b) => b.spotCount - a.spotCount || a.sortOrder - b.sortOrder);
+      categoriesReady = true;
     } catch (_) {
       CATEGORY_GROUPS = [];
       CATEGORIES = [];
+      categoriesReady = false;
     }
     return CATEGORY_GROUPS;
   }

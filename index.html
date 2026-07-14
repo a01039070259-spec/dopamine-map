@@ -4346,15 +4346,30 @@
       detailReturnScreen = 'mainScreen';
       mapReturnScreen = 'mainScreen';
 
-      renderCards(getDisplayedVenues());
-      loadSavedDiagnosisChip();
-
-      if (kakaoMap) {
-        setTimeout(() => {
-          syncMapChromeHeight();
-          kakaoMap.relayout();
-        }, 50);
-      }
+      const paint = async () => {
+        try {
+          if (!(SPOTS && SPOTS.length)) {
+            await reloadSpots();
+          }
+          if (!(VENUES && VENUES.length)) {
+            await reloadVenues();
+          } else {
+            VENUES = enrichVenues(VENUES);
+          }
+          if (window.Ux010 && typeof Ux010.loadCategoryGroups === 'function') {
+            await Ux010.loadCategoryGroups();
+          }
+        } catch (_) { /* paint with whatever we have */ }
+        renderCards(getDisplayedVenues());
+        loadSavedDiagnosisChip();
+        if (kakaoMap) {
+          setTimeout(() => {
+            syncMapChromeHeight();
+            kakaoMap.relayout();
+          }, 50);
+        }
+      };
+      paint();
     }
 
     function menuGoMap() {
@@ -4932,6 +4947,12 @@
     function closeDiagnosis() {
       markOnboardingDone();
       goToMainScreen();
+    }
+
+    async function ensureSpotDataReady() {
+      if (!(SPOTS && SPOTS.length)) await reloadSpots();
+      if (!(VENUES && VENUES.length)) await reloadVenues();
+      else VENUES = enrichVenues(VENUES);
     }
 
     function markOnboardingDone() {
@@ -6152,7 +6173,8 @@
     ═══════════════════════════════════════ */
     async function bootApp() {
       migrateLegacyDiagnosisStorage();
-      const spotsPromise = reloadSpots();
+      // 스팟을 먼저 로드해야 venue enrich / publishable 필터가 빈 목록이 되지 않음
+      await reloadSpots();
       await reloadVenues();
 
       if (window.Ux010) {
@@ -6168,15 +6190,6 @@
       } else {
         renderCards(getDisplayedVenues());
         await loadSavedDiagnosisChip();
-      }
-
-      await spotsPromise;
-      VENUES = enrichVenues(VENUES);
-      if (onboardingDone && window.Ux010) {
-        await Ux010.loadCategoryGroups();
-        Ux010.renderHomeHome();
-      } else if (onboardingDone) {
-        renderCards(getDisplayedVenues());
       }
 
       await refreshAuth();
