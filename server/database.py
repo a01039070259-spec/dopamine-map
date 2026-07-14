@@ -186,6 +186,8 @@ def row_to_spot(row: sqlite3.Row) -> dict:
         spot["venueId"] = row["venue_id"]
     if "coord_verified" in row.keys():
         spot["coordVerified"] = bool(row["coord_verified"])
+    if "legacy" in row.keys():
+        spot["legacy"] = bool(row["legacy"])
     if "kakao_place_id" in row.keys():
         spot["kakaoPlaceId"] = row["kakao_place_id"] or ""
     if "thrill_grade" in row.keys():
@@ -221,6 +223,18 @@ SPOT_SELECT_WITH_CATEGORY = """
     FROM spots s
     LEFT JOIN categories c ON c.id = s.category_id
 """
+
+# Publish rule: verified new spots OR grandfathered legacy (<=302)
+PUBLISHABLE_SQL = (
+    "(COALESCE(s.coord_verified, 0) = 1 OR COALESCE(s.legacy, 0) = 1)"
+)
+
+
+def is_spot_publishable(spot: dict) -> bool:
+    """coord_verified OR legacy — used by SEO and any server-side filters."""
+    if not spot:
+        return False
+    return bool(spot.get("coordVerified") or spot.get("legacy"))
 
 
 def spot_has_image(img: str) -> bool:
@@ -393,6 +407,7 @@ def spot_payload_to_columns(payload: dict) -> dict:
         ),
         "season_end_month": _optional_int(payload.get("seasonEndMonth"), lo=1, hi=12),
         "category_id": int(category_id) if category_id is not None else None,
+        "legacy": 1 if payload.get("legacy") else 0,
     }
 
 
@@ -430,14 +445,38 @@ def get_spot_detail(spot_id: int) -> Optional[dict]:
 
 def create_spot(payload: dict) -> dict:
     cols = spot_payload_to_columns(payload)
+    # New spots are never grandfathered as legacy
+    cols["legacy"] = 0
     created = payload.get("createdAt") or now_iso()
     updated = now_iso()
     with get_conn() as conn:
-        has_cat = any(
-            r[1] == "category_id"
-            for r in conn.execute("PRAGMA table_info(spots)").fetchall()
-        )
-        if has_cat:
+        cols_info = {r[1] for r in conn.execute("PRAGMA table_info(spots)").fetchall()}
+        has_cat = "category_id" in cols_info
+        has_legacy = "legacy" in cols_info
+        if has_cat and has_legacy:
+            cur = conn.execute(
+                """
+                INSERT INTO spots (
+                    name, addr, type, tl, em, bg, img, lat, lng,
+                    th, fe, sp, fp, sp2, ap, rank, marker_type,
+                    tags, br, ts, warns, reviews, custom, approved,
+                    coord_verified, kakao_place_id,
+                    thrill_grade, season_start_month, season_end_month,
+                    category_id, legacy,
+                    created_at, updated_at
+                ) VALUES (
+                    :name, :addr, :type, :tl, :em, :bg, :img, :lat, :lng,
+                    :th, :fe, :sp, :fp, :sp2, :ap, :rank, :marker_type,
+                    :tags, :br, :ts, :warns, :reviews, :custom, :approved,
+                    :coord_verified, :kakao_place_id,
+                    :thrill_grade, :season_start_month, :season_end_month,
+                    :category_id, :legacy,
+                    :created_at, :updated_at
+                )
+                """,
+                {**cols, "created_at": created, "updated_at": updated},
+            )
+        elif has_cat:
             cur = conn.execute(
                 """
                 INSERT INTO spots (
@@ -503,6 +542,8 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
         cols["season_start_month"] = existing.get("seasonStartMonth")
     if "seasonEndMonth" not in payload:
         cols["season_end_month"] = existing.get("seasonEndMonth")
+    if "legacy" not in payload:
+        cols["legacy"] = 1 if existing.get("legacy") else 0
     if "categoryId" not in payload and existing.get("categoryId") is not None:
         # re-resolve from type/tl when type fields change
         if payload.get("type") or payload.get("tl"):
@@ -512,11 +553,28 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
     created = payload.get("createdAt") or existing["createdAt"]
     updated = now_iso()
     with get_conn() as conn:
-        has_cat = any(
-            r[1] == "category_id"
-            for r in conn.execute("PRAGMA table_info(spots)").fetchall()
-        )
-        if has_cat:
+        cols_info = {r[1] for r in conn.execute("PRAGMA table_info(spots)").fetchall()}
+        has_cat = "category_id" in cols_info
+        has_legacy = "legacy" in cols_info
+        if has_cat and has_legacy:
+            conn.execute(
+                """
+                UPDATE spots SET
+                    name=:name, addr=:addr, type=:type, tl=:tl, em=:em, bg=:bg, img=:img,
+                    lat=:lat, lng=:lng, th=:th, fe=:fe, sp=:sp, fp=:fp, sp2=:sp2, ap=:ap,
+                    rank=:rank, marker_type=:marker_type, tags=:tags, br=:br, ts=:ts,
+                    warns=:warns, reviews=:reviews, custom=:custom, approved=:approved,
+                    coord_verified=:coord_verified, kakao_place_id=:kakao_place_id,
+                    thrill_grade=:thrill_grade,
+                    season_start_month=:season_start_month,
+                    season_end_month=:season_end_month,
+                    category_id=:category_id, legacy=:legacy,
+                    created_at=:created_at, updated_at=:updated_at
+                WHERE id=:id
+                """,
+                {**cols, "created_at": created, "updated_at": updated, "id": spot_id},
+            )
+        elif has_cat:
             conn.execute(
                 """
                 UPDATE spots SET

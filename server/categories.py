@@ -65,7 +65,7 @@ def list_categories(*, with_counts: bool = True, only_with_spots: bool = False) 
                        COALESCE((
                          SELECT COUNT(*) FROM spots s
                          WHERE s.category_id = c.id
-                           AND COALESCE(s.coord_verified, 0) = 1
+                           AND (COALESCE(s.coord_verified, 0) = 1 OR COALESCE(s.legacy, 0) = 1)
                        ), 0) AS spot_count
                 FROM categories c
                 ORDER BY c.group_slug ASC, spot_count DESC, c.sort_order ASC, c.name ASC
@@ -144,7 +144,7 @@ def map_region_clusters(
                s.category_id, c.group_slug
         FROM spots s
         LEFT JOIN categories c ON c.id = s.category_id
-        WHERE COALESCE(s.coord_verified, 0) = 1
+        WHERE (COALESCE(s.coord_verified, 0) = 1 OR COALESCE(s.legacy, 0) = 1)
     """
     params: list = []
     if group_slug:

@@ -41,6 +41,9 @@ def build_sitemap_xml(base_url: str, spots: list[dict]) -> str:
     for spot in spots:
         if not spot.get("approved", True):
             continue
+        # Publish = coordVerified OR legacy (same as app exposure)
+        if not (spot.get("coordVerified") or spot.get("legacy")):
+            continue
         sid = spot.get("id")
         if not sid:
             continue

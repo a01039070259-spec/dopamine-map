@@ -18,6 +18,7 @@ MIGRATION_007_RENAME_VENUE_13_SQL = MIGRATIONS_DIR / "007_rename_venue_13.sql"
 MIGRATION_008_KAKAO_PLACE_ID_SQL = MIGRATIONS_DIR / "008_add_kakao_place_id.sql"
 MIGRATION_009_THRILL_SEASON_SQL = MIGRATIONS_DIR / "009_add_thrill_grade_season.sql"
 MIGRATION_010_CATEGORIES_SQL = MIGRATIONS_DIR / "010_categories.sql"
+MIGRATION_011_LEGACY_SQL = MIGRATIONS_DIR / "011_add_legacy_spots.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
 VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
@@ -31,6 +32,7 @@ BACKUP_SUFFIX_007 = ".backup_pre_rename_venue_13"
 BACKUP_SUFFIX_008 = ".backup_pre_kakao_place_id"
 BACKUP_SUFFIX_009 = ".backup_pre_thrill_season"
 BACKUP_SUFFIX_010 = ".backup_pre_categories"
+BACKUP_SUFFIX_011 = ".backup_pre_legacy"
 VENUE_006_NAME = "부산 스카이라인루지(기장해안로)"
 VENUE_006_NAME_NEW = "부산 스카이라인 루지 & 하이플라이"
 MIGRATION_002_VENUE_NAMES = (
@@ -879,6 +881,50 @@ def apply_010_categories(db_path: Path) -> None:
     logger.info("migration %s: applied successfully", migration_name)
 
 
+def apply_011_add_legacy_spots(db_path: Path) -> None:
+    """Add spots.legacy and grandfather id<=302. Idempotent."""
+    migration_name = "011_add_legacy_spots"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "spots"):
+            logger.info("migration %s: skip (spots table missing)", migration_name)
+            return
+        if _column_exists(conn, "spots", "legacy"):
+            # ensure grandfather rows stay set (safe re-run)
+            conn.execute("UPDATE spots SET legacy = 1 WHERE id <= 302 AND COALESCE(legacy, 0) = 0")
+            conn.commit()
+            logger.info("migration %s: skip (legacy column already exists; grandfather refreshed)", migration_name)
+            return
+    finally:
+        conn.close()
+
+    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_011)
+    if not backup_path.exists():
+        shutil.copy2(db_path, backup_path)
+        logger.info("migration %s: backup created at %s", migration_name, backup_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute(
+            "ALTER TABLE spots ADD COLUMN legacy INTEGER NOT NULL DEFAULT 0"
+        )
+        conn.execute("UPDATE spots SET legacy = 1 WHERE id <= 302")
+        conn.commit()
+        legacy_n = conn.execute(
+            "SELECT COUNT(*) AS c FROM spots WHERE legacy = 1"
+        ).fetchone()[0]
+        logger.info("migration %s: legacy flagged %s spots (id<=302)", migration_name, legacy_n)
+    finally:
+        conn.close()
+
+    logger.info("migration %s: applied successfully", migration_name)
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
@@ -891,3 +937,4 @@ def apply_pending_migrations(db_path: Path) -> None:
     apply_008_add_kakao_place_id(db_path)
     apply_009_add_thrill_grade_season(db_path)
     apply_010_categories(db_path)
+    apply_011_add_legacy_spots(db_path)

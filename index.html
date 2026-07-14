@@ -755,6 +755,18 @@
       margin-bottom: 8px
     }
 
+    .d-map-btn {
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #2a4a2a;
+      background: rgba(10, 24, 14, .85);
+      color: var(--neon);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer
+    }
+
     .is-hidden { display: none !important }
 
     .toast {
@@ -3568,9 +3580,27 @@
       return true;
     }
 
+    function isSpotPublishable(s) {
+      if (!s) return false;
+      if (window.Ux010 && typeof Ux010.isSpotPublishable === 'function') {
+        return Ux010.isSpotPublishable(s);
+      }
+      return !!(s.coordVerified || s.legacy);
+    }
+
+    function venueIsPublishable(v) {
+      if (window.Ux010 && typeof Ux010.venueIsPublishable === 'function') {
+        return Ux010.venueIsPublishable(v);
+      }
+      const members = getVenueMemberSpots(v);
+      if (members.length) return members.some((s) => isSpotPublishable(s));
+      return isSpotPublishable(v.primarySpotId ? getSpot(v.primarySpotId) : null);
+    }
+
     function getMapVisibleVenues(filter) {
       const q = getSpotSearchQuery();
       return VENUES.filter((v) => {
+        if (!venueIsPublishable(v)) return false;
         if (!getVenueMapCoords(v)) return false;
         if (!venueMatchesMapFilter(v, filter)) return false;
         if (q && !matchVenueSearch(v, q)) return false;
@@ -3930,18 +3960,22 @@
 
     function onSearchInputChanged(fromId) {
       syncSearchInputs(fromId);
-      renderCards(getDisplayedVenues());
+      if (window.Ux010 && Ux010.selectedGroupSlug) {
+        Ux010.renderGroupList();
+      } else if (window.Ux010 && document.getElementById('homeGroupGrid') && !document.getElementById('homeGroupGrid').classList.contains('is-hidden')) {
+        /* home grid — season cards not search-driven */
+      } else {
+        renderCards(getDisplayedVenues());
+      }
       if (kakaoMap) {
         renderKakaoMarkers(currentFilter || 'all');
-        const visible = getMapVisibleVenues(currentFilter || 'all');
-        if (visible.length > 0) fitMapToVenueBounds(visible);
       }
     }
 
     function getDisplayedVenues() {
       const f = document.querySelector('.mfb.active')?.dataset.f || 'thrill';
       const q = getSpotSearchQuery();
-      let list = sortVenues(f);
+      let list = sortVenues(f).filter((v) => venueIsPublishable(v));
       if (q) list = list.filter((v) => matchVenueSearch(v, q));
       if (seasonNowOnly) list = list.filter((v) => venueHasInSeasonSpot(v));
       return list;
@@ -4821,21 +4855,37 @@
       const lo = Math.max(1, target - 1);
       const hi = Math.min(5, target + 1);
       const pool = (SPOTS || []).filter((s) => {
-        if (!s.coordVerified) return false;
+        if (!isSpotPublishable(s)) return false;
         const g = Number(s.thrillGrade);
         return Number.isFinite(g) && g >= lo && g <= hi;
       });
-      const inSeason = pool.filter((s) => isSeasonOpen(s));
-      const outSeason = pool.filter((s) => !isSeasonOpen(s));
-      const shuffle = (arr) => {
-        const a = arr.slice();
-        for (let i = a.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          const t = a[i]; a[i] = a[j]; a[j] = t;
-        }
-        return a;
-      };
-      return shuffle(inSeason).concat(shuffle(outSeason)).slice(0, limit || 3);
+      let picks = (() => {
+        const inSeason = pool.filter((s) => isSeasonOpen(s));
+        const outSeason = pool.filter((s) => !isSeasonOpen(s));
+        const shuffle = (arr) => {
+          const a = arr.slice();
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = a[i]; a[i] = a[j]; a[j] = t;
+          }
+          return a;
+        };
+        return shuffle(inSeason).concat(shuffle(outSeason)).slice(0, limit || 3);
+      })();
+      // NULL thrillGrade fallback pool (publishable only)
+      if (!picks.length) {
+        const fallback = (SPOTS || []).filter((s) => isSpotPublishable(s) && s.thrillGrade == null);
+        const shuffle = (arr) => {
+          const a = arr.slice();
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = a[i]; a[i] = a[j]; a[j] = t;
+          }
+          return a;
+        };
+        picks = shuffle(fallback).slice(0, limit || 3);
+      }
+      return picks;
     }
 
     function renderGradeSpotRecs(grade) {
@@ -4867,8 +4917,27 @@
       if (div) div.style.display = '';
     }
 
+    function hasMapCoords(spot) {
+      if (!spot) return false;
+      const lat = Number(spot.lat);
+      const lng = Number(spot.lng);
+      return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+    }
+
+    function openSpotOnMapFromDetail(spotId) {
+      if (window.Ux010 && typeof Ux010.openSpotOnMap === 'function') {
+        Ux010.openSpotOnMap(spotId);
+        return;
+      }
+      openRecommendedSpot(spotId);
+    }
+
     function openRecommendedSpot(spotId) {
       markOnboardingDone();
+      if (window.Ux010 && typeof Ux010.openSpotOnMap === 'function') {
+        Ux010.openSpotOnMap(spotId);
+        return;
+      }
       const spot = getSpot(spotId);
       goMap();
       const venueId = spot && spot.venueId != null ? spot.venueId : -Number(spotId);
@@ -5236,6 +5305,7 @@
         </div>
         <p class="d-title">${a.name}</p>
         <p class="d-addr">📍 ${a.addr}</p>
+        ${hasMapCoords(a) ? `<button type="button" class="d-map-btn" onclick="openSpotOnMapFromDetail(${a.id})">🗺️ 지도에서 보기</button>` : ''}
       </div>
     </div>
     ${seasonBanner}
@@ -5901,14 +5971,23 @@
 
       updateAppMenu();
 
-      const pendingDetail = sessionStorage.getItem(SS_PENDING_DETAIL) || params.get('openDetail') || params.get('spot');
-      if (pendingDetail) {
-        sessionStorage.removeItem(SS_PENDING_DETAIL);
+      const mapSpotId = params.get('spot_id') || params.get('mapSpot');
+      if (mapSpotId) {
         history.replaceState({}, '', location.pathname);
-        if (onboardingDone || localStorage.getItem(LS_ONBOARDING_DONE) === 'true') {
-          setTimeout(() => goDetail(Number(pendingDetail)), 400);
-        } else {
-          pendingDetailId = Number(pendingDetail);
+        const sid = Number(mapSpotId);
+        if (Number.isFinite(sid) && sid > 0) {
+          setTimeout(() => openSpotOnMapFromDetail(sid), 500);
+        }
+      } else {
+        const pendingDetail = sessionStorage.getItem(SS_PENDING_DETAIL) || params.get('openDetail') || params.get('spot');
+        if (pendingDetail) {
+          sessionStorage.removeItem(SS_PENDING_DETAIL);
+          history.replaceState({}, '', location.pathname);
+          if (onboardingDone || localStorage.getItem(LS_ONBOARDING_DONE) === 'true') {
+            setTimeout(() => goDetail(Number(pendingDetail)), 400);
+          } else {
+            pendingDetailId = Number(pendingDetail);
+          }
         }
       }
     }

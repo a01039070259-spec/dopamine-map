@@ -52,15 +52,20 @@
     return s && s.categoryId != null ? s.categoryId : null;
   }
 
-  function venueIsVerified(v) {
+  function isSpotPublishable(s) {
+    if (!s) return false;
+    return !!(s.coordVerified || s.legacy);
+  }
+
+  function venueIsPublishable(v) {
     const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
-    if (members.length) return members.some((s) => s.coordVerified);
+    if (members.length) return members.some((s) => isSpotPublishable(s));
     const s = v.primarySpotId ? getSpot(v.primarySpotId) : null;
-    return !!(s && s.coordVerified);
+    return isSpotPublishable(s);
   }
 
   function venueMatchesCategoryFilters(v) {
-    if (!venueIsVerified(v)) return false;
+    if (!venueIsPublishable(v)) return false;
     if (selectedGroupSlug) {
       if (venueGroupSlug(v) !== selectedGroupSlug) return false;
     }
@@ -69,7 +74,9 @@
       if (!members.length) {
         return venueCategoryId(v) === selectedCategoryId;
       }
-      return members.some((s) => s.categoryId === selectedCategoryId && s.coordVerified);
+      return members.some(
+        (s) => s.categoryId === selectedCategoryId && isSpotPublishable(s)
+      );
     }
     return true;
   }
@@ -101,7 +108,7 @@
   function getSeasonNowSpots(limit) {
     const month = new Date().getMonth() + 1;
     const list = (SPOTS || [])
-      .filter((s) => s.coordVerified)
+      .filter((s) => isSpotPublishable(s))
       .filter((s) => isSeasonOpenLocal(s, month))
       .sort((a, b) => (Number(b.thrillGrade) || 0) - (Number(a.thrillGrade) || 0));
     return list.slice(0, limit || 10);
@@ -644,5 +651,36 @@
     get selectedCategoryId() {
       return selectedCategoryId;
     },
+    isSpotPublishable,
+    venueIsPublishable,
+    openSpotOnMap,
   };
+
+  function openSpotOnMap(spotId) {
+    const spot = typeof getSpot === "function" ? getSpot(spotId) : null;
+    if (!spot) return;
+    const lat = Number(spot.lat);
+    const lng = Number(spot.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) {
+      return;
+    }
+    const venueId = spot.venueId != null ? spot.venueId : -Number(spotId);
+    if (typeof goMap === "function") goMap();
+    const tryFocus = () => {
+      if (!kakaoMap) {
+        setTimeout(tryFocus, 200);
+        return;
+      }
+      mapBoundsFilter = null;
+      kakaoMap.setLevel(MAP_LEVEL_L3);
+      kakaoMap.setCenter(new kakao.maps.LatLng(lat, lng));
+      selectedMapVenueId = venueId;
+      if (spot.id) currentId = spot.id;
+      renderKakaoMarkersUx(currentFilter || "all");
+      openMapBottomSheet(venueId);
+      const btn = document.getElementById("mapResearchBtn");
+      if (btn) btn.classList.remove("is-hidden");
+    };
+    setTimeout(tryFocus, 250);
+  }
 })(window);
