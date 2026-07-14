@@ -22,54 +22,6 @@ sys.stdout.reconfigure(encoding="utf-8")
 # Confirmed Kakao place_id only. Unresolved listed in NEEDS_HUMAN below.
 SPOTS = [
     {
-        "name": "지산 GPS MTB 파크",
-        "type": "mtbDownhill",
-        "tl": "MTB 다운힐",
-        "em": "🚵",
-        "bg": "#1a1208",
-        "kakao_queries": ["지산포레스트리조트"],
-        "prefer_place_id": "22529454",
-        "thrillGrade": 4,
-        "seasonStartMonth": 5,
-        "seasonEndMonth": 11,
-        "th": 4,
-        "fp": 68,
-        "sp2": 78,
-        "ap": 74,
-        "sp": 0,
-        "br": "스키 리프트에 자전거 싣고 올라가 다운힐로 찢는다. 수도권 다운힐의 대표 필드 — 리프트업, 싱글트랙·점프·뱅크가 끊이지 않는다. 하절기 시즌(대략 5~11월)만 열린다.",
-        "tags": ["#MTB다운힐", "#지산", "#리프트업", "#수도권대표", "#시즌제"],
-        "warns": [
-            {"i": "⚠️", "tx": "시즌·운영일(목~일 위주) 사전 확인 필수", "t": "y"},
-            {"i": "💀", "tx": "급경사·점프 구간 · 헬멧·보호대 필착", "t": "y"},
-            {"i": "📍", "tx": "카카오 좌표는 지산포레스트리조트(동일 슬로프)", "t": "g"},
-        ],
-        "_note": "MTB 전용 POI 없음 → 활동지 리조트 place_id 사용",
-    },
-    {
-        "name": "원주 산악자전거 파크",
-        "type": "mtbDownhill",
-        "tl": "MTB 다운힐",
-        "em": "🚵",
-        "bg": "#1a1208",
-        "kakao_queries": ["원주 산악자전거 파크", "원주산악자전거파크"],
-        "prefer_place_id": "1338219220",
-        "thrillGrade": 3,
-        "seasonStartMonth": None,
-        "seasonEndMonth": None,
-        "th": 3,
-        "fp": 58,
-        "sp2": 70,
-        "ap": 68,
-        "sp": 0,
-        "br": "다운힐 3코스+XC 1코스. 매주 월요일 휴무, 홈페이지 시설대관 예약제로 굴러간다. 원주 신림면의 산악자전거 파크.",
-        "tags": ["#MTB다운힐", "#원주", "#신림면", "#대관예약", "#XC"],
-        "warns": [
-            {"i": "📅", "tx": "시설대관 예약제 · 월요일 휴무", "t": "y"},
-            {"i": "⚠️", "tx": "코스 난이도 확인 후 진입 · 헬멧 필착", "t": "y"},
-        ],
-    },
-    {
         "name": "BAC센터 인수봉 암벽등반",
         "type": "rockClimbing",
         "tl": "자연 암벽등반",
@@ -168,14 +120,6 @@ SPOTS = [
 ]
 
 NEEDS_HUMAN = [
-    {
-        "name": "어드벤처코리아 덕풍계곡 캐녀닝",
-        "category": "캐녀닝",
-        "region_hint": "경북 울진/강원 삼척 덕풍계곡",
-        "grade": 5,
-        "season": "4~10",
-        "reason": "캐녀닝 투어 전용 카카오 place 없음. '어드벤처코리아'는 의왕 사무소 POI만 존재. '덕풍계곡'은 삼척 자연지명(투어 운영 지점과 1:1 특정 불가). 임의 좌표 금지.",
-    },
     {
         "name": "도봉산 선인봉 원데이 암벽체험",
         "category": "자연 암벽등반",

@@ -129,8 +129,6 @@
       롤러코스터: "롤러코스터",
       스카이바이크: "공중자전거",
       공중자전거: "공중자전거",
-      캐녀닝: "계곡탐험",
-      계곡탐험: "계곡탐험",
       하이로프: "숲속모험",
       숲속모험: "숲속모험",
       씨워킹: "바닷속걷기",
@@ -167,7 +165,6 @@
     "alpine-coaster": "🎢",
     skybike: "🚲",
     monorail: "🚋",
-    canyoning: "🏔️",
     "rock-climbing": "🧗",
     "high-ropes": "🪜",
     "survival-game": "🪖",
@@ -180,7 +177,6 @@
     atv: "🏍️",
     offroad: "🚙",
     "suv-offroad": "🚙",
-    "mtb-downhill": "🚵",
     amphibious: "🚢",
   };
 

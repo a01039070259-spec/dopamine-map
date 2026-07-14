@@ -929,7 +929,11 @@ def sync_category_seed_labels(db_path: Path) -> None:
     """Re-apply CATEGORY_SEED name/icon/sort onto existing categories (idempotent)."""
     if not db_path.is_file():
         return
-    from server.category_defs import CATEGORY_SEED
+    from server.category_defs import (
+        CATEGORY_SEED,
+        RETIRED_CATEGORY_SLUGS,
+        RETIRED_SPOT_TYPES,
+    )
 
     conn = sqlite3.connect(db_path)
     try:
@@ -944,6 +948,44 @@ def sync_category_seed_labels(db_path: Path) -> None:
                 """,
                 (name, group_slug, group_name, icon, sort_order, slug),
             )
+
+        # 폐기 카테고리: 스팟 삭제 + 카테고리 행 제거
+        if RETIRED_SPOT_TYPES and _table_exists(conn, "spots"):
+            placeholders = ",".join("?" * len(RETIRED_SPOT_TYPES))
+            cur = conn.execute(
+                f"DELETE FROM spots WHERE type IN ({placeholders})",
+                tuple(RETIRED_SPOT_TYPES),
+            )
+            if cur.rowcount:
+                logger.info(
+                    "prune_retired: deleted %s spots (types=%s)",
+                    cur.rowcount,
+                    sorted(RETIRED_SPOT_TYPES),
+                )
+        if RETIRED_CATEGORY_SLUGS:
+            placeholders = ",".join("?" * len(RETIRED_CATEGORY_SLUGS))
+            # 혹시 다른 타입으로 category_id만 묶인 스팟도 노출 차단
+            if _table_exists(conn, "spots") and _column_exists(conn, "spots", "category_id"):
+                conn.execute(
+                    f"""
+                    UPDATE spots SET category_id = NULL, approved = 0, coord_verified = 0
+                    WHERE category_id IN (
+                      SELECT id FROM categories WHERE slug IN ({placeholders})
+                    )
+                    """,
+                    tuple(RETIRED_CATEGORY_SLUGS),
+                )
+            cur = conn.execute(
+                f"DELETE FROM categories WHERE slug IN ({placeholders})",
+                tuple(RETIRED_CATEGORY_SLUGS),
+            )
+            if cur.rowcount:
+                logger.info(
+                    "prune_retired: deleted %s categories (slugs=%s)",
+                    cur.rowcount,
+                    sorted(RETIRED_CATEGORY_SLUGS),
+                )
+
         conn.commit()
         logger.info("sync_category_seed_labels: refreshed %s categories", len(CATEGORY_SEED))
     finally:

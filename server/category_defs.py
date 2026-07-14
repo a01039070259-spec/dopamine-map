@@ -27,7 +27,6 @@ CATEGORY_SEED: list[tuple[str, str, str, str, str, int]] = [
     ("alpine-coaster", "롤러코스터", "land", "땅", "🎢", 20),
     ("skybike", "공중자전거", "land", "땅", "🚲", 30),
     ("monorail", "모노레일", "land", "땅", "🚋", 40),
-    ("canyoning", "계곡탐험", "land", "땅", "🏔️", 50),
     ("rock-climbing", "암벽등반", "land", "땅", "🧗", 60),
     ("high-ropes", "숲속모험", "land", "땅", "🪜", 70),
     ("survival-game", "서바이벌", "land", "땅", "🪖", 80),
@@ -41,7 +40,6 @@ CATEGORY_SEED: list[tuple[str, str, str, str, str, int]] = [
     ("atv", "ATV", "speed", "스피드", "🏍️", 20),
     ("offroad", "오프로드", "speed", "스피드", "🚙", 30),
     ("suv-offroad", "SUV체험", "speed", "스피드", "🚙", 40),
-    ("mtb-downhill", "산악자전거", "speed", "스피드", "🚵", 50),
     ("amphibious", "수륙양용차", "speed", "스피드", "🚢", 60),
 ]
 
@@ -69,7 +67,6 @@ TYPE_TO_SLUG = {
     "coaster": "alpine-coaster",
     "skybike": "skybike",
     "monorail": "monorail",
-    "canyoning": "canyoning",
     "rockClimbing": "rock-climbing",
     "highRopes": "high-ropes",
     "netadv": "high-ropes",
@@ -81,9 +78,12 @@ TYPE_TO_SLUG = {
     "cave": "cave-explore",
     "kart": "kart",
     "atv": "atv",
-    "mtbDownhill": "mtb-downhill",
     "amphibious": "amphibious",
 }
+
+# 홈/맵에서 제거한 카테고리 — 시작 시 DB 정리
+RETIRED_CATEGORY_SLUGS: frozenset[str] = frozenset({"canyoning", "mtb-downhill"})
+RETIRED_SPOT_TYPES: frozenset[str] = frozenset({"canyoning", "mtbDownhill"})
 
 
 def resolve_category_slug(type_key: str, tl: str) -> Optional[str]:
