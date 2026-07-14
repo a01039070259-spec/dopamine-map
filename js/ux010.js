@@ -609,11 +609,8 @@
     return kakaoMap && kakaoMap.getLevel ? kakaoMap.getLevel() : MAP_LEVEL_L1;
   }
 
-  /** 단독일 때만 사진+이름 카드. 없으면 이모지 미니핀. */
+  /** 단독 핀: 카테고리만 (이름·사진 카드 X) */
   function makeMiniPinHTML(v) {
-    if (typeof makeMarkerHTML === "function") {
-      return makeMarkerHTML(v);
-    }
     const grade = venueMaxGrade(v);
     const hot = grade >= 4;
     const selected = selectedMapVenueId === v.id ? " selected" : "";
@@ -621,61 +618,20 @@
     const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
     const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
     const primary = spot || members[0] || null;
-    const ico =
-      v.spotCount > 1 && !v.virtual
-        ? "📍"
-        : spotIcon(primary) || "📍";
-    return `<div class="map-mini-pin${selected}${hotClass}" onclick="Ux010.selectMapVenue(${v.id}, event)"><span>${ico}</span></div>`;
+    const ico = spotIcon(primary) || "📍";
+    const cat = shortCatName(
+      primary ? spotLabel(primary) : (v && (v.tl || v.categoryName)) || "액티비티"
+    );
+    return `<div class="map-cat-pin${selected}${hotClass}" onclick="Ux010.selectMapVenue(${v.id}, event)">
+      <div class="map-mini-pin${hotClass}"><span>${ico}</span></div>
+      <span class="map-cat-label">${cat}</span>
+    </div>`;
   }
 
-  function makeRegionBubbleHTML(cluster, zoomFn) {
-    const label = `${cluster.region} ${cluster.count}`;
+  function makeCountBubbleHTML(count, lat, lng, zoomFn) {
+    const n = Number(count) || 0;
     const fn = zoomFn || "zoomToRegion";
-    const kind = fn === "zoomToCity" ? " city" : "";
-    return `<div class="map-region-bubble${kind}" onclick="Ux010.${fn}(${cluster.lat}, ${cluster.lng}, event)"><span>${label}</span></div>`;
-  }
-
-  function venueCityLabel(v) {
-    const addr = ((v && (v.address || v.addr)) || "").trim();
-    const parts = addr.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      const city = parts[1].replace(
-        /(특별자치시|광역시|특별시|자치시|시|군|구)$/,
-        ""
-      );
-      if (city) return city;
-      return parts[1];
-    }
-    if (v && v.region) {
-      return String(v.region)
-        .replace(/(특별자치시|광역시|특별시|자치시|도|시|군|구)$/, "")
-        .trim() || v.region;
-    }
-    return parts[0] || "지역";
-  }
-
-  function buildCityClusters(venues) {
-    const buckets = new Map();
-    (venues || []).forEach((v) => {
-      const c = getVenueMapCoords(v);
-      if (!c) return;
-      const city = venueCityLabel(v);
-      if (!buckets.has(city)) {
-        buckets.set(city, { region: city, count: 0, latSum: 0, lngSum: 0, venues: [] });
-      }
-      const b = buckets.get(city);
-      b.count += 1;
-      b.latSum += c.lat;
-      b.lngSum += c.lng;
-      b.venues.push(v);
-    });
-    return [...buckets.values()].map((b) => ({
-      region: b.region,
-      count: b.count,
-      lat: b.latSum / b.count,
-      lng: b.lngSum / b.count,
-      venues: b.venues,
-    }));
+    return `<div class="map-mini-cluster" onclick="Ux010.${fn}(${lat}, ${lng}, event)"><span>${n}</span></div>`;
   }
 
   /** 같은 좌표(또는 극근접) 핀을 살짝 펼쳐 겹침 해소 */
@@ -817,13 +773,13 @@
     const level = mapLevel();
     const counter = document.getElementById("mapCounter");
 
-    // L1: 도/광역시 — "경기 15"
+    // 멀리: 도/광역시 묶음 — 숫자만 (용인 4 X → 4)
     if (level >= MAP_LEVEL_L1) {
       const clusters = await fetchRegionClusters();
       clusters.forEach((cl) => {
         const overlay = new kakao.maps.CustomOverlay({
           position: new kakao.maps.LatLng(cl.lat, cl.lng),
-          content: makeRegionBubbleHTML(cl, "zoomToRegion"),
+          content: makeCountBubbleHTML(cl.count, cl.lat, cl.lng, "zoomToRegion"),
           yAnchor: 0.5,
           xAnchor: 0.5,
           clickable: true,
@@ -840,45 +796,12 @@
     const visible = getFilteredMapVenues(filter);
     if (counter) counter.innerHTML = `<b>${visible.length}</b> 장소`;
 
-    // L2: 시/군/구 — "성남 5" (1곳만 있으면 바로 사진 핀)
-    if (level >= MAP_LEVEL_CITY) {
-      const cities = buildCityClusters(visible);
-      cities.forEach((cl) => {
-        if (cl.count === 1 && cl.venues[0]) {
-          const v = cl.venues[0];
-          const overlay = new kakao.maps.CustomOverlay({
-            position: new kakao.maps.LatLng(cl.lat, cl.lng),
-            content: makeMiniPinHTML(v),
-            yAnchor: 1.1,
-            clickable: true,
-            zIndex: 3,
-          });
-          overlay.setMap(kakaoMap);
-          mapPinOverlays.push(overlay);
-          if (typeof kakaoMarkers !== "undefined") kakaoMarkers.push(overlay);
-          return;
-        }
-        const overlay = new kakao.maps.CustomOverlay({
-          position: new kakao.maps.LatLng(cl.lat, cl.lng),
-          content: makeRegionBubbleHTML(cl, "zoomToCity"),
-          yAnchor: 0.5,
-          xAnchor: 0.5,
-          clickable: true,
-          zIndex: 2,
-        });
-        overlay.setMap(kakaoMap);
-        mapClusterOverlays.push(overlay);
-        if (typeof kakaoMarkers !== "undefined") kakaoMarkers.push(overlay);
-      });
-      return;
-    }
-
-    // L3+: 숫자 클러스터 → 1개 남으면 사진 마커
+    // 중간·가까운 줌: 격자 숫자 클러스터 → 1개면 카테고리 핀
     const items = buildPinItems(visible, level);
     mapMiniClusters = items.filter((it) => it.type === "cluster");
     items.forEach((item) => {
       let html;
-      let yAnchor = 1.1;
+      let yAnchor = 1.05;
       if (item.type === "cluster") {
         const idx = mapMiniClusters.indexOf(item);
         html = `<div class="map-mini-cluster" onclick="Ux010.openMiniCluster(${idx}, ${item.lat}, ${item.lng}, event)"><span>${item.count}</span></div>`;
@@ -905,8 +828,7 @@
       ev.preventDefault && ev.preventDefault();
     }
     if (!kakaoMap) return;
-    // 도 → 시/군 단계
-    kakaoMap.setLevel(MAP_LEVEL_CITY);
+    kakaoMap.setLevel(7);
     kakaoMap.panTo(new kakao.maps.LatLng(lat, lng));
     setTimeout(() => renderKakaoMarkersUx(currentFilter || "all"), 200);
   }
@@ -917,7 +839,6 @@
       ev.preventDefault && ev.preventDefault();
     }
     if (!kakaoMap) return;
-    // 시 → 숫자 클러스터 단계
     kakaoMap.setLevel(6);
     kakaoMap.panTo(new kakao.maps.LatLng(lat, lng));
     setTimeout(() => renderKakaoMarkersUx(currentFilter || "all"), 200);
