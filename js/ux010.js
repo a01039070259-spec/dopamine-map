@@ -633,7 +633,8 @@
   function makeRegionBubbleHTML(cluster, zoomFn) {
     const label = `${cluster.region} ${cluster.count}`;
     const fn = zoomFn || "zoomToRegion";
-    return `<div class="map-region-bubble" onclick="Ux010.${fn}(${cluster.lat}, ${cluster.lng}, event)"><span>${label}</span></div>`;
+    const kind = fn === "zoomToCity" ? " city" : "";
+    return `<div class="map-region-bubble${kind}" onclick="Ux010.${fn}(${cluster.lat}, ${cluster.lng}, event)"><span>${label}</span></div>`;
   }
 
   function venueCityLabel(v) {
@@ -1025,7 +1026,8 @@
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         kakaoMap.setCenter(new kakao.maps.LatLng(lat, lng));
-        kakaoMap.setLevel(8); // L2
+        // 멀리서 도 단위부터 보이도록 (확대하면 시→숫자→사진)
+        kakaoMap.setLevel(Math.max(MAP_LEVEL_L1, 11));
         clearBoundsFilter();
         renderKakaoMarkersUx(currentFilter || "all");
       },

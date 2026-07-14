@@ -560,6 +560,11 @@ def api_get_diagnosis(request: Request):
 def _home_html() -> str:
     index_path = ROOT / "index.html"
     html_text = index_path.read_text(encoding="utf-8")
+    # Bust browser cache on static JS after deploys
+    for rel in ("js/ux010.js", "js/spots-store.js"):
+        path = ROOT / rel
+        ver = str(int(path.stat().st_mtime)) if path.exists() else "1"
+        html_text = html_text.replace(f'src="{rel}"', f'src="{rel}?v={ver}"')
     return inject_home_seo(
         html_text,
         APP_BASE_URL,
@@ -596,7 +601,12 @@ def spot_landing(spot_id: int):
 @app.get("/", response_class=HTMLResponse)
 @app.get("/index.html", response_class=HTMLResponse)
 def serve_home():
-    return HTMLResponse(_home_html())
-
+    return HTMLResponse(
+        _home_html(),
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
 
 app.mount("/", StaticFiles(directory=str(ROOT), html=True), name="site")
