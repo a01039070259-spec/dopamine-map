@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>도파민 지도 ⚡ — 찐 매니아를 위한 하드코어 액티비티</title>
 
   <!-- ============================================================
@@ -470,6 +470,26 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       padding: 4px 16px 16px
+    }
+
+    .home-group-grid.is-loading .home-group-card,
+    .home-season-track.is-loading .home-season-card {
+      min-height: 72px;
+      background: linear-gradient(90deg, #141414 25%, #1c1c1c 50%, #141414 75%);
+      background-size: 200% 100%;
+      animation: skel 1.2s ease-in-out infinite;
+      color: transparent;
+      border-color: #222;
+      pointer-events: none
+    }
+
+    @keyframes skel {
+      0% { background-position: 200% 0 }
+      100% { background-position: -200% 0 }
+    }
+
+    #kakaoMap {
+      touch-action: manipulation
     }
 
     .home-group-card {
@@ -3246,6 +3266,7 @@
         <div class="rs-recs" id="rsRecs"></div>
         <div class="rs-divider" id="rsRecsDivider"></div>
         <div class="rs-actions" id="rsActions">
+          <button class="rs-kakao-btn" id="rsShareBtn" type="button" onclick="shareDiagnosisResult()">결과 공유</button>
           <button class="rs-kakao-btn" id="rsKakaoBtn" type="button">카카오 로그인 · 결과 저장</button>
           <button class="rs-skip-btn" id="rsSkipBtn" type="button">나중에 하기</button>
           <button class="rs-back-btn is-hidden" id="rsBackBtn" type="button">← 뒤로</button>
@@ -3273,8 +3294,8 @@
               style="color:var(--neon);text-decoration:none">상세</a></span>
         </div>
         <div class="m-login-nudge is-hidden" id="loginNudge">
-          <p>카카오 로그인하면 <strong style="color:var(--neon)">내 등급 저장</strong>과 <strong style="color:var(--neon)">스팟
-              상세·리뷰</strong>를 이용할 수 있어요.</p>
+          <p>카카오 로그인하면 <strong style="color:var(--neon)">내 등급 저장</strong>과
+              <strong style="color:var(--neon)">리뷰 작성</strong>을 이용할 수 있어요. 스팟 상세는 비로그인으로도 볼 수 있습니다.</p>
           <div class="m-login-nudge-actions">
             <button type="button" class="m-login-nudge-kakao" onclick="startKakaoLogin()">카카오로 로그인</button>
             <button type="button" class="m-login-nudge-later" onclick="dismissLoginNudge()">나중에</button>
@@ -3317,6 +3338,9 @@
         <div class="m-cards" id="homeGroupCards"></div>
       </div>
 
+      <!-- LEGACY_LIST_VIEW (011): fear/speed 정렬 — 리뷰 매운맛 지표 충분해지면 부활.
+           실제 라우팅은 신 홈 그리드(Ux010)만 사용. renderCards는 그룹 리스트 미진입 폴백용. -->
+      <!--
       <section class="m-filter-sec is-hidden" id="filterRowLegacyWrap">
         <p class="m-filter-lbl">정렬 기준</p>
         <div class="m-filter-row" id="filterRow">
@@ -3330,6 +3354,11 @@
         <p style="font-size:11px;color:#444" id="sortInfo">스릴 지수 높은 순</p>
       </div>
       <div class="m-cards is-hidden" id="cardList"></div>
+      -->
+      <div class="m-cards is-hidden" id="cardList" aria-hidden="true"></div>
+      <span class="is-hidden" id="resultCount" aria-hidden="true">0</span>
+      <span class="is-hidden" id="sortInfo" aria-hidden="true"></span>
+      <div class="is-hidden" id="filterRow" aria-hidden="true"></div>
     </div>
 
     <!-- ════════════ ②b VENUE (multi-activity) ════════════ -->
@@ -3433,21 +3462,18 @@
         <div id="kakaoMap"></div>
         <button type="button" class="map-research-btn is-hidden" id="mapResearchBtn" onclick="Ux010.researchThisArea()">이 지역에서 재검색</button>
 
-        <!-- API 키 미설정 시 Fallback UI -->
+        <!-- 지도 로딩 실패 — 사용자용 폴백 (개발자 진단은 console.error) -->
         <div class="map-fallback" id="mapFallback" style="display:none">
           <div class="map-fallback-icon">🗺️</div>
-          <div class="map-fallback-title" id="mapFallbackTitle">지도를 불러올 수 없습니다</div>
+          <div class="map-fallback-title" id="mapFallbackTitle">지도를 불러오지 못했어요</div>
           <div class="map-fallback-desc" id="mapFallbackDesc">
-            카카오 개발자 콘솔에서 아래 설정을 확인해 주세요.
+            잠시 후 새로고침 해주세요.
           </div>
-          <div class="map-fallback-code" id="mapFallbackDetail">OPEN_MAP_AND_LOCAL 서비스 활성화 필요</div>
-          <div style="font-size:12px;color:#888;margin-top:14px;line-height:1.7;text-align:left;max-width:420px">
-            1. <a href="https://developers.kakao.com/console/app" target="_blank" rel="noopener"
-              style="color:var(--neon)">developers.kakao.com</a> → 내 애플리케이션 → <strong>도파민지도</strong><br>
-            2. <strong>제품 설정</strong> → <strong>지도/로컬</strong> → <strong>활성화 ON</strong><br>
-            3. <strong>플랫폼</strong> → Web → <code>http://127.0.0.1:8080</code> 등록<br>
-            4. 저장 후 이 페이지 <strong>Ctrl+F5</strong> 새로고침
+          <div class="map-fallback-actions" style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:16px">
+            <button type="button" class="mbs-cta" style="width:auto;min-width:160px" onclick="location.reload()">새로고침</button>
+            <button type="button" class="rbtn" onclick="goFromMapFallback()">리스트로 보기</button>
           </div>
+          <div class="map-fallback-code is-hidden" id="mapFallbackDetail" aria-hidden="true"></div>
         </div>
 
         <div class="map-counter" id="mapCounter"><b>0</b> 장소</div>
@@ -3497,7 +3523,7 @@
     <div class="login-modal hidden" id="loginModal">
       <div class="login-modal-box">
         <p class="login-modal-title">로그인이 필요합니다</p>
-        <p class="login-modal-desc">스팟 상세 정보와 리뷰 작성은 카카오 로그인 후 이용할 수 있습니다.</p>
+        <p class="login-modal-desc">리뷰 작성·진단 결과 저장에 카카오 로그인이 필요합니다. 스팟 상세 열람은 로그인 없이 가능합니다.</p>
         <button type="button" class="login-modal-btn" onclick="startKakaoLogin()">카카오로 로그인</button>
         <button type="button" class="login-modal-cancel" onclick="hideLoginModal()">닫기</button>
       </div>
@@ -4346,8 +4372,20 @@
       updateAppMenu();
     }
 
-    function showLoginModal(detailId) {
+    function showLoginModal(detailId, reason) {
       pendingDetailId = detailId || null;
+      const title = document.querySelector('#loginModal .login-modal-title');
+      const desc = document.querySelector('#loginModal .login-modal-desc');
+      if (reason === 'review') {
+        if (title) title.textContent = '리뷰를 남기려면 로그인이 필요해요';
+        if (desc) desc.textContent = '생존 후기를 남기려면 카카오 로그인이 필요합니다. 스팟 상세 열람은 로그인 없이 가능합니다.';
+      } else if (reason === 'diagnosis') {
+        if (title) title.textContent = '진단 결과를 저장하려면 로그인이 필요해요';
+        if (desc) desc.textContent = '카카오 로그인하면 내 도파민 등급을 기기 간에 불러올 수 있어요.';
+      } else {
+        if (title) title.textContent = '로그인이 필요합니다';
+        if (desc) desc.textContent = '리뷰 작성·진단 결과 저장에 카카오 로그인이 필요합니다.';
+      }
       document.getElementById('loginModal').classList.remove('hidden');
     }
 
@@ -4371,7 +4409,8 @@
         } catch (_) { }
         currentUser = null;
         updateAuthButton();
-        renderCards(getDisplayedVenues());
+        if (window.Ux010 && Ux010.selectedGroupSlug) Ux010.renderGroupList();
+        else if (window.Ux010) Ux010.renderHomeHome();
         await loadSavedDiagnosisChip();
         showToast('로그아웃 되었습니다');
         return;
@@ -4381,7 +4420,7 @@
     }
 
     function detailButtonLabel() {
-      return currentUser ? '상세 보기 →' : '로그인하러가기 →';
+      return '상세 보기 →';
     }
 
     function slide(fromId, toId) {
@@ -4954,6 +4993,26 @@
       }, 450);
     }
 
+    function shareDiagnosisResult() {
+      const gradeName = lastDiagnosisResult || getLocalResultType() || '미진단';
+      const grade = findGradeByName(gradeName);
+      const emoji = (grade && grade.emoji) || '🧪';
+      const text = `${emoji} 내 도파민 등급은 「${gradeName}」!\n안전바가 흔들려야 진짜 액티비티다.\n도파민맵에서 등급 맞춰 스팟 찾아보기`;
+      const url = location.origin + '/';
+      const full = `${text}\n${url}`;
+      if (navigator.share) {
+        navigator.share({ title: '도파민맵 등급', text, url }).catch(() => { });
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(full).then(() => showToast('공유 문구가 복사됐어요')).catch(() => {
+          prompt('아래 문구를 복사하세요', full);
+        });
+        return;
+      }
+      prompt('아래 문구를 복사하세요', full);
+    }
+
     function setupResultActions(mode) {
       const kakaoBtn = document.getElementById('rsKakaoBtn');
       const skipBtn = document.getElementById('rsSkipBtn');
@@ -5187,17 +5246,27 @@
        ② MAIN
     ═══════════════════════════════════════ */
     function renderCards(data) {
-      if (!data.length) {
-        document.getElementById('cardList').innerHTML =
-          '<div class="m-empty" style="grid-column:1/-1;text-align:center;padding:56px 20px;color:var(--text-muted)">' +
-          '<p style="font-size:16px;font-weight:700;color:#888;margin-bottom:8px">등록된 스팟이 없습니다</p>' +
-          '<p style="font-size:13px;line-height:1.6">관리자 페이지에서 액티비티를 등록하면<br>여기와 지도에 표시됩니다.</p></div>';
-        document.getElementById('resultCount').textContent = 0;
+      // 011: 신 홈(Ux010)이 주 리스트. cardList는 폴백 컨테이너만 유지.
+      if (window.Ux010 && Ux010.selectedGroupSlug) {
+        Ux010.renderGroupList();
         return;
       }
-      document.getElementById('cardList').innerHTML = data.map(v => renderVenueCardHtml(v)).join('');
-      document.getElementById('resultCount').textContent = data.length;
-      updateSortInfoLabel(document.querySelector('.mfb.active')?.dataset.f || 'thrill');
+      if (window.Ux010) {
+        Ux010.renderHomeHome();
+        return;
+      }
+      const listEl = document.getElementById('cardList');
+      const countEl = document.getElementById('resultCount');
+      if (!listEl) return;
+      if (!data || !data.length) {
+        listEl.innerHTML =
+          '<div class="m-empty" style="grid-column:1/-1;text-align:center;padding:56px 20px;color:var(--text-muted)">' +
+          '<p style="font-size:16px;font-weight:700;color:#888;margin-bottom:8px">등록된 스팟이 없습니다</p></div>';
+        if (countEl) countEl.textContent = 0;
+        return;
+      }
+      listEl.innerHTML = data.map(v => renderVenueCardHtml(v)).join('');
+      if (countEl) countEl.textContent = data.length;
     }
 
     function updateSortInfoLabel(f) {
@@ -5349,7 +5418,7 @@
     <div class="d-sticky">
       ${currentUser
           ? `<button class="btn-primary" style="width:100%" onclick="goReview(${a.id})">✍️ 리뷰 쓰기</button>`
-          : `<button class="btn-primary" style="width:100%" onclick="showLoginModal(${a.id});showToast('로그인 후 리뷰를 작성할 수 있어요')">🔐 로그인 후 리뷰 작성</button>`}
+          : `<button class="btn-primary" style="width:100%" onclick="showLoginModal(${a.id}, 'review');showToast('리뷰를 남기려면 로그인이 필요해요')">🔐 로그인 후 리뷰 작성</button>`}
     </div>`;
 
       let fromId;
@@ -5366,12 +5435,51 @@
       slide(fromId, 'detailScreen');
     }
 
-    async function goDetail(id, fromReview = false, returnTo = null) {
-      currentId = id;
-      if (!fromReview && !currentUser) {
-        showLoginModal(id);
-        return;
+    let mapUiState = null;
+
+    function saveMapUiState() {
+      if (!kakaoMap) return;
+      try {
+        const c = kakaoMap.getCenter();
+        mapUiState = {
+          level: kakaoMap.getLevel(),
+          lat: c.getLat(),
+          lng: c.getLng(),
+          filter: currentFilter || 'all',
+          selected: selectedMapVenueId,
+          group: window.Ux010 ? Ux010.selectedGroupSlug : null,
+          categoryId: window.Ux010 ? Ux010.selectedCategoryId : null,
+          season: !!seasonNowOnly,
+        };
+        sessionStorage.setItem('dopamine_map_ui', JSON.stringify(mapUiState));
+      } catch (_) { }
+    }
+
+    function restoreMapUiState() {
+      let st = mapUiState;
+      if (!st) {
+        try { st = JSON.parse(sessionStorage.getItem('dopamine_map_ui') || 'null'); } catch (_) { st = null; }
       }
+      if (!st || !kakaoMap) return;
+      try {
+        if (st.lat != null && st.lng != null) {
+          kakaoMap.setCenter(new kakao.maps.LatLng(st.lat, st.lng));
+        }
+        if (st.level != null) kakaoMap.setLevel(st.level);
+        currentFilter = st.filter || 'all';
+        selectedMapVenueId = st.selected;
+        if (typeof seasonNowOnly !== 'undefined' && st.season !== seasonNowOnly) {
+          /* leave season as user left it — do not flip unexpectedly */
+        }
+        renderKakaoMarkers(currentFilter || 'all');
+      } catch (_) { }
+    }
+
+    async function goDetail(id, fromReview = false, returnTo = null) {
+      if (document.getElementById('mapScreen')?.classList.contains('active')) {
+        saveMapUiState();
+      }
+      currentId = id;
       let a;
       try {
         a = await DopamineStore.fetchSpotById(id);
@@ -5380,11 +5488,15 @@
         else SPOTS.push(a);
       } catch (e) {
         if (e.status === 401) {
-          showLoginModal(id);
+          a = getSpot(id);
+          if (!a) {
+            showToast('스팟 정보를 불러올 수 없습니다');
+            return;
+          }
+        } else {
+          showToast('스팟 정보를 불러올 수 없습니다');
           return;
         }
-        showToast('스팟 정보를 불러올 수 없습니다');
-        return;
       }
       renderDetailView(a, fromReview, returnTo);
     }
@@ -5409,10 +5521,10 @@
       to.scrollTop = 0;
 
       if (toId === 'mapScreen' && kakaoMap) {
-        clearMapVenueSelection();
         setTimeout(() => {
           syncMapChromeHeight();
-          kakaoMap.relayout();
+          if (kakaoMap.relayout) kakaoMap.relayout();
+          restoreMapUiState();
         }, 50);
       }
     }
@@ -5452,8 +5564,8 @@
     ═══════════════════════════════════════ */
     function goReview(id) {
       if (!currentUser) {
-        showLoginModal(id);
-        showToast('로그인 후 리뷰를 작성할 수 있어요');
+        showLoginModal(id, 'review');
+        showToast('리뷰를 남기려면 로그인이 필요해요');
         return;
       }
       currentId = id;
@@ -5513,7 +5625,7 @@
         setTimeout(() => goDetail(currentId, true), 800);
       }).catch((e) => {
         if (e.status === 401) {
-          showLoginModal(currentId);
+          showLoginModal(currentId, 'review');
           return;
         }
         showToast('리뷰 저장에 실패했습니다');
@@ -5696,20 +5808,25 @@
     }
 
     function showMapFallback(reason, detail) {
+      console.error('[map fallback]', reason, detail);
       const fb = document.getElementById('mapFallback');
       const title = document.getElementById('mapFallbackTitle');
       const desc = document.getElementById('mapFallbackDesc');
       const code = document.getElementById('mapFallbackDetail');
-      if (title) title.textContent = reason || '지도를 불러올 수 없습니다';
-      if (desc) {
-        if (String(detail).includes('FILE_PROTOCOL')) {
-          desc.textContent = 'file:// 로는 지도 API가 동작하지 않습니다. http://127.0.0.1:8080/index.html 로 접속해 주세요.';
-        } else {
-          desc.textContent = '카카오 개발자 콘솔에서 지도/로컬 API와 Web 도메인을 확인해 주세요.';
-        }
+      if (title) title.textContent = '지도를 불러오지 못했어요';
+      if (desc) desc.textContent = '잠시 후 새로고침 해주세요.';
+      if (code) {
+        code.textContent = String(detail || reason || '');
+        code.classList.add('is-hidden');
       }
-      if (code) code.textContent = detail || 'OPEN_MAP_AND_LOCAL 서비스 활성화 필요';
       if (fb) fb.style.display = 'flex';
+    }
+
+    function goFromMapFallback() {
+      const fb = document.getElementById('mapFallback');
+      if (fb) fb.style.display = 'none';
+      if (typeof goFromMap === 'function') goFromMap();
+      else if (typeof goMain === 'function') goMain();
     }
 
     function ensureKakaoMapsReady(onReady, onFail) {
@@ -5762,17 +5879,7 @@
         }
       }, (err) => {
         console.error('카카오 SDK 로드 실패:', err);
-        let detail = String(err);
-        if (detail.includes('FILE_PROTOCOL')) {
-          detail = 'FILE_PROTOCOL — http://127.0.0.1:8080/index.html 로 접속';
-        } else if (detail.includes('KAKAO_SDK_TIMEOUT')) {
-          detail = 'SDK 로드 시간 초과 — Ctrl+F5 새로고침 후 재시도';
-        } else if (detail.includes('SDK_SCRIPT') || detail.includes('KAKAO_SDK') || detail.includes('KAKAO_MAPS')) {
-          detail = 'SDK 로드 실패 — 콘솔 Web 도메인(http://127.0.0.1:8080) + 지도/로컬 API ON';
-        } else if (detail.includes('OPEN_MAP') || detail.includes('NotAuthorized')) {
-          detail = 'OPEN_MAP_AND_LOCAL 서비스가 비활성화됨 → 콘솔에서 지도/로컬 ON';
-        }
-        showMapFallback('카카오 지도 SDK 로드 실패', detail);
+        showMapFallback('카카오 지도 SDK 로드 실패', String(err));
       });
     }
 

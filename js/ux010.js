@@ -133,36 +133,51 @@
     if (sortSec) sortSec.classList.add("is-hidden");
     if (grid) {
       grid.classList.remove("is-hidden");
-      grid.innerHTML = (CATEGORY_GROUPS || [])
-        .map(
-          (g) => `
+      if (!(CATEGORY_GROUPS || []).length) {
+        grid.classList.add("is-loading");
+        grid.innerHTML = [0, 1, 2, 3]
+          .map(() => `<button type="button" class="home-group-card" tabindex="-1" aria-hidden="true">.</button>`)
+          .join("");
+      } else {
+        grid.classList.remove("is-loading");
+        grid.innerHTML = (CATEGORY_GROUPS || [])
+          .map(
+            (g) => `
         <button type="button" class="home-group-card" data-group="${g.groupSlug}" onclick="Ux010.openGroup('${g.groupSlug}')">
           <span class="home-group-ico">${g.icon || ""}</span>
           <span class="home-group-name">${g.groupName}</span>
           <span class="home-group-count">${g.spotCount} 스팟</span>
         </button>`
-        )
-        .join("");
+          )
+          .join("");
+      }
     }
     if (season) {
       season.classList.remove("is-hidden");
       const spots = getSeasonNowSpots(10);
       const track = document.getElementById("homeSeasonTrack");
       if (track) {
-        track.innerHTML = spots.length
-          ? spots
-              .map((s) => {
-                const vid = s.venueId != null ? s.venueId : -Number(s.id);
-                return `<button type="button" class="home-season-card" onclick="Ux010.openSpotFromHome(${s.id})">
+        if (!(SPOTS || []).length) {
+          track.classList.add("is-loading");
+          track.innerHTML = [0, 1, 2]
+            .map(() => `<button type="button" class="home-season-card" tabindex="-1" aria-hidden="true">.</button>`)
+            .join("");
+        } else {
+          track.classList.remove("is-loading");
+          track.innerHTML = spots.length
+            ? spots
+                .map((s) => {
+                  return `<button type="button" class="home-season-card" onclick="Ux010.openSpotFromHome(${s.id})">
               <span class="hsc-ico">${spotIcon(s)}</span>
               <span class="hsc-cat">${spotLabel(s)}</span>
               <span class="hsc-name">${s.name}</span>
               ${thrillBadge(s.thrillGrade)}
               <span class="hsc-season">지금 가능</span>
             </button>`;
-              })
-              .join("")
-          : `<p class="home-season-empty">현재 시즌 스팟이 없어요</p>`;
+                })
+                .join("")
+            : `<p class="home-season-empty">현재 시즌 스팟이 없어요</p>`;
+        }
       }
     }
     const quiz = document.getElementById("homeQuizBanner");
@@ -351,7 +366,7 @@
       if (!s) return;
       const seasonOn = isSeasonOpenLocal(s);
       body.innerHTML = `
-        <div class="mbs-card">
+        <div class="mbs-card" role="button" tabindex="0" onclick="Ux010.openSpotDetail(${s.id})">
           <div class="mbs-card-top">
             <span class="mbs-ico lg">${spotIcon(s)}</span>
             <div>
@@ -362,7 +377,7 @@
           <p class="mbs-title">${s.name}</p>
           <p class="mbs-addr">📍 ${s.addr || v.address || ""}</p>
           <p class="mbs-season ${seasonOn ? "on" : "off"}">${seasonOn ? "⏱ 지금 가능" : "🚫 시즌 외"}</p>
-          <button type="button" class="mbs-cta" onclick="Ux010.openSpotDetail(${s.id})">상세 보기</button>
+          <button type="button" class="mbs-cta" onclick="event.stopPropagation();Ux010.openSpotDetail(${s.id})">상세 보기</button>
         </div>`;
     }
     el.classList.remove("is-hidden");
@@ -370,7 +385,7 @@
 
   function openSpotDetail(spotId) {
     closeBottomSheet();
-    if (typeof goDetail === "function") goDetail(spotId);
+    if (typeof goDetail === "function") goDetail(spotId, false, "mapScreen");
   }
 
   /* ───── Map markers 3-level ───── */

@@ -114,10 +114,13 @@ def build_spot_page_html(spot: dict, base_url: str) -> str:
 <meta property="og:title" content="{html.escape(title)}"/>
 <meta property="og:description" content="{html.escape(desc)}"/>
 <meta property="og:url" content="{html.escape(page_url)}"/>
+<meta property="og:image" content="{html.escape(base + "/assets/og-default.jpg")}"/>
 <meta property="og:locale" content="ko_KR"/>
-<meta name="twitter:card" content="summary"/>
+<meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="{html.escape(title)}"/>
 <meta name="twitter:description" content="{html.escape(desc)}"/>
+<meta name="twitter:image" content="{html.escape(base + "/assets/og-default.jpg")}"/>
+<!-- TODO(011): 스팟별 동적 og:image — spot.cover 주입 -->
 <script type="application/ld+json">{json.dumps(json_ld, ensure_ascii=False)}</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
@@ -178,10 +181,15 @@ def inject_home_seo(html_text: str, base_url: str, google_verification: str = ""
             f'<meta property="og:title" content="{html.escape(SITE_NAME)} ⚡"/>',
             f'<meta property="og:description" content="{html.escape(DEFAULT_DESCRIPTION)}"/>',
             f'<meta property="og:url" content="{html.escape(base + "/")}"/>',
+            f'<meta property="og:image" content="{html.escape(base + "/assets/og-default.jpg")}"/>',
+            '<meta property="og:image:width" content="1200"/>',
+            '<meta property="og:image:height" content="630"/>',
             '<meta property="og:locale" content="ko_KR"/>',
             '<meta name="twitter:card" content="summary_large_image"/>',
             f'<meta name="twitter:title" content="{html.escape(SITE_NAME)}"/>',
             f'<meta name="twitter:description" content="{html.escape(DEFAULT_DESCRIPTION)}"/>',
+            f'<meta name="twitter:image" content="{html.escape(base + "/assets/og-default.jpg")}"/>',
+            # TODO(011): 스팟별 동적 og:image — 백엔드 spot 페이지 렌더에서 커버 이미지 주입 필요
             *extra,
             f"""<script type="application/ld+json">{json.dumps({
                 "@context": "https://schema.org",

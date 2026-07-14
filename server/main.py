@@ -481,8 +481,7 @@ def api_get_spot(
     request: Request,
     x_admin_password: Optional[str] = Header(default=None, alias="X-Admin-Password"),
 ):
-    if not is_admin(x_admin_password):
-        require_user(request)
+    # Public read — detail 열람은 비로그인 허용. 리뷰 작성 API만 인증.
     spot = get_spot_detail(spot_id)
     if not spot:
         raise HTTPException(status_code=404, detail="스팟을 찾을 수 없습니다")
