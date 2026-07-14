@@ -609,8 +609,6 @@
     return kakaoMap && kakaoMap.getLevel ? kakaoMap.getLevel() : MAP_LEVEL_L1;
   }
 
-  let mapMiniClusters = []; // last rendered mini-clusters for click → sheet
-
   /** 단독일 때만 사진+이름 카드. 없으면 이모지 미니핀. */
   function makeMiniPinHTML(v) {
     if (typeof makeMarkerHTML === "function") {
