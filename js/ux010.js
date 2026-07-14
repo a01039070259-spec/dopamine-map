@@ -52,7 +52,15 @@
     return s && s.categoryId != null ? s.categoryId : null;
   }
 
+  function venueIsVerified(v) {
+    const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
+    if (members.length) return members.some((s) => s.coordVerified);
+    const s = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+    return !!(s && s.coordVerified);
+  }
+
   function venueMatchesCategoryFilters(v) {
+    if (!venueIsVerified(v)) return false;
     if (selectedGroupSlug) {
       if (venueGroupSlug(v) !== selectedGroupSlug) return false;
     }
@@ -61,7 +69,7 @@
       if (!members.length) {
         return venueCategoryId(v) === selectedCategoryId;
       }
-      return members.some((s) => s.categoryId === selectedCategoryId);
+      return members.some((s) => s.categoryId === selectedCategoryId && s.coordVerified);
     }
     return true;
   }
