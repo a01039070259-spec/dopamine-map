@@ -608,6 +608,8 @@
     return kakaoMap && kakaoMap.getLevel ? kakaoMap.getLevel() : MAP_LEVEL_L1;
   }
 
+  let mapMiniClusters = []; // last rendered mini-clusters for click → sheet
+
   function makeMiniPinHTML(v) {
     const grade = venueMaxGrade(v);
     const hot = grade >= 4;
@@ -624,6 +626,28 @@
   function makeRegionBubbleHTML(cluster) {
     const label = `${cluster.region} ${cluster.count}`;
     return `<div class="map-region-bubble" onclick="Ux010.zoomToRegion(${cluster.lat}, ${cluster.lng}, event)"><span>${label}</span></div>`;
+  }
+
+  /** 같은 좌표(또는 극근접) 핀을 살짝 펼쳐 겹침 해소 */
+  function spiderfySameCoords(entries) {
+    if (entries.length <= 1) {
+      const e = entries[0];
+      return e
+        ? [{ type: "pin", venue: e.v, lat: e.c.lat, lng: e.c.lng }]
+        : [];
+    }
+    const lat0 = entries.reduce((s, e) => s + e.c.lat, 0) / entries.length;
+    const lng0 = entries.reduce((s, e) => s + e.c.lng, 0) / entries.length;
+    const r = 0.00028; // ~30m
+    return entries.map((e, i) => {
+      const a = (2 * Math.PI * i) / entries.length - Math.PI / 2;
+      return {
+        type: "pin",
+        venue: e.v,
+        lat: lat0 + r * Math.cos(a),
+        lng: lng0 + r * Math.sin(a),
+      };
+    });
   }
 
   function clusterNearby(venues, cellDeg) {
@@ -646,6 +670,64 @@
       }
     });
     return out;
+  }
+
+  /** 고배율: 격자 클러스터 끄고, 동일좌표만 펼침 */
+  function buildPinItems(venues, level) {
+    if (level <= 3) {
+      const buckets = new Map();
+      venues.forEach((v) => {
+        const c = getVenueMapCoords(v);
+        if (!c) return;
+        const key = `${c.lat.toFixed(5)}_${c.lng.toFixed(5)}`;
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push({ v, c });
+      });
+      const out = [];
+      buckets.forEach((entries) => {
+        spiderfySameCoords(entries).forEach((p) => out.push(p));
+      });
+      return out;
+    }
+    // Kakao level 작을수록 확대. 확대로 갈수록 셀을 줄여 숫자 클러스터가 풀리게.
+    const cell = level <= 5 ? 0.0022 : level <= 7 ? 0.006 : 0.018;
+    return clusterNearby(venues, cell);
+  }
+
+  function openClusterVenueSheet(venues) {
+    const el = ensureBottomSheet();
+    const body = document.getElementById("mbsBody");
+    const list = (venues || []).filter(Boolean);
+    if (!list.length) return;
+    body.innerHTML = `
+      <p class="mbs-title">이 위치 ${list.length}곳</p>
+      <p class="mbs-sub">겹친 장소를 골라 주세요</p>
+      <div class="mbs-list">
+        ${list
+          .map((v) => {
+            const s =
+              (typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v)[0] : null) ||
+              (v.primarySpotId ? getSpot(v.primarySpotId) : null);
+            const title = (s && s.name) || v.name || "장소";
+            const cat = s ? spotLabel(s) : v.tl || "";
+            const sid = s && s.id != null ? s.id : v.primarySpotId;
+            const click =
+              sid != null
+                ? `Ux010.openSpotDetail(${sid})`
+                : `Ux010.selectMapVenue(${v.id}, event)`;
+            return `
+            <button type="button" class="mbs-item" onclick="${click}">
+              <span class="mbs-ico">${s ? spotIcon(s) : "📍"}</span>
+              <span class="mbs-meta">
+                <span class="mbs-cat">${cat}</span>
+                <span class="mbs-name">${title}</span>
+              </span>
+              ${s ? thrillBadge(s.thrillGrade || s.th) : ""}
+            </button>`;
+          })
+          .join("")}
+      </div>`;
+    el.classList.remove("is-hidden");
   }
 
   async function fetchRegionClusters() {
@@ -701,12 +783,13 @@
     const visible = getFilteredMapVenues(filter);
     if (counter) counter.innerHTML = `<b>${visible.length}</b> 장소`;
 
-    const cell = level <= MAP_LEVEL_L3 ? 0.008 : 0.02;
-    const items = clusterNearby(visible, cell);
+    const items = buildPinItems(visible, level);
+    mapMiniClusters = items.filter((it) => it.type === "cluster");
     items.forEach((item) => {
       let html;
       if (item.type === "cluster") {
-        html = `<div class="map-mini-cluster" onclick="Ux010.zoomIntoMiniCluster(${item.lat}, ${item.lng}, event)"><span>${item.count}</span></div>`;
+        const idx = mapMiniClusters.indexOf(item);
+        html = `<div class="map-mini-cluster" onclick="Ux010.openMiniCluster(${idx}, ${item.lat}, ${item.lng}, event)"><span>${item.count}</span></div>`;
       } else {
         html = makeMiniPinHTML(item.venue);
       }
@@ -729,21 +812,41 @@
       ev.preventDefault && ev.preventDefault();
     }
     if (!kakaoMap) return;
-    kakaoMap.setLevel(8);
+    kakaoMap.setLevel(7);
     kakaoMap.panTo(new kakao.maps.LatLng(lat, lng));
     setTimeout(() => renderKakaoMarkersUx(currentFilter || "all"), 200);
   }
 
-  function zoomIntoMiniCluster(lat, lng, ev) {
+  function openMiniCluster(idx, lat, lng, ev) {
     if (ev) {
       ev.stopPropagation();
       ev.preventDefault && ev.preventDefault();
     }
     if (!kakaoMap) return;
-    const next = Math.max(mapLevel() - 2, 5);
+    const cl = mapMiniClusters[idx];
+    const level = mapLevel();
+    // 이미 크게 확대됐으면 숫자 대신 목록
+    if (level <= 4 && cl && cl.venues && cl.venues.length) {
+      openClusterVenueSheet(cl.venues);
+      return;
+    }
+    const next = Math.max(level - 2, 1);
     kakaoMap.setLevel(next);
     kakaoMap.panTo(new kakao.maps.LatLng(lat, lng));
-    setTimeout(() => renderKakaoMarkersUx(currentFilter || "all"), 200);
+    setTimeout(() => {
+      renderKakaoMarkersUx(currentFilter || "all");
+      // 줌인 후에도 같은 위치에 묶이면 목록
+      const still = (mapMiniClusters || []).find(
+        (c) => Math.abs(c.lat - lat) < 0.0008 && Math.abs(c.lng - lng) < 0.0008
+      );
+      if (still && still.venues && still.venues.length && mapLevel() <= 3) {
+        openClusterVenueSheet(still.venues);
+      }
+    }, 240);
+  }
+
+  function zoomIntoMiniCluster(lat, lng, ev) {
+    openMiniCluster(0, lat, lng, ev);
   }
 
   function selectMapVenue(venueId, ev) {
@@ -872,6 +975,7 @@
     renderKakaoMarkersUx,
     zoomToRegion,
     zoomIntoMiniCluster,
+    openMiniCluster,
     researchThisArea,
     onMapIdleForResearch,
     startMapAtUserLocation,
