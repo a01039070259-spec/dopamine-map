@@ -197,7 +197,30 @@ def row_to_spot(row: sqlite3.Row) -> dict:
     if "season_end_month" in row.keys():
         em = row["season_end_month"]
         spot["seasonEndMonth"] = int(em) if em is not None else None
+    if "category_id" in row.keys():
+        cid = row["category_id"]
+        spot["categoryId"] = int(cid) if cid is not None else None
+    if "category_slug" in row.keys() and row["category_slug"]:
+        spot["categorySlug"] = row["category_slug"]
+        spot["categoryName"] = row["category_name"] if "category_name" in row.keys() else None
+        spot["groupSlug"] = row["group_slug"] if "group_slug" in row.keys() else None
+        spot["groupName"] = row["group_name"] if "group_name" in row.keys() else None
+        spot["categoryIcon"] = (
+            row["category_icon"] if "category_icon" in row.keys() else ""
+        ) or ""
     return spot
+
+
+SPOT_SELECT_WITH_CATEGORY = """
+    SELECT s.*,
+           c.slug AS category_slug,
+           c.name AS category_name,
+           c.group_slug AS group_slug,
+           c.group_name AS group_name,
+           c.icon AS category_icon
+    FROM spots s
+    LEFT JOIN categories c ON c.id = s.category_id
+"""
 
 
 def spot_has_image(img: str) -> bool:
@@ -327,11 +350,21 @@ def spot_payload_to_columns(payload: dict) -> dict:
     tags = payload.get("tags") or []
     warns = payload.get("warns") or []
     reviews = payload.get("reviews") or []
+    type_key = payload.get("type") or "custom"
+    tl = payload.get("tl") or payload.get("type") or "액티비티"
+    category_id = payload.get("categoryId")
+    if category_id is None:
+        try:
+            from server.categories import resolve_category_id_for_spot
+
+            category_id = resolve_category_id_for_spot(type_key, tl)
+        except Exception:
+            category_id = None
     return {
         "name": payload["name"],
         "addr": payload["addr"],
-        "type": payload.get("type") or "custom",
-        "tl": payload.get("tl") or payload.get("type") or "액티비티",
+        "type": type_key,
+        "tl": tl,
         "em": payload.get("em") or "🔥",
         "bg": payload.get("bg") or "#1a0a2e",
         "img": payload.get("img") or "",
@@ -359,18 +392,29 @@ def spot_payload_to_columns(payload: dict) -> dict:
             payload.get("seasonStartMonth"), lo=1, hi=12
         ),
         "season_end_month": _optional_int(payload.get("seasonEndMonth"), lo=1, hi=12),
+        "category_id": int(category_id) if category_id is not None else None,
     }
 
 
 def list_spots() -> list[dict]:
     with get_conn() as conn:
-        rows = conn.execute("SELECT * FROM spots ORDER BY id ASC").fetchall()
+        try:
+            rows = conn.execute(
+                SPOT_SELECT_WITH_CATEGORY + " ORDER BY s.id ASC"
+            ).fetchall()
+        except sqlite3.OperationalError:
+            rows = conn.execute("SELECT * FROM spots ORDER BY id ASC").fetchall()
     return [row_to_spot_summary(r) for r in rows]
 
 
 def get_spot(spot_id: int) -> Optional[dict]:
     with get_conn() as conn:
-        row = conn.execute("SELECT * FROM spots WHERE id = ?", (spot_id,)).fetchone()
+        try:
+            row = conn.execute(
+                SPOT_SELECT_WITH_CATEGORY + " WHERE s.id = ?", (spot_id,)
+            ).fetchone()
+        except sqlite3.OperationalError:
+            row = conn.execute("SELECT * FROM spots WHERE id = ?", (spot_id,)).fetchone()
     return row_to_spot(row) if row else None
 
 
@@ -389,26 +433,54 @@ def create_spot(payload: dict) -> dict:
     created = payload.get("createdAt") or now_iso()
     updated = now_iso()
     with get_conn() as conn:
-        cur = conn.execute(
-            """
-            INSERT INTO spots (
-                name, addr, type, tl, em, bg, img, lat, lng,
-                th, fe, sp, fp, sp2, ap, rank, marker_type,
-                tags, br, ts, warns, reviews, custom, approved,
-                coord_verified, kakao_place_id,
-                thrill_grade, season_start_month, season_end_month,
-                created_at, updated_at
-            ) VALUES (
-                :name, :addr, :type, :tl, :em, :bg, :img, :lat, :lng,
-                :th, :fe, :sp, :fp, :sp2, :ap, :rank, :marker_type,
-                :tags, :br, :ts, :warns, :reviews, :custom, :approved,
-                :coord_verified, :kakao_place_id,
-                :thrill_grade, :season_start_month, :season_end_month,
-                :created_at, :updated_at
-            )
-            """,
-            {**cols, "created_at": created, "updated_at": updated},
+        has_cat = any(
+            r[1] == "category_id"
+            for r in conn.execute("PRAGMA table_info(spots)").fetchall()
         )
+        if has_cat:
+            cur = conn.execute(
+                """
+                INSERT INTO spots (
+                    name, addr, type, tl, em, bg, img, lat, lng,
+                    th, fe, sp, fp, sp2, ap, rank, marker_type,
+                    tags, br, ts, warns, reviews, custom, approved,
+                    coord_verified, kakao_place_id,
+                    thrill_grade, season_start_month, season_end_month,
+                    category_id,
+                    created_at, updated_at
+                ) VALUES (
+                    :name, :addr, :type, :tl, :em, :bg, :img, :lat, :lng,
+                    :th, :fe, :sp, :fp, :sp2, :ap, :rank, :marker_type,
+                    :tags, :br, :ts, :warns, :reviews, :custom, :approved,
+                    :coord_verified, :kakao_place_id,
+                    :thrill_grade, :season_start_month, :season_end_month,
+                    :category_id,
+                    :created_at, :updated_at
+                )
+                """,
+                {**cols, "created_at": created, "updated_at": updated},
+            )
+        else:
+            cur = conn.execute(
+                """
+                INSERT INTO spots (
+                    name, addr, type, tl, em, bg, img, lat, lng,
+                    th, fe, sp, fp, sp2, ap, rank, marker_type,
+                    tags, br, ts, warns, reviews, custom, approved,
+                    coord_verified, kakao_place_id,
+                    thrill_grade, season_start_month, season_end_month,
+                    created_at, updated_at
+                ) VALUES (
+                    :name, :addr, :type, :tl, :em, :bg, :img, :lat, :lng,
+                    :th, :fe, :sp, :fp, :sp2, :ap, :rank, :marker_type,
+                    :tags, :br, :ts, :warns, :reviews, :custom, :approved,
+                    :coord_verified, :kakao_place_id,
+                    :thrill_grade, :season_start_month, :season_end_month,
+                    :created_at, :updated_at
+                )
+                """,
+                {**cols, "created_at": created, "updated_at": updated},
+            )
         conn.commit()
         new_id = cur.lastrowid
     spot = get_spot(new_id)
@@ -422,7 +494,6 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
         return None
     cols = spot_payload_to_columns(payload)
     if "coordVerified" not in payload:
-        # 부분 업데이트에서 기존 검증 플래그가 초기화되지 않도록 유지
         cols["coord_verified"] = 1 if existing.get("coordVerified") else 0
     if "kakaoPlaceId" not in payload:
         cols["kakao_place_id"] = existing.get("kakaoPlaceId") or None
@@ -432,25 +503,54 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
         cols["season_start_month"] = existing.get("seasonStartMonth")
     if "seasonEndMonth" not in payload:
         cols["season_end_month"] = existing.get("seasonEndMonth")
+    if "categoryId" not in payload and existing.get("categoryId") is not None:
+        # re-resolve from type/tl when type fields change
+        if payload.get("type") or payload.get("tl"):
+            pass  # cols already has resolved category_id
+        else:
+            cols["category_id"] = existing.get("categoryId")
     created = payload.get("createdAt") or existing["createdAt"]
     updated = now_iso()
     with get_conn() as conn:
-        conn.execute(
-            """
-            UPDATE spots SET
-                name=:name, addr=:addr, type=:type, tl=:tl, em=:em, bg=:bg, img=:img,
-                lat=:lat, lng=:lng, th=:th, fe=:fe, sp=:sp, fp=:fp, sp2=:sp2, ap=:ap,
-                rank=:rank, marker_type=:marker_type, tags=:tags, br=:br, ts=:ts,
-                warns=:warns, reviews=:reviews, custom=:custom, approved=:approved,
-                coord_verified=:coord_verified, kakao_place_id=:kakao_place_id,
-                thrill_grade=:thrill_grade,
-                season_start_month=:season_start_month,
-                season_end_month=:season_end_month,
-                created_at=:created_at, updated_at=:updated_at
-            WHERE id=:id
-            """,
-            {**cols, "created_at": created, "updated_at": updated, "id": spot_id},
+        has_cat = any(
+            r[1] == "category_id"
+            for r in conn.execute("PRAGMA table_info(spots)").fetchall()
         )
+        if has_cat:
+            conn.execute(
+                """
+                UPDATE spots SET
+                    name=:name, addr=:addr, type=:type, tl=:tl, em=:em, bg=:bg, img=:img,
+                    lat=:lat, lng=:lng, th=:th, fe=:fe, sp=:sp, fp=:fp, sp2=:sp2, ap=:ap,
+                    rank=:rank, marker_type=:marker_type, tags=:tags, br=:br, ts=:ts,
+                    warns=:warns, reviews=:reviews, custom=:custom, approved=:approved,
+                    coord_verified=:coord_verified, kakao_place_id=:kakao_place_id,
+                    thrill_grade=:thrill_grade,
+                    season_start_month=:season_start_month,
+                    season_end_month=:season_end_month,
+                    category_id=:category_id,
+                    created_at=:created_at, updated_at=:updated_at
+                WHERE id=:id
+                """,
+                {**cols, "created_at": created, "updated_at": updated, "id": spot_id},
+            )
+        else:
+            conn.execute(
+                """
+                UPDATE spots SET
+                    name=:name, addr=:addr, type=:type, tl=:tl, em=:em, bg=:bg, img=:img,
+                    lat=:lat, lng=:lng, th=:th, fe=:fe, sp=:sp, fp=:fp, sp2=:sp2, ap=:ap,
+                    rank=:rank, marker_type=:marker_type, tags=:tags, br=:br, ts=:ts,
+                    warns=:warns, reviews=:reviews, custom=:custom, approved=:approved,
+                    coord_verified=:coord_verified, kakao_place_id=:kakao_place_id,
+                    thrill_grade=:thrill_grade,
+                    season_start_month=:season_start_month,
+                    season_end_month=:season_end_month,
+                    created_at=:created_at, updated_at=:updated_at
+                WHERE id=:id
+                """,
+                {**cols, "created_at": created, "updated_at": updated, "id": spot_id},
+            )
         conn.commit()
     return get_spot(spot_id)
 

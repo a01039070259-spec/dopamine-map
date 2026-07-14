@@ -17,6 +17,7 @@ MIGRATION_006_VENUE_286_287_SQL = MIGRATIONS_DIR / "006_venue_286_287.sql"
 MIGRATION_007_RENAME_VENUE_13_SQL = MIGRATIONS_DIR / "007_rename_venue_13.sql"
 MIGRATION_008_KAKAO_PLACE_ID_SQL = MIGRATIONS_DIR / "008_add_kakao_place_id.sql"
 MIGRATION_009_THRILL_SEASON_SQL = MIGRATIONS_DIR / "009_add_thrill_grade_season.sql"
+MIGRATION_010_CATEGORIES_SQL = MIGRATIONS_DIR / "010_categories.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
 VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
@@ -29,6 +30,7 @@ BACKUP_SUFFIX_006 = ".backup_pre_venue_286_287"
 BACKUP_SUFFIX_007 = ".backup_pre_rename_venue_13"
 BACKUP_SUFFIX_008 = ".backup_pre_kakao_place_id"
 BACKUP_SUFFIX_009 = ".backup_pre_thrill_season"
+BACKUP_SUFFIX_010 = ".backup_pre_categories"
 VENUE_006_NAME = "부산 스카이라인루지(기장해안로)"
 VENUE_006_NAME_NEW = "부산 스카이라인 루지 & 하이플라이"
 MIGRATION_002_VENUE_NAMES = (
@@ -759,6 +761,124 @@ def apply_009_add_thrill_grade_season(db_path: Path) -> None:
     logger.info("migration %s: applied successfully", migration_name)
 
 
+def apply_010_categories(db_path: Path) -> None:
+    """Create categories table, seed taxonomy, map spots.category_id. Idempotent."""
+    migration_name = "010_categories"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    if not MIGRATION_010_CATEGORIES_SQL.is_file():
+        raise RuntimeError(
+            f"migration {migration_name}: SQL file missing at {MIGRATION_010_CATEGORIES_SQL}"
+        )
+
+    from server.category_defs import CATEGORY_SEED, resolve_category_slug
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        if not _table_exists(conn, "spots"):
+            logger.info("migration %s: skip (spots table missing)", migration_name)
+            return
+
+        already = _table_exists(conn, "categories") and _column_exists(
+            conn, "spots", "category_id"
+        )
+        if already:
+            cat_count = conn.execute("SELECT COUNT(*) AS c FROM categories").fetchone()["c"]
+            null_count = conn.execute(
+                "SELECT COUNT(*) AS c FROM spots WHERE category_id IS NULL"
+            ).fetchone()["c"]
+            if cat_count > 0 and null_count == 0:
+                logger.info("migration %s: skip (already seeded and fully mapped)", migration_name)
+                return
+    finally:
+        conn.close()
+
+    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_010)
+    if not backup_path.exists():
+        shutil.copy2(db_path, backup_path)
+        logger.info("migration %s: backup created at %s", migration_name, backup_path)
+
+    sql = MIGRATION_010_CATEGORIES_SQL.read_text(encoding="utf-8")
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.executescript(sql)
+        if not _column_exists(conn, "spots", "category_id"):
+            conn.execute(
+                "ALTER TABLE spots ADD COLUMN category_id INTEGER REFERENCES categories(id)"
+            )
+
+        for slug, name, group_slug, group_name, icon, sort_order in CATEGORY_SEED:
+            conn.execute(
+                """
+                INSERT INTO categories (name, slug, group_slug, group_name, icon, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(slug) DO UPDATE SET
+                    name=excluded.name,
+                    group_slug=excluded.group_slug,
+                    group_name=excluded.group_name,
+                    icon=excluded.icon,
+                    sort_order=excluded.sort_order
+                """,
+                (name, slug, group_slug, group_name, icon, sort_order),
+            )
+
+        slug_to_id = {
+            row["slug"]: row["id"]
+            for row in conn.execute("SELECT id, slug FROM categories").fetchall()
+        }
+
+        spots = conn.execute("SELECT id, type, tl FROM spots").fetchall()
+        merge_counts: dict[str, int] = {}
+        unmapped: list[tuple] = []
+        for spot in spots:
+            slug = resolve_category_slug(spot["type"] or "", spot["tl"] or "")
+            if not slug or slug not in slug_to_id:
+                unmapped.append((spot["id"], spot["type"], spot["tl"]))
+                continue
+            cat_id = slug_to_id[slug]
+            conn.execute(
+                "UPDATE spots SET category_id = ? WHERE id = ?",
+                (cat_id, spot["id"]),
+            )
+            key = f"{spot['type']!r}/{spot['tl']!r} → {slug}"
+            merge_counts[key] = merge_counts.get(key, 0) + 1
+
+        conn.commit()
+
+        for key, count in sorted(merge_counts.items(), key=lambda x: -x[1]):
+            logger.info("migration %s merge: %s (%d)", migration_name, key, count)
+
+        if unmapped:
+            for sid, t, tl in unmapped:
+                logger.warning(
+                    "migration %s UNMAPPED spot#%s type=%r tl=%r",
+                    migration_name,
+                    sid,
+                    t,
+                    tl,
+                )
+            raise RuntimeError(
+                f"migration {migration_name}: {len(unmapped)} spots have no category mapping"
+            )
+
+        null_left = conn.execute(
+            "SELECT COUNT(*) AS c FROM spots WHERE category_id IS NULL"
+        ).fetchone()["c"]
+        if null_left:
+            raise RuntimeError(
+                f"migration {migration_name}: {null_left} spots still have NULL category_id"
+            )
+    finally:
+        conn.close()
+
+    logger.info("migration %s: applied successfully", migration_name)
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
@@ -770,3 +890,4 @@ def apply_pending_migrations(db_path: Path) -> None:
     apply_007_rename_venue_13(db_path)
     apply_008_add_kakao_place_id(db_path)
     apply_009_add_thrill_grade_season(db_path)
+    apply_010_categories(db_path)

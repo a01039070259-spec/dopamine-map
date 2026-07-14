@@ -82,6 +82,12 @@ def _spot_to_virtual_venue(spot: dict, *, for_list: bool = False) -> dict:
         "rank": spot.get("rank"),
         "ts": spot.get("ts"),
         "tags": spot.get("tags") or [],
+        "categoryId": spot.get("categoryId"),
+        "categorySlug": spot.get("categorySlug"),
+        "categoryName": spot.get("categoryName"),
+        "groupSlug": spot.get("groupSlug"),
+        "groupName": spot.get("groupName"),
+        "categoryIcon": spot.get("categoryIcon"),
     }
     return venue
 
@@ -113,18 +119,50 @@ def list_venues() -> list[dict]:
                     )
                 )
 
+        spot_rows = []
         if _spots_have_venue_id(conn):
-            spot_rows = conn.execute(
-                """
-                SELECT * FROM spots
-                WHERE venue_id IS NULL
-                ORDER BY id ASC
-                """
-            ).fetchall()
+            try:
+                spot_rows = conn.execute(
+                    """
+                    SELECT s.*,
+                           c.slug AS category_slug,
+                           c.name AS category_name,
+                           c.group_slug AS group_slug,
+                           c.group_name AS group_name,
+                           c.icon AS category_icon
+                    FROM spots s
+                    LEFT JOIN categories c ON c.id = s.category_id
+                    WHERE s.venue_id IS NULL
+                    ORDER BY s.id ASC
+                    """
+                ).fetchall()
+            except sqlite3.OperationalError:
+                spot_rows = conn.execute(
+                    """
+                    SELECT * FROM spots
+                    WHERE venue_id IS NULL
+                    ORDER BY id ASC
+                    """
+                ).fetchall()
         else:
-            spot_rows = conn.execute(
-                "SELECT * FROM spots ORDER BY id ASC"
-            ).fetchall()
+            try:
+                spot_rows = conn.execute(
+                    """
+                    SELECT s.*,
+                           c.slug AS category_slug,
+                           c.name AS category_name,
+                           c.group_slug AS group_slug,
+                           c.group_name AS group_name,
+                           c.icon AS category_icon
+                    FROM spots s
+                    LEFT JOIN categories c ON c.id = s.category_id
+                    ORDER BY s.id ASC
+                    """
+                ).fetchall()
+            except sqlite3.OperationalError:
+                spot_rows = conn.execute(
+                    "SELECT * FROM spots ORDER BY id ASC"
+                ).fetchall()
 
     for row in spot_rows:
         spot = row_to_spot_summary(row)
@@ -162,10 +200,28 @@ def get_venue(venue_id: int) -> Optional[dict]:
                 (venue_id,),
             ).fetchone()
             if row:
-                spot_rows = conn.execute(
-                    "SELECT * FROM spots WHERE venue_id = ? ORDER BY id ASC",
-                    (venue_id,),
-                ).fetchall()
+                spot_rows = []
+                try:
+                    spot_rows = conn.execute(
+                        """
+                        SELECT s.*,
+                               c.slug AS category_slug,
+                               c.name AS category_name,
+                               c.group_slug AS group_slug,
+                               c.group_name AS group_name,
+                               c.icon AS category_icon
+                        FROM spots s
+                        LEFT JOIN categories c ON c.id = s.category_id
+                        WHERE s.venue_id = ?
+                        ORDER BY s.id ASC
+                        """,
+                        (venue_id,),
+                    ).fetchall()
+                except sqlite3.OperationalError:
+                    spot_rows = conn.execute(
+                        "SELECT * FROM spots WHERE venue_id = ? ORDER BY id ASC",
+                        (venue_id,),
+                    ).fetchall()
                 spot_count = len(spot_rows)
                 primary_id = spot_rows[0]["id"] if spot_rows else None
                 venue = _row_to_venue(

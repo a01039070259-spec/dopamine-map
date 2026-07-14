@@ -49,6 +49,11 @@ from server.database import (
     parse_diagnosis_result,
 )
 from server.venues import get_venue, list_venues
+from server.categories import (
+    list_categories,
+    list_category_groups,
+    map_region_clusters,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
@@ -398,6 +403,29 @@ def api_record_visit(payload: dict, request: Request):
 @app.get("/api/spots")
 def api_list_spots():
     return list_spots()
+
+
+@app.get("/api/categories")
+def api_list_categories(withSpotsOnly: bool = True):
+    return list_categories(with_counts=True, only_with_spots=withSpotsOnly)
+
+
+@app.get("/api/categories/groups")
+def api_list_category_groups(withSpotsOnly: bool = True):
+    return list_category_groups(only_with_spots=withSpotsOnly)
+
+
+@app.get("/api/map/clusters")
+def api_map_clusters(
+    group: Optional[str] = None,
+    categoryId: Optional[int] = None,
+    seasonMonth: Optional[int] = None,
+):
+    return map_region_clusters(
+        group_slug=group,
+        category_id=categoryId,
+        season_month=seasonMonth,
+    )
 
 
 @app.get("/api/venues")

@@ -464,6 +464,299 @@
       border: 1px solid #333
     }
 
+    /* UX010 home + map */
+    .home-group-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 4px 16px 16px
+    }
+
+    .home-group-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 16px 14px;
+      border-radius: 14px;
+      border: 1px solid #2a2a2a;
+      background: linear-gradient(145deg, #141414, #0c0c0c);
+      color: #eee;
+      cursor: pointer;
+      text-align: left
+    }
+
+    .home-group-card:active { transform: scale(.98) }
+
+    .home-group-ico { font-size: 28px; line-height: 1 }
+
+    .home-group-name { font-size: 16px; font-weight: 700 }
+
+    .home-group-count { font-size: 12px; color: #888 }
+
+    .home-season-sec { padding: 0 0 12px }
+
+    .home-season-lbl {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ccc;
+      padding: 0 16px 8px
+    }
+
+    .home-season-track {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 0 16px 4px;
+      -webkit-overflow-scrolling: touch
+    }
+
+    .home-season-card {
+      flex: 0 0 140px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #2a3528;
+      background: #0e160e;
+      color: #e8ffe8;
+      text-align: left;
+      cursor: pointer
+    }
+
+    .hsc-ico { font-size: 22px }
+
+    .hsc-cat { font-size: 10px; color: #8fbc8f }
+
+    .hsc-name {
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden
+    }
+
+    .hsc-season { font-size: 10px; color: var(--neon) }
+
+    .home-season-empty { color: #666; font-size: 12px; padding: 8px 16px }
+
+    .home-quiz-banner {
+      margin: 4px 16px 12px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #3b2a10;
+      background: linear-gradient(90deg, #1a1208, #0e0e0e);
+      color: #f5e6c8;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: calc(100% - 32px);
+      text-align: left
+    }
+
+    .home-nearby-btn {
+      margin: 0 16px 20px;
+      width: calc(100% - 32px);
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #1a4a2a;
+      background: #0a1a10;
+      color: var(--neon);
+      font-weight: 700;
+      cursor: pointer
+    }
+
+    .home-group-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px 4px
+    }
+
+    .home-group-head h2 {
+      flex: 1;
+      font-size: 18px;
+      margin: 0
+    }
+
+    .sub-chip-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 16px 10px;
+      -webkit-overflow-scrolling: touch
+    }
+
+    .sub-chip {
+      flex: 0 0 auto;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid #333;
+      background: #141414;
+      color: #bbb;
+      font-size: 12px;
+      cursor: pointer
+    }
+
+    .sub-chip em { font-style: normal; color: #666; margin-left: 4px }
+
+    .sub-chip.active {
+      border-color: var(--neon);
+      color: var(--neon);
+      background: #0a1a10
+    }
+
+    .map-mini-pin {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #0a0a0a;
+      border: 2px solid var(--neon);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .45)
+    }
+
+    .map-mini-pin.hot { border-color: #ef4444 }
+
+    .map-mini-pin.selected {
+      transform: scale(1.2);
+      border-width: 3px
+    }
+
+    .map-mini-cluster {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 8px;
+      border-radius: 17px;
+      background: #111;
+      border: 2px solid var(--neon);
+      color: var(--neon);
+      font-weight: 800;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer
+    }
+
+    .map-region-bubble {
+      min-width: 64px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(10, 20, 12, .92);
+      border: 2px solid var(--neon);
+      color: #e8ffe8;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .4)
+    }
+
+    .map-research-btn {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--map-chrome-h, 120px) + 16px);
+      z-index: 20;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid #2a4a2a;
+      background: rgba(8, 16, 10, .92);
+      color: var(--neon);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer
+    }
+
+    .map-bottom-sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+      max-height: 48%;
+      background: #101010;
+      border-radius: 18px 18px 0 0;
+      border-top: 1px solid #2a2a2a;
+      box-shadow: 0 -8px 32px rgba(0, 0, 0, .5);
+      padding: 8px 16px 20px;
+      overflow: auto
+    }
+
+    .map-bottom-sheet.is-hidden { display: none }
+
+    .mbs-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: #444;
+      margin: 4px auto 12px
+    }
+
+    .mbs-title { font-size: 16px; font-weight: 800; margin: 0 0 4px }
+
+    .mbs-sub, .mbs-addr { font-size: 12px; color: #888; margin: 0 0 8px }
+
+    .mbs-list { display: flex; flex-direction: column; gap: 8px }
+
+    .mbs-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #2a2a2a;
+      background: #161616;
+      color: #eee;
+      text-align: left;
+      cursor: pointer
+    }
+
+    .mbs-ico { font-size: 20px }
+
+    .mbs-ico.lg { font-size: 28px }
+
+    .mbs-meta { flex: 1; display: flex; flex-direction: column; gap: 2px }
+
+    .mbs-cat { font-size: 11px; color: #8fbc8f }
+
+    .mbs-name { font-size: 13px; font-weight: 700 }
+
+    .mbs-season { font-size: 12px; margin: 6px 0 12px }
+
+    .mbs-season.on { color: var(--neon) }
+
+    .mbs-season.off { color: #f87171 }
+
+    .mbs-cta {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--neon);
+      color: #041008;
+      font-weight: 800;
+      cursor: pointer
+    }
+
+    .mbs-card-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px
+    }
+
+    .is-hidden { display: none !important }
+
     .toast {
       position: fixed;
       bottom: 90px;
@@ -2977,23 +3270,54 @@
         </div>
         <div class="m-search-wrap">
           <span class="m-si">🔍</span>
-          <input class="m-search" type="text" id="searchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 롤러코스터, 인천)" />
+          <input class="m-search" type="text" id="searchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 짚라인, 인천)" />
         </div>
       </header>
-      <section class="m-filter-sec">
+
+      <div id="homeGroupGrid" class="home-group-grid"></div>
+
+      <section class="home-season-sec" id="homeSeasonRow">
+        <p class="home-season-lbl">⏱ 지금 시즌</p>
+        <div class="home-season-track" id="homeSeasonTrack"></div>
+      </section>
+
+      <button type="button" class="home-quiz-banner" id="homeQuizBanner" onclick="openDiagnosis()">🧪 내 도파민 등급 자가진단 →</button>
+      <button type="button" class="home-nearby-btn" id="homeNearbyBtn" onclick="goMap()">📍 내 주변 지도 보기</button>
+
+      <div id="homeGroupList" class="is-hidden">
+        <div class="home-group-head">
+          <button type="button" class="back-btn" onclick="Ux010.backToHome()">← </button>
+          <h2 id="homeGroupTitle">하늘</h2>
+          <button type="button" class="rbtn" onclick="Ux010.openGroupMap()">지도</button>
+        </div>
+        <div class="sub-chip-row" id="homeSubChips"></div>
+        <section class="m-filter-sec" id="homeSortSec">
+          <p class="m-filter-lbl">정렬</p>
+          <div class="m-filter-row">
+            <button class="mfb active" onclick="Ux010.setGroupSort('region', this)">지역명순</button>
+            <button class="mfb" onclick="Ux010.setGroupSort('thrill', this)">스릴 등급순</button>
+            <button type="button" class="mfb season-tog" id="seasonToggleMain" aria-pressed="false">⏱ 지금 가능</button>
+          </div>
+        </section>
+        <div class="m-rh">
+          <p class="m-rc"><b id="homeGroupCount">0</b>개의 장소</p>
+        </div>
+        <div class="m-cards" id="homeGroupCards"></div>
+      </div>
+
+      <section class="m-filter-sec is-hidden" id="filterRowLegacyWrap">
         <p class="m-filter-lbl">정렬 기준</p>
         <div class="m-filter-row" id="filterRow">
           <button class="mfb active" data-f="thrill">🔥 스릴 지수순</button>
           <button class="mfb" data-f="fear">💀 공포도순</button>
           <button class="mfb" data-f="speed">⚡ 속도순</button>
-          <button type="button" class="mfb season-tog" id="seasonToggleMain" aria-pressed="false">⏱ 지금 가능</button>
         </div>
       </section>
-      <div class="m-rh">
+      <div class="m-rh is-hidden">
         <p class="m-rc"><b id="resultCount">0</b>개의 매운맛 장소</p>
         <p style="font-size:11px;color:#444" id="sortInfo">스릴 지수 높은 순</p>
       </div>
-      <div class="m-cards" id="cardList"></div>
+      <div class="m-cards is-hidden" id="cardList"></div>
     </div>
 
     <!-- ════════════ ②b VENUE (multi-activity) ════════════ -->
@@ -3085,6 +3409,7 @@
           <button class="rbtn" onclick="setRadius(this,'thrill4')">🔥 스릴 4+</button>
           <button type="button" class="rbtn season-tog" id="seasonToggleMap" aria-pressed="false" onclick="toggleSeasonNowFilter(this)">⏱ 지금 가능</button>
         </div>
+        <div class="sub-chip-row is-hidden" id="mapSubChips"></div>
         <div class="map-search-wrap">
           <span class="m-si">🔍</span>
           <input class="m-search map-search" type="text" id="mapSearchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 짚라인, 제주)"
@@ -3094,6 +3419,7 @@
 
       <div class="map-stage">
         <div id="kakaoMap"></div>
+        <button type="button" class="map-research-btn is-hidden" id="mapResearchBtn" onclick="Ux010.researchThisArea()">이 지역에서 재검색</button>
 
         <!-- API 키 미설정 시 Fallback UI -->
         <div class="map-fallback" id="mapFallback" style="display:none">
@@ -3167,6 +3493,7 @@
   </div><!-- /app -->
 
   <script src="js/spots-store.js"></script>
+  <script src="js/ux010.js"></script>
   <script>
     /* ═══════════════════════════════════════
        📍 장소 데이터 (관리자 등록 → SQLite DB /api/spots)
@@ -3332,7 +3659,13 @@
     function refreshMainListIfVisible() {
       const main = document.getElementById('mainScreen');
       if (main?.classList.contains('active')) {
-        renderCards(getDisplayedVenues());
+        if (window.Ux010 && Ux010.selectedGroupSlug) {
+          Ux010.renderGroupList();
+        } else if (window.Ux010) {
+          Ux010.renderHomeHome();
+        } else {
+          renderCards(getDisplayedVenues());
+        }
       }
     }
 
@@ -3553,11 +3886,15 @@
         el.classList.toggle('on', seasonNowOnly);
         el.setAttribute('aria-pressed', seasonNowOnly ? 'true' : 'false');
       });
-      renderCards(getDisplayedVenues());
+      if (window.Ux010 && Ux010.selectedGroupSlug) {
+        Ux010.renderGroupList();
+      } else {
+        renderCards(getDisplayedVenues());
+      }
       if (kakaoMap) {
         renderKakaoMarkers(currentFilter || 'all');
         const visible = getMapVisibleVenues(currentFilter || 'all');
-        if (visible.length > 0) fitMapToVenueBounds(visible);
+        if (visible.length > 0 && !window.Ux010) fitMapToVenueBounds(visible);
       }
     }
 
@@ -4144,7 +4481,9 @@
         : '';
       const userGrade = getEffectiveUserGrade();
       const levelBadge = gradeLevelBadgeHtml(getSpotGradeBadgeKind(v._thrillPct, userGrade));
-      const tl = v.spotCount > 1 ? '복합 체험장' : ((spot && spot.tl) ? spot.tl : (v.tl || '액티비티'));
+      const tl = v.spotCount > 1
+        ? '복합 체험장'
+        : ((spot && (spot.categoryName || spot.tl)) ? (spot.categoryName || spot.tl) : (v.tl || '액티비티'));
       const chip = spot ? chipClass(spot) : 't-custom';
       const ts = (spot && v.spotCount === 1) ? (spot.ts || v.ts || '') : '';
       const rank = (spot && v.spotCount === 1) ? (spot.rank || v.rank || '') : '';
@@ -4695,7 +5034,7 @@
     function enterMain(fromFirstDiagnosis) {
       markOnboardingDone();
       resetDiagnosisView();
-      reloadSpotAndVenueData().then(() => {
+      reloadSpotAndVenueData().then(async () => {
         const ob = document.getElementById('onboardScreen');
         const main = document.getElementById('mainScreen');
         ob.classList.remove('active');
@@ -4703,7 +5042,12 @@
         main.classList.remove('hidden', 'slide-left');
         main.classList.add('active');
         prevScreen = 'mainScreen';
-        renderCards(getDisplayedVenues());
+        if (window.Ux010) {
+          await Ux010.loadCategoryGroups();
+          Ux010.renderHomeHome();
+        } else {
+          renderCards(getDisplayedVenues());
+        }
         loadSavedDiagnosisChip();
         if (fromFirstDiagnosis) {
           promptLoginAfterOnboarding();
@@ -5241,12 +5585,20 @@
     }
 
     function clearMapVenueSelection() {
+      if (window.Ux010 && typeof Ux010.closeBottomSheet === 'function') {
+        Ux010.closeBottomSheet();
+        return;
+      }
       if (selectedMapVenueId == null) return;
       selectedMapVenueId = null;
       if (kakaoMap) renderKakaoMarkers(currentFilter || 'all');
     }
 
     function selectMapVenue(venueId, ev) {
+      if (window.Ux010 && typeof Ux010.selectMapVenue === 'function') {
+        Ux010.selectMapVenue(venueId, ev);
+        return;
+      }
       if (ev) {
         ev.stopPropagation();
         if (ev.preventDefault) ev.preventDefault();
@@ -5311,20 +5663,28 @@
           kakaoMap.addControl(zoomControl, kakao.maps.ControlPosition.BOTTOMRIGHT);
 
           renderKakaoMarkers('all');
-          fitMapToVenueBounds(getMapVisibleVenues('all'));
 
           kakao.maps.event.addListener(kakaoMap, 'zoom_changed', () => {
             renderKakaoMarkers(currentFilter || 'all');
+            if (window.Ux010) Ux010.onMapIdleForResearch();
           });
 
           kakao.maps.event.addListener(kakaoMap, 'click', () => {
             clearMapVenueSelection();
           });
 
+          kakao.maps.event.addListener(kakaoMap, 'dragend', () => {
+            if (window.Ux010) Ux010.onMapIdleForResearch();
+          });
+
+          if (window.Ux010) {
+            Ux010.syncMapCategoryChips();
+            Ux010.startMapAtUserLocation();
+          }
+
           setTimeout(() => {
             syncMapChromeHeight();
             if (kakaoMap) kakaoMap.relayout();
-            fitMapToVenueBounds(getMapVisibleVenues('all'));
           }, 200);
         } catch (e) {
           console.error('카카오맵 초기화 오류:', e);
@@ -5347,6 +5707,10 @@
     }
 
     function renderKakaoMarkers(filter) {
+      if (window.Ux010 && typeof Ux010.renderKakaoMarkersUx === 'function') {
+        Ux010.renderKakaoMarkersUx(filter);
+        return;
+      }
       if (!kakaoMap) return;
 
       // 기존 마커 제거
@@ -5427,7 +5791,10 @@
           initKakaoMap();
         } else if (kakaoMap.relayout) {
           kakaoMap.relayout();
-          fitMapToVenueBounds(getMapVisibleVenues(currentFilter || 'all'));
+          if (window.Ux010) {
+            Ux010.syncMapCategoryChips();
+            Ux010.startMapAtUserLocation();
+          }
         }
       };
 
@@ -5451,9 +5818,16 @@
       const spotsPromise = reloadSpots();
       await reloadVenues();
 
+      if (window.Ux010) {
+        await Ux010.loadCategoryGroups();
+      }
+
       const onboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
       if (!onboardingDone) {
         startOnboardingFlow();
+      } else if (window.Ux010) {
+        Ux010.renderHomeHome();
+        await loadSavedDiagnosisChip();
       } else {
         renderCards(getDisplayedVenues());
         await loadSavedDiagnosisChip();
@@ -5461,7 +5835,10 @@
 
       await spotsPromise;
       VENUES = enrichVenues(VENUES);
-      if (onboardingDone) {
+      if (onboardingDone && window.Ux010) {
+        await Ux010.loadCategoryGroups();
+        Ux010.renderHomeHome();
+      } else if (onboardingDone) {
         renderCards(getDisplayedVenues());
       }
 
