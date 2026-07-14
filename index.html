@@ -79,10 +79,6 @@
       pointer-events: none
     }
 
-    .ob-skip.skip-hidden {
-      display: none !important
-    }
-
     /* ── TOKENS ── */
     :root {
       --neon: #39ff14;
@@ -94,7 +90,8 @@
       --bg: #0a0a0a;
       --bg2: #111;
       --bg3: #161616;
-      --border: #1e1e --border2:#2a2a2a;
+      --border: #1e1e1e;
+      --border2: #2a2a2a;
       --text-muted: #555;
       --text-dim: #888;
     }
@@ -554,18 +551,25 @@
       margin-bottom: 0
     }
 
+    .diag-topbar.is-first-entry {
+      display: none
+    }
+
     .ob-bg {
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 50% 40%, rgba(57, 255, 20, .07) 0%, transparent 70%)
+      background:
+        radial-gradient(ellipse at 50% 28%, rgba(57, 255, 20, .12) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(57, 255, 20, .04) 0%, transparent 45%),
+        #000
     }
 
     .ob-scanlines {
       position: absolute;
       inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .15) 2px, rgba(0, 0, 0, .15) 4px);
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .12) 2px, rgba(0, 0, 0, .12) 4px);
       pointer-events: none;
-      opacity: .35
+      opacity: .28
     }
 
     .ob-corner {
@@ -574,7 +578,7 @@
       height: 28px;
       border-color: var(--neon);
       border-style: solid;
-      opacity: .35
+      opacity: .4
     }
 
     .ob-corner.tl {
@@ -590,13 +594,13 @@
     }
 
     .ob-corner.bl {
-      bottom: 80px;
+      bottom: 28px;
       left: 16px;
       border-width: 0 0 2px 2px
     }
 
     .ob-corner.br {
-      bottom: 80px;
+      bottom: 28px;
       right: 16px;
       border-width: 0 2px 2px 0
     }
@@ -608,101 +612,170 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 56px 24px 40px;
-      max-width: 720px;
+      padding: 64px 24px 48px;
+      max-width: 560px;
       margin: 0 auto;
       left: 0;
-      right: 0
+      right: 0;
+      text-align: center;
+      z-index: 5
     }
 
     #introPhase.hidden {
       display: none !important
     }
 
-    .ob-warn-bar {
+    .ob-brand-mark {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: obIn .55s .08s forwards
+    }
+
+    .ob-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: var(--neon);
-      color: #000;
-      font-size: 11px;
+      color: #041004;
+      font-size: 10px;
       font-weight: 900;
-      letter-spacing: 2px;
-      padding: 5px 14px;
+      letter-spacing: 2.2px;
+      padding: 6px 12px;
       border-radius: 3px;
-      margin-bottom: 32px;
-      opacity: 0;
-      animation: obIn .4s forwards
+      text-transform: uppercase;
+      box-shadow: 0 0 24px rgba(57, 255, 20, .25)
     }
 
-    .ob-line {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      line-height: 1.5;
-      text-align: center;
-      margin-bottom: 10px;
-      opacity: 0;
-      min-height: 26px;
-      letter-spacing: -.3px
-    }
-
-    .ob-line.neon {
-      color: var(--neon)
+    .ob-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #041004;
+      animation: obPulse 1.6s ease-in-out infinite
     }
 
     .ob-logo-big {
-      font-size: 34px;
+      font-size: clamp(32px, 8vw, 42px);
       font-weight: 900;
       color: var(--neon);
-      letter-spacing: -1px;
-      margin-top: 24px;
-      opacity: 0
+      letter-spacing: -1.2px;
+      line-height: 1.15;
+      text-shadow: 0 0 40px rgba(57, 255, 20, .22)
     }
 
     .ob-logo-sub {
-      font-size: 12px;
-      color: #444;
-      letter-spacing: 2px;
+      font-size: 11px;
+      color: #666;
+      letter-spacing: 2.4px;
       text-transform: uppercase;
-      margin-top: 4px;
-      opacity: 0
+      margin-top: 2px
     }
 
-    .ob-skip {
-      position: fixed;
-      bottom: 24px;
-      right: clamp(16px, 4vw, 48px);
-      z-index: 120;
-      background: rgba(10, 10, 10, .82);
-      border: 1px solid var(--border2);
-      color: var(--text-dim);
-      font-size: 13px;
+    .ob-headline {
+      font-size: clamp(18px, 4.5vw, 22px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.45;
+      letter-spacing: -.4px;
+      margin-bottom: 12px;
+      max-width: 20em;
+      opacity: 0;
+      animation: obIn .55s .28s forwards
+    }
+
+    .ob-headline em {
+      font-style: normal;
+      color: var(--neon)
+    }
+
+    .ob-support {
+      font-size: 14px;
+      font-weight: 500;
+      color: #8a8a8a;
+      line-height: 1.65;
+      margin-bottom: 36px;
+      max-width: 22em;
+      opacity: 0;
+      animation: obIn .55s .42s forwards
+    }
+
+    .ob-cta-group {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      width: min(100%, 320px);
+      opacity: 0;
+      animation: obIn .55s .58s forwards
+    }
+
+    .ob-cta-primary {
+      appearance: none;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 20px;
+      background: var(--neon);
+      color: #041004;
       font-family: 'Noto Sans KR', sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -.2px;
       cursor: pointer;
-      padding: 8px 14px;
-      border-radius: 8px;
-      backdrop-filter: blur(6px);
-      transition: color .2s, border-color .2s, background .2s;
+      box-shadow: 0 0 0 1px rgba(57, 255, 20, .35), 0 8px 32px rgba(57, 255, 20, .22);
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease
     }
 
-    .ob-skip:hover {
+    .ob-cta-primary:hover {
+      filter: brightness(1.06);
+      box-shadow: 0 0 0 1px rgba(57, 255, 20, .5), 0 10px 40px rgba(57, 255, 20, .32);
+      transform: translateY(-1px)
+    }
+
+    .ob-cta-primary:active {
+      transform: translateY(0)
+    }
+
+    .ob-cta-secondary {
+      appearance: none;
+      width: 100%;
+      background: transparent;
+      border: 1px solid rgba(57, 255, 20, .35);
       color: var(--neon);
-      border-color: var(--neon);
-      background: rgba(13, 42, 6, .85)
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .18s, border-color .18s, color .18s
     }
 
-    .ob-skip.hidden {
-      display: none !important
+    .ob-cta-secondary:hover {
+      background: rgba(57, 255, 20, .08);
+      border-color: var(--neon)
     }
 
     @keyframes obIn {
       from {
         opacity: 0;
-        transform: translateY(8px)
+        transform: translateY(14px)
       }
 
       to {
         opacity: 1;
         transform: translateY(0)
       }
+    }
+
+    @keyframes obPulse {
+      0%, 100% { opacity: 1; transform: scale(1) }
+      50% { opacity: .45; transform: scale(.85) }
     }
 
     /* QUIZ */
@@ -2702,20 +2775,23 @@
       <div class="ob-corner bl"></div>
       <div class="ob-corner br"></div>
 
-      <div class="diag-topbar" id="diagTopBar">
-        <button type="button" class="qz-back" onclick="closeDiagnosis()">← 뒤로</button>
+      <div class="diag-topbar is-first-entry" id="diagTopBar">
+        <button type="button" class="qz-back" id="diagBackBtn" onclick="closeDiagnosis()">← 뒤로</button>
       </div>
 
       <div id="introPhase" class="hidden">
-        <div class="ob-warn-bar" id="obWarn">⚠ WARNING SYSTEM INITIALIZING ⚠</div>
-        <div class="ob-line" id="obL1"></div>
-        <div class="ob-line neon" id="obL2"></div>
-        <div class="ob-line" id="obL3"></div>
-        <div class="ob-line neon" style="font-size:14px" id="obL4"></div>
-        <div class="ob-logo-big" id="obLogo">도파민 지도 ⚡</div>
-        <div class="ob-logo-sub" id="obLogoSub">DOPAMINE MAP — BETA</div>
+        <div class="ob-brand-mark">
+          <div class="ob-badge">HARDCORE GUIDE</div>
+          <div class="ob-logo-big">도파민 지도 ⚡</div>
+          <div class="ob-logo-sub">DOPAMINE MAP</div>
+        </div>
+        <p class="ob-headline">안전바가 흔들려야<br><em>진짜 액티비티</em>다</p>
+        <p class="ob-support">전국 짚라인·번지·패러 등 하드코어 스팟의 스릴 지수와 생존 가이드. 30초 자가진단으로 내 등급부터 확인하세요.</p>
+        <div class="ob-cta-group">
+          <button type="button" class="ob-cta-primary" id="diagStartCta" onclick="startQuiz()">자가진단 시작 →</button>
+          <button type="button" class="ob-cta-secondary" id="diagMapCta" onclick="closeDiagnosis()">지도로 바로 가기</button>
+        </div>
       </div>
-      <button type="button" class="ob-skip hidden" id="diagSkipIntro" onclick="startQuiz()">건너뛰기 →</button>
 
       <div id="quizPhase">
         <div class="qz-header">
@@ -4021,57 +4097,28 @@
     /* ═══════════════════════════════════════
        ① 자가진단
     ═══════════════════════════════════════ */
-    const INTRO_LINES = [
-      { id: 'obL1', text: "뻔하고 지루한 여행에 지쳤습니까?", delay: 400 },
-      { id: 'obL2', text: "안전바가 흔들려야 진짜 액티비티다.", delay: 1400 },
-      { id: 'obL3', text: "찐 매니아들을 위한 하드코어 도파민 지도.", delay: 2400 },
-      { id: 'obL4', text: "자가진단을 시작합니다.", delay: 3400 },
-    ];
-
     let introTimerIds = [];
-
-    function typeText(el, text, cb) {
-      let i = 0;
-      el.style.opacity = '1';
-      function tick() {
-        if (i <= text.length) {
-          el.textContent = text.slice(0, i) + (i < text.length ? '|' : '');
-          i++;
-          setTimeout(tick, i < text.length ? 38 : 0);
-        } else {
-          el.textContent = text;
-          if (cb) cb();
-        }
-      }
-      tick();
-    }
 
     function clearIntroTimers() {
       introTimerIds.forEach((id) => clearTimeout(id));
       introTimerIds = [];
     }
 
-    function resetIntroLines() {
-      ['obL1', 'obL2', 'obL3', 'obL4', 'obLogo', 'obLogoSub', 'obWarn'].forEach((id) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.textContent = id === 'obWarn' ? '⚠ WARNING SYSTEM INITIALIZING ⚠' : '';
-        el.style.opacity = id === 'obWarn' ? '' : '0';
-      });
+    function setDiagnosisChrome({ firstEntry }) {
+      const top = document.getElementById('diagTopBar');
+      if (!top) return;
+      top.classList.toggle('is-first-entry', !!firstEntry);
     }
 
     function resetDiagnosisView() {
       clearIntroTimers();
       const intro = document.getElementById('introPhase');
-      const skip = document.getElementById('diagSkipIntro');
       const qp = document.getElementById('quizPhase');
       const rp = document.getElementById('resultPhase');
       if (intro) intro.classList.add('hidden');
-      if (skip) skip.classList.add('hidden');
       if (qp) qp.classList.remove('active');
       if (rp) rp.classList.remove('active');
       document.querySelector('#resultPhase .rs-wrap')?.classList.remove('special-tier');
-      resetIntroLines();
     }
 
     function initQuizScores() {
@@ -4086,26 +4133,18 @@
       ).join('');
     }
 
-    function runDiagnosisIntro() {
-      resetIntroLines();
+    function runDiagnosisIntro(options = {}) {
+      const firstEntry = options.firstEntry === true
+        || localStorage.getItem(LS_ONBOARDING_DONE) !== 'true';
+      setDiagnosisChrome({ firstEntry });
+      resetDiagnosisView();
       const intro = document.getElementById('introPhase');
-      const skip = document.getElementById('diagSkipIntro');
-      if (intro) intro.classList.remove('hidden');
-      if (skip) skip.classList.remove('hidden');
-
-      INTRO_LINES.forEach(({ id, text, delay }) => {
-        introTimerIds.push(setTimeout(() => {
-          const el = document.getElementById(id);
-          if (el) typeText(el, text);
-        }, delay));
-      });
-      introTimerIds.push(setTimeout(() => {
-        const logo = document.getElementById('obLogo');
-        const sub = document.getElementById('obLogoSub');
-        if (logo) { logo.style.opacity = '1'; logo.style.transition = 'opacity .6s'; }
-        if (sub) { sub.style.opacity = '1'; sub.style.transition = 'opacity .8s .2s'; }
-      }, 4200));
-      introTimerIds.push(setTimeout(() => startQuiz(), 5600));
+      if (intro) {
+        // restart enter animations
+        intro.classList.add('hidden');
+        void intro.offsetWidth;
+        intro.classList.remove('hidden');
+      }
     }
 
     function openDiagnosis() {
@@ -4115,11 +4154,11 @@
       renderQuizSteps();
       const from = document.querySelector('.screen.active')?.id || 'mainScreen';
       if (from === 'onboardScreen') {
-        runDiagnosisIntro();
+        runDiagnosisIntro({ firstEntry: localStorage.getItem(LS_ONBOARDING_DONE) !== 'true' });
         return;
       }
       showScreen('onboardScreen');
-      runDiagnosisIntro();
+      runDiagnosisIntro({ firstEntry: false });
     }
 
     function closeDiagnosis() {
@@ -4133,8 +4172,8 @@
 
     function startQuiz() {
       clearIntroTimers();
+      setDiagnosisChrome({ firstEntry: false });
       document.getElementById('introPhase')?.classList.add('hidden');
-      document.getElementById('diagSkipIntro')?.classList.add('hidden');
       document.getElementById('resultPhase')?.classList.remove('active');
       initQuizScores();
       quizStep = 0;
@@ -4289,9 +4328,9 @@
       }
       resetDiagnosisView();
       document.getElementById('introPhase')?.classList.add('hidden');
-      document.getElementById('diagSkipIntro')?.classList.add('hidden');
       document.getElementById('quizPhase')?.classList.remove('active');
       document.getElementById('resultPhase')?.classList.add('active');
+      setDiagnosisChrome({ firstEntry: false });
       renderGradeResult(grade, getLocalResultScore());
       setupResultActions(currentUser ? 'saved' : 'review');
       showScreen('onboardScreen');
@@ -4459,7 +4498,7 @@
       initQuizScores();
       quizStep = 0;
       renderQuizSteps();
-      runDiagnosisIntro();
+      runDiagnosisIntro({ firstEntry: true });
     }
 
     /* ═══════════════════════════════════════
