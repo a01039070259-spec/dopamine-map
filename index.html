@@ -464,19 +464,46 @@
       border: 1px solid #333
     }
 
-    /* UX010 home + map — Baemin-style flat category icons */
+    /* UX010 home — compact popular categories + more drawer */
     .home-group-grid,
     .home-cat-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 6px 2px;
-      padding: 8px 10px 18px
+      gap: 10px 6px;
+      padding: 4px 12px 8px
     }
+
+    .home-cat-more-wrap {
+      padding: 0 14px 14px
+    }
+
+    .home-cat-more-btn {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+      background: #141414;
+      color: #bbb;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer
+    }
+
+    .home-cat-more-btn:active { transform: scale(.99) }
+
+    .home-cat-extra {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px 6px;
+      padding: 10px 0 4px
+    }
+
+    .home-cat-extra.is-collapsed { display: none }
 
     .home-group-grid.is-loading .home-cat-btn,
     .home-cat-grid.is-loading .home-cat-btn,
     .home-season-track.is-loading .home-season-card {
-      min-height: 72px;
+      min-height: 78px;
       background: linear-gradient(90deg, #141414 25%, #1c1c1c 50%, #141414 75%);
       background-size: 200% 100%;
       animation: skel 1.2s ease-in-out infinite;
@@ -494,12 +521,20 @@
       touch-action: manipulation
     }
 
+    .map-mini-pin,
+    .map-mini-cluster,
+    .map-region-bubble {
+      pointer-events: auto;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent
+    }
+
     .home-cat-btn {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 7px;
-      padding: 8px 2px 6px;
+      gap: 8px;
+      padding: 4px 2px 2px;
       background: transparent;
       border: none;
       color: #eee;
@@ -508,23 +543,30 @@
     }
 
     .home-cat-btn:active .home-cat-ico {
-      transform: scale(.94);
-      border-color: var(--neon)
+      transform: scale(.94)
     }
 
     .home-cat-ico {
-      width: 54px;
-      height: 54px;
+      width: 56px;
+      height: 56px;
       border-radius: 18px;
-      background: #151515;
-      border: 1px solid #2a2a2a;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 26px;
       line-height: 1;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.04)
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06)
     }
+
+    .home-cat-ico.t0 { background: linear-gradient(160deg, #1c2a1e, #121812) }
+    .home-cat-ico.t1 { background: linear-gradient(160deg, #1a2430, #10161c) }
+    .home-cat-ico.t2 { background: linear-gradient(160deg, #2a1e18, #161210) }
+    .home-cat-ico.t3 { background: linear-gradient(160deg, #241828, #141016) }
+    .home-cat-ico.t4 { background: linear-gradient(160deg, #1e2420, #121614) }
+    .home-cat-ico.t5 { background: linear-gradient(160deg, #201c14, #14120e) }
+    .home-cat-ico.t6 { background: linear-gradient(160deg, #182028, #101418) }
+    .home-cat-ico.t7 { background: linear-gradient(160deg, #221a1a, #141010) }
 
     .home-cat-name {
       font-size: 11px;
@@ -532,8 +574,16 @@
       text-align: center;
       line-height: 1.25;
       letter-spacing: -.2px;
-      max-width: 76px;
+      max-width: 78px;
       color: #ddd
+    }
+
+    .home-search-empty {
+      padding: 28px 18px;
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+      line-height: 1.5
     }
 
     /* legacy group card kept for map/tooling; unused on home */
@@ -3348,7 +3398,7 @@
         </div>
         <div class="m-search-wrap">
           <span class="m-si">🔍</span>
-          <input class="m-search" type="text" id="searchInput" placeholder="종류 · 지역 · 장소명 검색 (예: 짚라인, 인천)" />
+          <input class="m-search" type="text" id="searchInput" placeholder="지역 · 장소 · 액티비티 검색 (예: 청도, 짚라인)" />
         </div>
       </header>
 
@@ -4031,10 +4081,19 @@
 
     function onSearchInputChanged(fromId) {
       syncSearchInputs(fromId);
+      const q = typeof getSpotSearchQuery === 'function' ? getSpotSearchQuery() : '';
+      if (window.Ux010 && typeof Ux010.onHomeSearch === 'function') {
+        const main = document.getElementById('mainScreen');
+        if (main?.classList.contains('active')) {
+          Ux010.onHomeSearch(q);
+          if (kakaoMap) renderKakaoMarkers(currentFilter || 'all');
+          return;
+        }
+      }
       if (window.Ux010 && Ux010.isListMode) {
         Ux010.renderGroupList();
-      } else if (window.Ux010 && document.getElementById('homeGroupGrid') && !document.getElementById('homeGroupGrid').classList.contains('is-hidden')) {
-        /* home grid — season cards not search-driven */
+      } else if (window.Ux010 && document.getElementById('homeGroupGrid') && !document.getElementById('homeGroupGrid').classList.contains('is-hidden') && !q) {
+        /* idle home */
       } else {
         renderCards(getDisplayedVenues());
       }

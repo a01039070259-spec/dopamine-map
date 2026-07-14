@@ -206,6 +206,18 @@
     return `<span class="mc-thrill-grade">${"⚡".repeat(n)}</span>`;
   }
 
+  let homeCatsExpanded = false;
+  const HOME_CAT_PRIMARY = 8;
+
+  function catBtnHtml(c, idx) {
+    const tone = `t${idx % 8}`;
+    return `
+        <button type="button" class="home-cat-btn" data-cid="${c.id}" onclick="Ux010.openCategory(${c.id})">
+          <span class="home-cat-ico ${tone}" aria-hidden="true">${catIcon(c)}</span>
+          <span class="home-cat-name">${shortCatName(c.name)}</span>
+        </button>`;
+  }
+
   function renderHomeHome() {
     homeMode = "home";
     flatCategoryMode = false;
@@ -220,22 +232,29 @@
     if (grid) {
       grid.classList.remove("is-hidden");
       grid.classList.add("home-cat-grid");
-      if (!(CATEGORIES || []).length) {
+      const cats = CATEGORIES || [];
+      if (!cats.length) {
         grid.classList.add("is-loading");
         grid.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7]
           .map(() => `<button type="button" class="home-cat-btn" tabindex="-1" aria-hidden="true"><span class="home-cat-ico">·</span><span class="home-cat-name">·</span></button>`)
           .join("");
       } else {
         grid.classList.remove("is-loading");
-        grid.innerHTML = (CATEGORIES || [])
-          .map(
-            (c) => `
-        <button type="button" class="home-cat-btn" data-cid="${c.id}" onclick="Ux010.openCategory(${c.id})">
-          <span class="home-cat-ico" aria-hidden="true">${catIcon(c)}</span>
-          <span class="home-cat-name">${shortCatName(c.name)}</span>
-        </button>`
-          )
-          .join("");
+        const primary = cats.slice(0, HOME_CAT_PRIMARY);
+        const extra = cats.slice(HOME_CAT_PRIMARY);
+        let html = primary.map((c, i) => catBtnHtml(c, i)).join("");
+        if (extra.length) {
+          html += `
+          <div class="home-cat-more-wrap" style="grid-column:1/-1">
+            <button type="button" class="home-cat-more-btn" id="homeCatMoreBtn" onclick="Ux010.toggleHomeCats()">
+              ${homeCatsExpanded ? "인기 카테고리만 보기 ↑" : `전체 카테고리 ${extra.length}개 더보기 ↓`}
+            </button>
+            <div class="home-cat-extra ${homeCatsExpanded ? "" : "is-collapsed"}" id="homeCatExtra">
+              ${extra.map((c, i) => catBtnHtml(c, i + HOME_CAT_PRIMARY)).join("")}
+            </div>
+          </div>`;
+        }
+        grid.innerHTML = html;
       }
     }
     if (season) {
@@ -274,6 +293,69 @@
     if (legacyCards) legacyCards.classList.add("is-hidden");
     const rh = document.querySelector(".m-rh");
     if (rh) rh.classList.add("is-hidden");
+  }
+
+  function toggleHomeCats() {
+    homeCatsExpanded = !homeCatsExpanded;
+    const extra = document.getElementById("homeCatExtra");
+    const btn = document.getElementById("homeCatMoreBtn");
+    const rest = Math.max(0, (CATEGORIES || []).length - HOME_CAT_PRIMARY);
+    if (extra) extra.classList.toggle("is-collapsed", !homeCatsExpanded);
+    if (btn) {
+      btn.textContent = homeCatsExpanded
+        ? "인기 카테고리만 보기 ↑"
+        : `전체 카테고리 ${rest}개 더보기 ↓`;
+    }
+  }
+
+  /** 홈 검색창 — 카테고리 대신 전국 검색 결과 */
+  function onHomeSearch(query) {
+    const q = String(query || "").trim();
+    if (!q) {
+      if (homeMode === "search" || homeMode === "group") renderHomeHome();
+      return;
+    }
+    homeMode = "search";
+    flatCategoryMode = false;
+    selectedGroupSlug = null;
+    selectedCategoryId = null;
+    showListShell(`‘${q}’ 검색`);
+    const chips = document.getElementById("homeSubChips");
+    if (chips) {
+      chips.innerHTML = "";
+      chips.classList.add("is-hidden");
+    }
+    renderSearchList(q);
+  }
+
+  function renderSearchList(q) {
+    let list = (VENUES || []).filter((v) => venueIsPublishable(v));
+    if (typeof seasonNowOnly !== "undefined" && seasonNowOnly && typeof venueHasInSeasonSpot === "function") {
+      list = list.filter((v) => venueHasInSeasonSpot(v));
+    }
+    if (typeof matchVenueSearch === "function") {
+      list = list.filter((v) => matchVenueSearch(v, q));
+    }
+    list = list.slice().sort((a, b) => venueMaxGrade(b) - venueMaxGrade(a) || String(a.name).localeCompare(String(b.name), "ko"));
+
+    const countEl = document.getElementById("homeGroupCount");
+    if (countEl) countEl.textContent = String(list.length);
+    const cards = document.getElementById("homeGroupCards");
+    if (!cards) return;
+    if (!list.length) {
+      cards.innerHTML = `<p class="home-search-empty">‘${q}’에 맞는 스팟이 없어요.<br>지역명이나 액티비티명으로 다시 검색해 보세요.</p>`;
+      return;
+    }
+    if (typeof renderVenueCardHtml === "function") {
+      cards.innerHTML = list.map((v) => renderVenueCardHtml(v)).join("");
+    } else {
+      cards.innerHTML = list
+        .map(
+          (v) =>
+            `<button type="button" class="mc" onclick="Ux010.openSpotFromHome(${v.primarySpotId || ""})">${v.name}</button>`
+        )
+        .join("");
+    }
   }
 
   function showListShell(titleText) {
@@ -399,6 +481,13 @@
   }
 
   function backToHome() {
+    homeCatsExpanded = false;
+    try {
+      const main = document.getElementById("searchInput");
+      const map = document.getElementById("mapSearchInput");
+      if (main) main.value = "";
+      if (map) map.value = "";
+    } catch (_) {}
     renderHomeHome();
   }
 
@@ -493,7 +582,8 @@
   }
 
   function openSpotDetail(spotId) {
-    closeBottomSheet();
+    const sheet = document.getElementById("mapBottomSheet");
+    if (sheet) sheet.classList.add("is-hidden");
     if (typeof goDetail === "function") goDetail(spotId, false, "mapScreen");
   }
 
@@ -592,6 +682,8 @@
           content: makeRegionBubbleHTML(cl),
           yAnchor: 0.5,
           xAnchor: 0.5,
+          clickable: true,
+          zIndex: 2,
         });
         overlay.setMap(kakaoMap);
         mapClusterOverlays.push(overlay);
@@ -617,6 +709,8 @@
         position: new kakao.maps.LatLng(item.lat, item.lng),
         content: html,
         yAnchor: 1.1,
+        clickable: true,
+        zIndex: 3,
       });
       overlay.setMap(kakaoMap);
       mapPinOverlays.push(overlay);
@@ -653,14 +747,23 @@
       ev.preventDefault && ev.preventDefault();
     }
     selectedMapVenueId = venueId;
-    const v = getVenue(venueId);
-    if (v) {
-      const coords = getVenueMapCoords(v);
-      if (coords && kakaoMap) {
-        kakaoMap.panTo(new kakao.maps.LatLng(coords.lat, coords.lng));
-      }
-      if (v.primarySpotId) currentId = v.primarySpotId;
+    const v = typeof getVenue === "function" ? getVenue(venueId) : null;
+    if (!v) return;
+    const coords = typeof getVenueMapCoords === "function" ? getVenueMapCoords(v) : null;
+    if (coords && kakaoMap) {
+      kakaoMap.panTo(new kakao.maps.LatLng(coords.lat, coords.lng));
     }
+    const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
+    const isComposite = v.spotCount > 1 && !v.virtual;
+    if (!isComposite) {
+      const s = members[0] || (v.primarySpotId ? getSpot(v.primarySpotId) : null);
+      if (s && s.id) {
+        if (s.id) currentId = s.id;
+        openSpotDetail(s.id);
+        return;
+      }
+    }
+    if (v.primarySpotId) currentId = v.primarySpotId;
     renderKakaoMarkersUx(currentFilter || "all");
     openMapBottomSheet(venueId);
   }
@@ -777,11 +880,13 @@
       return selectedCategoryId;
     },
     get isListMode() {
-      return homeMode === "group";
+      return homeMode === "group" || homeMode === "search";
     },
     isSpotPublishable,
     venueIsPublishable,
     openSpotOnMap,
+    onHomeSearch,
+    toggleHomeCats,
   };
 
   function openSpotOnMap(spotId) {
