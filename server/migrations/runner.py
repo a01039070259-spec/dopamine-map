@@ -16,6 +16,7 @@ MIGRATION_COORD_VERIFIED_SQL = MIGRATIONS_DIR / "005_add_coord_verified.sql"
 MIGRATION_006_VENUE_286_287_SQL = MIGRATIONS_DIR / "006_venue_286_287.sql"
 MIGRATION_007_RENAME_VENUE_13_SQL = MIGRATIONS_DIR / "007_rename_venue_13.sql"
 MIGRATION_008_KAKAO_PLACE_ID_SQL = MIGRATIONS_DIR / "008_add_kakao_place_id.sql"
+MIGRATION_009_THRILL_SEASON_SQL = MIGRATIONS_DIR / "009_add_thrill_grade_season.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
 VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
@@ -27,6 +28,7 @@ BACKUP_SUFFIX_COORD_VERIFIED = ".backup_pre_coord_verified"
 BACKUP_SUFFIX_006 = ".backup_pre_venue_286_287"
 BACKUP_SUFFIX_007 = ".backup_pre_rename_venue_13"
 BACKUP_SUFFIX_008 = ".backup_pre_kakao_place_id"
+BACKUP_SUFFIX_009 = ".backup_pre_thrill_season"
 VENUE_006_NAME = "부산 스카이라인루지(기장해안로)"
 VENUE_006_NAME_NEW = "부산 스카이라인 루지 & 하이플라이"
 MIGRATION_002_VENUE_NAMES = (
@@ -704,6 +706,59 @@ def apply_008_add_kakao_place_id(db_path: Path) -> None:
     logger.info("migration %s: applied successfully", migration_name)
 
 
+def apply_009_add_thrill_grade_season(db_path: Path) -> None:
+    """Add spots.thrill_grade + season months. Idempotent via column check."""
+    migration_name = "009_add_thrill_grade_season"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    if not MIGRATION_009_THRILL_SEASON_SQL.is_file():
+        raise RuntimeError(
+            f"migration {migration_name}: SQL file missing at {MIGRATION_009_THRILL_SEASON_SQL}"
+        )
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "spots"):
+            logger.info("migration %s: skip (spots table missing)", migration_name)
+            return
+        has_grade = _column_exists(conn, "spots", "thrill_grade")
+        has_start = _column_exists(conn, "spots", "season_start_month")
+        has_end = _column_exists(conn, "spots", "season_end_month")
+        if has_grade and has_start and has_end:
+            logger.info("migration %s: skip (columns already exist)", migration_name)
+            return
+    finally:
+        conn.close()
+
+    backup_path = db_path.with_name(db_path.name + BACKUP_SUFFIX_009)
+    if not backup_path.exists():
+        shutil.copy2(db_path, backup_path)
+        logger.info("migration %s: backup created at %s", migration_name, backup_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _column_exists(conn, "spots", "thrill_grade"):
+            conn.execute(
+                "ALTER TABLE spots ADD COLUMN thrill_grade INTEGER DEFAULT NULL"
+            )
+        if not _column_exists(conn, "spots", "season_start_month"):
+            conn.execute(
+                "ALTER TABLE spots ADD COLUMN season_start_month INTEGER DEFAULT NULL"
+            )
+        if not _column_exists(conn, "spots", "season_end_month"):
+            conn.execute(
+                "ALTER TABLE spots ADD COLUMN season_end_month INTEGER DEFAULT NULL"
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    logger.info("migration %s: applied successfully", migration_name)
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
@@ -714,3 +769,4 @@ def apply_pending_migrations(db_path: Path) -> None:
     apply_006_venue_286_287(db_path)
     apply_007_rename_venue_13(db_path)
     apply_008_add_kakao_place_id(db_path)
+    apply_009_add_thrill_grade_season(db_path)

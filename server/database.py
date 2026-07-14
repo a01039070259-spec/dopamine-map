@@ -188,6 +188,15 @@ def row_to_spot(row: sqlite3.Row) -> dict:
         spot["coordVerified"] = bool(row["coord_verified"])
     if "kakao_place_id" in row.keys():
         spot["kakaoPlaceId"] = row["kakao_place_id"] or ""
+    if "thrill_grade" in row.keys():
+        tg = row["thrill_grade"]
+        spot["thrillGrade"] = int(tg) if tg is not None else None
+    if "season_start_month" in row.keys():
+        sm = row["season_start_month"]
+        spot["seasonStartMonth"] = int(sm) if sm is not None else None
+    if "season_end_month" in row.keys():
+        em = row["season_end_month"]
+        spot["seasonEndMonth"] = int(em) if em is not None else None
     return spot
 
 
@@ -300,6 +309,20 @@ def review_row_to_dict(row: sqlite3.Row) -> dict:
     }
 
 
+def _optional_int(value, *, lo=None, hi=None):
+    if value is None or value == "":
+        return None
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    if lo is not None and n < lo:
+        return None
+    if hi is not None and n > hi:
+        return None
+    return n
+
+
 def spot_payload_to_columns(payload: dict) -> dict:
     tags = payload.get("tags") or []
     warns = payload.get("warns") or []
@@ -331,6 +354,11 @@ def spot_payload_to_columns(payload: dict) -> dict:
         "approved": 1 if payload.get("approved", True) else 0,
         "coord_verified": 1 if payload.get("coordVerified") else 0,
         "kakao_place_id": (payload.get("kakaoPlaceId") or "") or None,
+        "thrill_grade": _optional_int(payload.get("thrillGrade"), lo=1, hi=5),
+        "season_start_month": _optional_int(
+            payload.get("seasonStartMonth"), lo=1, hi=12
+        ),
+        "season_end_month": _optional_int(payload.get("seasonEndMonth"), lo=1, hi=12),
     }
 
 
@@ -367,12 +395,16 @@ def create_spot(payload: dict) -> dict:
                 name, addr, type, tl, em, bg, img, lat, lng,
                 th, fe, sp, fp, sp2, ap, rank, marker_type,
                 tags, br, ts, warns, reviews, custom, approved,
-                coord_verified, kakao_place_id, created_at, updated_at
+                coord_verified, kakao_place_id,
+                thrill_grade, season_start_month, season_end_month,
+                created_at, updated_at
             ) VALUES (
                 :name, :addr, :type, :tl, :em, :bg, :img, :lat, :lng,
                 :th, :fe, :sp, :fp, :sp2, :ap, :rank, :marker_type,
                 :tags, :br, :ts, :warns, :reviews, :custom, :approved,
-                :coord_verified, :kakao_place_id, :created_at, :updated_at
+                :coord_verified, :kakao_place_id,
+                :thrill_grade, :season_start_month, :season_end_month,
+                :created_at, :updated_at
             )
             """,
             {**cols, "created_at": created, "updated_at": updated},
@@ -394,6 +426,12 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
         cols["coord_verified"] = 1 if existing.get("coordVerified") else 0
     if "kakaoPlaceId" not in payload:
         cols["kakao_place_id"] = existing.get("kakaoPlaceId") or None
+    if "thrillGrade" not in payload:
+        cols["thrill_grade"] = existing.get("thrillGrade")
+    if "seasonStartMonth" not in payload:
+        cols["season_start_month"] = existing.get("seasonStartMonth")
+    if "seasonEndMonth" not in payload:
+        cols["season_end_month"] = existing.get("seasonEndMonth")
     created = payload.get("createdAt") or existing["createdAt"]
     updated = now_iso()
     with get_conn() as conn:
@@ -405,6 +443,9 @@ def update_spot(spot_id: int, payload: dict) -> Optional[dict]:
                 rank=:rank, marker_type=:marker_type, tags=:tags, br=:br, ts=:ts,
                 warns=:warns, reviews=:reviews, custom=:custom, approved=:approved,
                 coord_verified=:coord_verified, kakao_place_id=:kakao_place_id,
+                thrill_grade=:thrill_grade,
+                season_start_month=:season_start_month,
+                season_end_month=:season_end_month,
                 created_at=:created_at, updated_at=:updated_at
             WHERE id=:id
             """,
