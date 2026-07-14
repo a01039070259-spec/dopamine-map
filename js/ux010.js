@@ -7,10 +7,12 @@
   const MAP_LEVEL_L3 = 6; // level <= 6 → neighborhood (selected emphasis)
 
   let CATEGORY_GROUPS = [];
+  let CATEGORIES = [];
   let homeMode = "home"; // home | group
   let selectedGroupSlug = null;
   let selectedCategoryId = null; // null = all in group
   let groupSortMode = "region"; // region | thrill
+  let flatCategoryMode = false;
   let mapBoundsFilter = null; // {swLat,swLng,neLat,neLng} or null
   let mapClusterOverlays = [];
   let mapPinOverlays = [];
@@ -91,13 +93,99 @@
 
   async function loadCategoryGroups() {
     try {
-      const res = await fetch("/api/categories/groups?withSpotsOnly=true");
-      if (!res.ok) throw new Error("cat");
-      CATEGORY_GROUPS = await res.json();
+      const [gRes, cRes] = await Promise.all([
+        fetch("/api/categories/groups?withSpotsOnly=true"),
+        fetch("/api/categories?withSpotsOnly=true"),
+      ]);
+      CATEGORY_GROUPS = gRes.ok ? await gRes.json() : [];
+      CATEGORIES = cRes.ok ? await cRes.json() : [];
+      CATEGORIES = (CATEGORIES || [])
+        .filter((c) => c.spotCount > 0)
+        .slice()
+        .sort((a, b) => b.spotCount - a.spotCount || a.sortOrder - b.sortOrder);
     } catch (_) {
       CATEGORY_GROUPS = [];
+      CATEGORIES = [];
     }
     return CATEGORY_GROUPS;
+  }
+
+  /** 홈 아이콘 그리드용 짧은 표기 — 생소한 영문/은어는 쉬운 말로 */
+  function shortCatName(name) {
+    const n = String(name || "");
+    const aliases = {
+      실내스카이다이빙: "실내스카이",
+      "자연 암벽등반": "암벽등반",
+      "서바이벌 게임": "서바이벌",
+      "MTB 다운힐": "산악자전거",
+      MTB: "산악자전거",
+      산악자전거: "산악자전거",
+      SUV오프로드: "SUV체험",
+      SUV체험: "SUV체험",
+      "급류 카약": "카약",
+      급류카약: "카약",
+      카약: "카약",
+      알파인코스터: "롤러코스터",
+      롤러코스터: "롤러코스터",
+      스카이바이크: "공중자전거",
+      공중자전거: "공중자전거",
+      캐녀닝: "계곡탐험",
+      계곡탐험: "계곡탐험",
+      하이로프: "숲속모험",
+      숲속모험: "숲속모험",
+      씨워킹: "바닷속걷기",
+      바닷속걷기: "바닷속걷기",
+      케이브보트: "동굴보트",
+      동굴보트: "동굴보트",
+      동물라이딩: "동물타기",
+      동물타기: "동물타기",
+      수륙양용차: "수륙양용",
+    };
+    if (aliases[n]) return aliases[n];
+    if (n.length <= 6) return n;
+    return n.length > 7 ? n.slice(0, 6) + "…" : n;
+  }
+
+  /** slug 기준 아이콘 — DB가 구버전 시드여도 홈은 즉시 통일 */
+  const CAT_ICON_BY_SLUG = {
+    paragliding: "🪂",
+    bungee: "🔻",
+    zipline: "➰",
+    "indoor-skydiving": "💨",
+    balloon: "🎈",
+    "big-swing": "🌀",
+    "light-aircraft": "✈️",
+    "hang-glider": "🪁",
+    rafting: "🛶",
+    "whitewater-kayak": "🛶",
+    jetboat: "🚤",
+    parasailing: "🪂",
+    seawalk: "🤿",
+    "cave-boat": "🚤",
+    luge: "🛷",
+    "alpine-coaster": "🎢",
+    skybike: "🚲",
+    monorail: "🚋",
+    canyoning: "🏔️",
+    "rock-climbing": "🧗",
+    "high-ropes": "🪜",
+    "survival-game": "🪖",
+    shooting: "🎯",
+    "animal-riding": "🐴",
+    skywalk: "🌉",
+    slide: "🛝",
+    "cave-explore": "🦇",
+    kart: "🏎️",
+    atv: "🏍️",
+    offroad: "🚙",
+    "suv-offroad": "🚙",
+    "mtb-downhill": "🚵",
+    amphibious: "🚢",
+  };
+
+  function catIcon(c) {
+    if (!c) return "📍";
+    return CAT_ICON_BY_SLUG[c.slug] || c.icon || "📍";
   }
 
   function isSeasonOpenLocal(spot, month) {
@@ -123,6 +211,7 @@
 
   function renderHomeHome() {
     homeMode = "home";
+    flatCategoryMode = false;
     selectedGroupSlug = null;
     selectedCategoryId = null;
     const grid = document.getElementById("homeGroupGrid");
@@ -133,20 +222,20 @@
     if (sortSec) sortSec.classList.add("is-hidden");
     if (grid) {
       grid.classList.remove("is-hidden");
-      if (!(CATEGORY_GROUPS || []).length) {
+      grid.classList.add("home-cat-grid");
+      if (!(CATEGORIES || []).length) {
         grid.classList.add("is-loading");
-        grid.innerHTML = [0, 1, 2, 3]
-          .map(() => `<button type="button" class="home-group-card" tabindex="-1" aria-hidden="true">.</button>`)
+        grid.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7]
+          .map(() => `<button type="button" class="home-cat-btn" tabindex="-1" aria-hidden="true"><span class="home-cat-ico">·</span><span class="home-cat-name">·</span></button>`)
           .join("");
       } else {
         grid.classList.remove("is-loading");
-        grid.innerHTML = (CATEGORY_GROUPS || [])
+        grid.innerHTML = (CATEGORIES || [])
           .map(
-            (g) => `
-        <button type="button" class="home-group-card" data-group="${g.groupSlug}" onclick="Ux010.openGroup('${g.groupSlug}')">
-          <span class="home-group-ico">${g.icon || ""}</span>
-          <span class="home-group-name">${g.groupName}</span>
-          <span class="home-group-count">${g.spotCount} 스팟</span>
+            (c) => `
+        <button type="button" class="home-cat-btn" data-cid="${c.id}" onclick="Ux010.openCategory(${c.id})">
+          <span class="home-cat-ico" aria-hidden="true">${catIcon(c)}</span>
+          <span class="home-cat-name">${shortCatName(c.name)}</span>
         </button>`
           )
           .join("");
@@ -190,11 +279,7 @@
     if (rh) rh.classList.add("is-hidden");
   }
 
-  function openGroup(groupSlug) {
-    homeMode = "group";
-    selectedGroupSlug = groupSlug;
-    selectedCategoryId = null;
-    const g = (CATEGORY_GROUPS || []).find((x) => x.groupSlug === groupSlug);
+  function showListShell(titleText) {
     const grid = document.getElementById("homeGroupGrid");
     const season = document.getElementById("homeSeasonRow");
     const quiz = document.getElementById("homeQuizBanner");
@@ -207,22 +292,53 @@
     if (nearby) nearby.classList.add("is-hidden");
     if (listWrap) listWrap.classList.remove("is-hidden");
     if (sortSec) sortSec.classList.remove("is-hidden");
-
     const title = document.getElementById("homeGroupTitle");
-    if (title) title.textContent = (g && g.groupName) || groupSlug;
+    if (title) title.textContent = titleText || "액티비티";
+  }
+
+  /** 배달의민족식: 소분류 아이콘 탭 → 해당 카테고리 리스트 */
+  function openCategory(categoryId) {
+    homeMode = "group";
+    flatCategoryMode = true;
+    const cat = (CATEGORIES || []).find((c) => Number(c.id) === Number(categoryId));
+    if (!cat) return;
+    selectedCategoryId = Number(categoryId);
+    // 리스트는 카테고리만 필터 (대분류 하늘/땅 노출 안 함). 지도 전환 시에만 group 사용.
+    selectedGroupSlug = null;
+    showListShell(shortCatName(cat.name));
+
+    const chips = document.getElementById("homeSubChips");
+    if (chips) {
+      chips.innerHTML = "";
+      chips.classList.add("is-hidden");
+    }
+    // stash for map
+    openCategory._groupSlug = cat.groupSlug || null;
+    renderGroupList();
+  }
+
+  function openGroupMap() {
+    if (flatCategoryMode && openCategory._groupSlug) {
+      selectedGroupSlug = openCategory._groupSlug;
+    }
+    if (typeof goMap === "function") goMap({ keepFilters: true });
+  }
+
+  function openGroup(groupSlug) {
+    homeMode = "group";
+    flatCategoryMode = false;
+    selectedGroupSlug = groupSlug;
+    selectedCategoryId = null;
+    const g = (CATEGORY_GROUPS || []).find((x) => x.groupSlug === groupSlug);
+    showListShell((g && g.groupName) || groupSlug);
 
     const chips = document.getElementById("homeSubChips");
     if (chips && g) {
+      chips.classList.remove("is-hidden");
       const cats = (g.categories || [])
         .filter((c) => c.spotCount > 0)
         .slice()
-        .sort((a, b) => {
-          if (a.sortOrder !== b.sortOrder && (a.sortOrderManual || b.sortOrderManual)) {
-            /* reserved */
-          }
-          // spot count desc primary; sort_order only as tiebreak (manual override not stored separately)
-          return b.spotCount - a.spotCount || a.sortOrder - b.sortOrder;
-        });
+        .sort((a, b) => b.spotCount - a.spotCount || a.sortOrder - b.sortOrder);
       chips.innerHTML =
         `<button type="button" class="sub-chip active" data-cid="" onclick="Ux010.setCategoryFilter(null, this)">전체</button>` +
         cats
@@ -287,10 +403,6 @@
 
   function backToHome() {
     renderHomeHome();
-  }
-
-  function openGroupMap() {
-    if (typeof goMap === "function") goMap({ keepFilters: true });
   }
 
   /* ───── Bottom sheet ───── */
@@ -642,6 +754,7 @@
     loadCategoryGroups,
     renderHomeHome,
     openGroup,
+    openCategory,
     setCategoryFilter,
     setGroupSort,
     renderGroupList,
@@ -665,6 +778,9 @@
     },
     get selectedCategoryId() {
       return selectedCategoryId;
+    },
+    get isListMode() {
+      return homeMode === "group";
     },
     isSpotPublishable,
     venueIsPublishable,

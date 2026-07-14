@@ -925,6 +925,31 @@ def apply_011_add_legacy_spots(db_path: Path) -> None:
     logger.info("migration %s: applied successfully", migration_name)
 
 
+def sync_category_seed_labels(db_path: Path) -> None:
+    """Re-apply CATEGORY_SEED name/icon/sort onto existing categories (idempotent)."""
+    if not db_path.is_file():
+        return
+    from server.category_defs import CATEGORY_SEED
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "categories"):
+            return
+        for slug, name, group_slug, group_name, icon, sort_order in CATEGORY_SEED:
+            conn.execute(
+                """
+                UPDATE categories
+                SET name = ?, group_slug = ?, group_name = ?, icon = ?, sort_order = ?
+                WHERE slug = ?
+                """,
+                (name, group_slug, group_name, icon, sort_order, slug),
+            )
+        conn.commit()
+        logger.info("sync_category_seed_labels: refreshed %s categories", len(CATEGORY_SEED))
+    finally:
+        conn.close()
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
@@ -937,4 +962,5 @@ def apply_pending_migrations(db_path: Path) -> None:
     apply_008_add_kakao_place_id(db_path)
     apply_009_add_thrill_grade_season(db_path)
     apply_010_categories(db_path)
+    sync_category_seed_labels(db_path)
     apply_011_add_legacy_spots(db_path)

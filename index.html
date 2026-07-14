@@ -464,15 +464,17 @@
       border: 1px solid #333
     }
 
-    /* UX010 home + map */
-    .home-group-grid {
+    /* UX010 home + map — Baemin-style flat category icons */
+    .home-group-grid,
+    .home-cat-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      padding: 4px 16px 16px
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px 2px;
+      padding: 8px 10px 18px
     }
 
-    .home-group-grid.is-loading .home-group-card,
+    .home-group-grid.is-loading .home-cat-btn,
+    .home-cat-grid.is-loading .home-cat-btn,
     .home-season-track.is-loading .home-season-card {
       min-height: 72px;
       background: linear-gradient(90deg, #141414 25%, #1c1c1c 50%, #141414 75%);
@@ -492,6 +494,49 @@
       touch-action: manipulation
     }
 
+    .home-cat-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 2px 6px;
+      background: transparent;
+      border: none;
+      color: #eee;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .home-cat-btn:active .home-cat-ico {
+      transform: scale(.94);
+      border-color: var(--neon)
+    }
+
+    .home-cat-ico {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      background: #151515;
+      border: 1px solid #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      line-height: 1;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04)
+    }
+
+    .home-cat-name {
+      font-size: 11px;
+      font-weight: 650;
+      text-align: center;
+      line-height: 1.25;
+      letter-spacing: -.2px;
+      max-width: 76px;
+      color: #ddd
+    }
+
+    /* legacy group card kept for map/tooling; unused on home */
     .home-group-card {
       display: flex;
       flex-direction: column;
@@ -3320,7 +3365,7 @@
       <div id="homeGroupList" class="is-hidden">
         <div class="home-group-head">
           <button type="button" class="back-btn" onclick="Ux010.backToHome()">← </button>
-          <h2 id="homeGroupTitle">하늘</h2>
+          <h2 id="homeGroupTitle">액티비티</h2>
           <button type="button" class="rbtn" onclick="Ux010.openGroupMap()">지도</button>
         </div>
         <div class="sub-chip-row" id="homeSubChips"></div>
@@ -3715,7 +3760,7 @@
     function refreshMainListIfVisible() {
       const main = document.getElementById('mainScreen');
       if (main?.classList.contains('active')) {
-        if (window.Ux010 && Ux010.selectedGroupSlug) {
+        if (window.Ux010 && Ux010.isListMode) {
           Ux010.renderGroupList();
         } else if (window.Ux010) {
           Ux010.renderHomeHome();
@@ -3942,7 +3987,7 @@
         el.classList.toggle('on', seasonNowOnly);
         el.setAttribute('aria-pressed', seasonNowOnly ? 'true' : 'false');
       });
-      if (window.Ux010 && Ux010.selectedGroupSlug) {
+      if (window.Ux010 && Ux010.isListMode) {
         Ux010.renderGroupList();
       } else {
         renderCards(getDisplayedVenues());
@@ -3986,7 +4031,7 @@
 
     function onSearchInputChanged(fromId) {
       syncSearchInputs(fromId);
-      if (window.Ux010 && Ux010.selectedGroupSlug) {
+      if (window.Ux010 && Ux010.isListMode) {
         Ux010.renderGroupList();
       } else if (window.Ux010 && document.getElementById('homeGroupGrid') && !document.getElementById('homeGroupGrid').classList.contains('is-hidden')) {
         /* home grid — season cards not search-driven */
@@ -4409,7 +4454,7 @@
         } catch (_) { }
         currentUser = null;
         updateAuthButton();
-        if (window.Ux010 && Ux010.selectedGroupSlug) Ux010.renderGroupList();
+        if (window.Ux010 && Ux010.isListMode) Ux010.renderGroupList();
         else if (window.Ux010) Ux010.renderHomeHome();
         await loadSavedDiagnosisChip();
         showToast('로그아웃 되었습니다');
@@ -5247,7 +5292,7 @@
     ═══════════════════════════════════════ */
     function renderCards(data) {
       // 011: 신 홈(Ux010)이 주 리스트. cardList는 폴백 컨테이너만 유지.
-      if (window.Ux010 && Ux010.selectedGroupSlug) {
+      if (window.Ux010 && Ux010.isListMode) {
         Ux010.renderGroupList();
         return;
       }
