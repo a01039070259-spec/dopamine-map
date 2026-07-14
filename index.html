@@ -4949,12 +4949,6 @@
       goToMainScreen();
     }
 
-    async function ensureSpotDataReady() {
-      if (!(SPOTS && SPOTS.length)) await reloadSpots();
-      if (!(VENUES && VENUES.length)) await reloadVenues();
-      else VENUES = enrichVenues(VENUES);
-    }
-
     function markOnboardingDone() {
       localStorage.setItem(LS_ONBOARDING_DONE, 'true');
     }
