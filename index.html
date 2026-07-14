@@ -969,15 +969,45 @@
       padding: 14px 16px 0;
       max-width: 640px;
       margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
       pointer-events: none;
     }
 
-    .diag-topbar .qz-back {
+    .diag-topbar .qz-back,
+    .diag-topbar .ob-skip {
       pointer-events: auto;
       margin-bottom: 0
     }
 
-    .diag-topbar.is-first-entry {
+    .diag-topbar.is-first-entry .qz-back {
+      visibility: hidden
+    }
+
+    .ob-skip {
+      appearance: none;
+      border: 1px solid rgba(57, 255, 20, .4);
+      background: rgba(8, 16, 8, .75);
+      color: var(--neon);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: -.1px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 18px rgba(57, 255, 20, .12);
+      transition: background .18s, border-color .18s, transform .18s
+    }
+
+    .ob-skip:active {
+      transform: scale(.97)
+    }
+
+    .diag-topbar:not(.is-first-entry) .ob-skip {
       display: none
     }
 
@@ -1051,29 +1081,20 @@
       display: none !important
     }
 
-    .ob-brand-mark {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 28px;
-      opacity: 0;
-      animation: obIn .55s .08s forwards
-    }
-
     .ob-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       background: var(--neon);
       color: #041004;
-      font-size: 10px;
+      font-size: clamp(10px, 2.8vw, 11px);
       font-weight: 900;
-      letter-spacing: 2.2px;
+      letter-spacing: 0.12em;
       padding: 6px 12px;
       border-radius: 3px;
       text-transform: uppercase;
-      box-shadow: 0 0 24px rgba(57, 255, 20, .25)
+      box-shadow: 0 0 24px rgba(57, 255, 20, .25);
+      white-space: nowrap
     }
 
     .ob-badge::before {
@@ -1082,36 +1103,38 @@
       height: 6px;
       border-radius: 50%;
       background: #041004;
-      animation: obPulse 1.6s ease-in-out infinite
+      animation: obPulse 1.6s ease-in-out infinite;
+      flex-shrink: 0
     }
 
     .ob-logo-big {
-      font-size: clamp(32px, 8vw, 42px);
+      font-size: clamp(28px, 7.2vw, 42px);
       font-weight: 900;
       color: var(--neon);
-      letter-spacing: -1.2px;
+      letter-spacing: -1px;
       line-height: 1.15;
       text-shadow: 0 0 40px rgba(57, 255, 20, .22)
     }
 
     .ob-logo-sub {
-      font-size: 11px;
-      color: #666;
-      letter-spacing: 2.4px;
+      font-size: clamp(11px, 3vw, 12px);
+      color: #7a7a7a;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      margin-top: 2px
+      margin-top: 2px;
+      font-weight: 700
     }
 
     .ob-headline {
-      font-size: clamp(18px, 4.5vw, 22px);
+      font-size: clamp(18px, 4.8vw, 24px);
       font-weight: 800;
       color: #fff;
       line-height: 1.45;
-      letter-spacing: -.4px;
-      margin-bottom: 12px;
-      max-width: 20em;
+      letter-spacing: -.35px;
+      margin-bottom: 10px;
+      max-width: 18em;
       opacity: 0;
-      animation: obIn .55s .28s forwards
+      animation: obIn .45s .12s forwards
     }
 
     .ob-headline em {
@@ -1120,24 +1143,44 @@
     }
 
     .ob-support {
-      font-size: 14px;
+      font-size: clamp(13px, 3.4vw, 14px);
       font-weight: 500;
-      color: #8a8a8a;
+      color: #9a9a9a;
       line-height: 1.65;
-      margin-bottom: 36px;
+      margin-bottom: 10px;
       max-width: 22em;
       opacity: 0;
-      animation: obIn .55s .42s forwards
+      animation: obIn .45s .22s forwards
+    }
+
+    .ob-why {
+      font-size: 12px;
+      color: #5f5f5f;
+      line-height: 1.5;
+      margin: 0 0 28px;
+      max-width: 22em;
+      opacity: 0;
+      animation: obIn .45s .3s forwards
     }
 
     .ob-cta-group {
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 12px;
+      gap: 10px;
       width: min(100%, 320px);
       opacity: 0;
-      animation: obIn .55s .58s forwards
+      animation: obIn .45s .36s forwards
+    }
+
+    .ob-brand-mark {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: obIn .45s .04s forwards
     }
 
     .ob-cta-primary {
@@ -1170,21 +1213,29 @@
     .ob-cta-secondary {
       appearance: none;
       width: 100%;
-      background: transparent;
-      border: 1px solid rgba(57, 255, 20, .35);
+      background: rgba(57, 255, 20, .06);
+      border: 1px solid rgba(57, 255, 20, .45);
       color: var(--neon);
       font-family: 'Noto Sans KR', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 13px 16px;
       border-radius: 12px;
       cursor: pointer;
       transition: background .18s, border-color .18s, color .18s
     }
 
     .ob-cta-secondary:hover {
-      background: rgba(57, 255, 20, .08);
+      background: rgba(57, 255, 20, .1);
       border-color: var(--neon)
+    }
+
+    .ob-cta-hint {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+      font-weight: 500
     }
 
     @keyframes obIn {
@@ -3319,6 +3370,7 @@
 
       <div class="diag-topbar is-first-entry" id="diagTopBar">
         <button type="button" class="qz-back" id="diagBackBtn" onclick="closeDiagnosis()">← 뒤로</button>
+        <button type="button" class="ob-skip" id="obSkipBtn" onclick="closeDiagnosis()">건너뛰기</button>
       </div>
 
       <div id="introPhase" class="hidden">
@@ -3328,10 +3380,12 @@
           <div class="ob-logo-sub">DOPAMINE MAP</div>
         </div>
         <p class="ob-headline">안전바가 흔들려야<br><em>진짜 액티비티</em>다</p>
-        <p class="ob-support">전국 짚라인·번지·패러 등 하드코어 스팟의 스릴 지수와 생존 가이드. 30초 자가진단으로 내 등급부터 확인하세요.</p>
+        <p class="ob-support">전국 짚라인·번지·패러 등 하드코어 스팟의 스릴 지수와 생존 가이드.</p>
+        <p class="ob-why">30초 등급 진단은 나에게 맞는 스팟을 고르기 위한 선택이에요. 필수는 아닙니다.</p>
         <div class="ob-cta-group">
           <button type="button" class="ob-cta-primary" id="diagStartCta" onclick="startQuiz()">자가진단 시작 →</button>
-          <button type="button" class="ob-cta-secondary" id="diagMapCta" onclick="closeDiagnosis()">지도로 바로 가기</button>
+          <button type="button" class="ob-cta-secondary" id="diagMapCta" onclick="closeDiagnosis()">진단 없이 지도 보기</button>
+          <p class="ob-cta-hint">언제든 홈에서 다시 진단할 수 있어요</p>
         </div>
       </div>
 
@@ -4886,7 +4940,9 @@
 
     function startQuiz() {
       clearIntroTimers();
-      setDiagnosisChrome({ firstEntry: false });
+      // 첫 진입이면 퀴즈 중에도 우측 '건너뛰기' 유지
+      const firstEntry = localStorage.getItem(LS_ONBOARDING_DONE) !== 'true';
+      setDiagnosisChrome({ firstEntry });
       document.getElementById('introPhase')?.classList.add('hidden');
       document.getElementById('resultPhase')?.classList.remove('active');
       initQuizScores();
