@@ -610,17 +610,48 @@
 
   let mapMiniClusters = []; // last rendered mini-clusters for click → sheet
 
+  function pinLabelText(v, spot) {
+    if (v && v.spotCount > 1 && !v.virtual) {
+      return `${v.spotCount}종`;
+    }
+    const raw = spot
+      ? spotLabel(spot)
+      : (v && (v.tl || v.categoryName)) || "액티비티";
+    return shortCatName(raw);
+  }
+
   function makeMiniPinHTML(v) {
     const grade = venueMaxGrade(v);
     const hot = grade >= 4;
     const selected = selectedMapVenueId === v.id ? " selected" : "";
     const hotClass = hot ? " hot" : "";
     const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+    const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
+    const primary = spot || members[0] || null;
     const ico =
-      v.spotCount > 1
+      v.spotCount > 1 && !v.virtual
         ? "📍"
-        : spotIcon(spot) || "📍";
-    return `<div class="map-mini-pin${selected}${hotClass}" onclick="Ux010.selectMapVenue(${v.id}, event)"><span>${ico}</span></div>`;
+        : spotIcon(primary) || "📍";
+    const label = pinLabelText(v, primary);
+    return `<div class="map-pin-wrap${selected}${hotClass}" onclick="Ux010.selectMapVenue(${v.id}, event)">
+      <div class="map-mini-pin${hotClass}"><span>${ico}</span></div>
+      <span class="map-pin-label">${label}</span>
+    </div>`;
+  }
+
+  function clusterPreviewLabel(venues) {
+    const list = venues || [];
+    if (!list.length) return "여러 곳";
+    const labels = list.map((v) => {
+      const s =
+        (typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v)[0] : null) ||
+        (v.primarySpotId ? getSpot(v.primarySpotId) : null);
+      return pinLabelText(v, s);
+    });
+    const uniq = [...new Set(labels.filter(Boolean))];
+    if (uniq.length === 1) return `${uniq[0]} ${list.length}`;
+    if (uniq.length === 2) return `${uniq[0]}·${uniq[1]}`;
+    return `${uniq[0]} 외${list.length - 1}`;
   }
 
   function makeRegionBubbleHTML(cluster) {
@@ -789,7 +820,11 @@
       let html;
       if (item.type === "cluster") {
         const idx = mapMiniClusters.indexOf(item);
-        html = `<div class="map-mini-cluster" onclick="Ux010.openMiniCluster(${idx}, ${item.lat}, ${item.lng}, event)"><span>${item.count}</span></div>`;
+        const preview = clusterPreviewLabel(item.venues);
+        html = `<div class="map-cluster-wrap" onclick="Ux010.openMiniCluster(${idx}, ${item.lat}, ${item.lng}, event)">
+          <div class="map-mini-cluster"><span>${item.count}</span></div>
+          <span class="map-cluster-label">${preview}</span>
+        </div>`;
       } else {
         html = makeMiniPinHTML(item.venue);
       }
