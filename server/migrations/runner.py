@@ -940,13 +940,19 @@ def sync_category_seed_labels(db_path: Path) -> None:
         if not _table_exists(conn, "categories"):
             return
         for slug, name, group_slug, group_name, icon, sort_order in CATEGORY_SEED:
+            # Upsert so newly added seed categories are inserted (not just updated)
             conn.execute(
                 """
-                UPDATE categories
-                SET name = ?, group_slug = ?, group_name = ?, icon = ?, sort_order = ?
-                WHERE slug = ?
+                INSERT INTO categories (name, slug, group_slug, group_name, icon, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(slug) DO UPDATE SET
+                    name=excluded.name,
+                    group_slug=excluded.group_slug,
+                    group_name=excluded.group_name,
+                    icon=excluded.icon,
+                    sort_order=excluded.sort_order
                 """,
-                (name, group_slug, group_name, icon, sort_order, slug),
+                (name, slug, group_slug, group_name, icon, sort_order),
             )
 
         # 폐기 카테고리: 스팟 삭제 + 카테고리 행 제거
