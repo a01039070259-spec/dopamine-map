@@ -193,10 +193,10 @@
 
   /** 홈 4대 카테고리 섹션 — 클릭 없이 그룹별로 한눈에 */
   const MACRO_SECTIONS = [
-    { key: "thrill", title: "스릴/익스트림", color: "#ff4d4d" },
-    { key: "riding", title: "탈것/라이딩", color: "#ff9124" },
-    { key: "water", title: "수상 레저", color: "#3aa0ff" },
-    { key: "adventure", title: "어드벤처/탐험", color: "#37d67a" },
+    { key: "thrill", title: "스릴/익스트림", color: "#ff4d4d", emoji: "🎢" },
+    { key: "riding", title: "탈것/라이딩", color: "#ff9124", emoji: "🏎️" },
+    { key: "water", title: "수상 레저", color: "#3aa0ff", emoji: "🚤" },
+    { key: "adventure", title: "어드벤처/탐험", color: "#37d67a", emoji: "🗺️" },
   ];
   const CAT_MACRO_BY_SLUG = {
     // 스릴/익스트림 — 고소·공중·낙하 계열
@@ -252,6 +252,67 @@
         </button>`;
   }
 
+  // 홈: 24개 아이콘 대신 4개 대형 카테고리 버튼 + 아코디언(세부 종목)
+  let homeMacroOpen = null;
+
+  function macroCardHtml(sec, list, open) {
+    const total = list.reduce((n, c) => n + (Number(c.spotCount) || 0), 0);
+    return `
+        <button type="button" class="home-macro-card${open ? " is-open" : ""}" style="--macro:${sec.color}" aria-expanded="${open}" onclick="Ux010.toggleMacro('${sec.key}')">
+          <span class="hmc-emoji" aria-hidden="true">${sec.emoji}</span>
+          <span class="hmc-text">
+            <span class="hmc-title">${sec.title}</span>
+            <span class="hmc-meta">${list.length}종 · ${total}곳</span>
+          </span>
+          <span class="hmc-caret" aria-hidden="true">${open ? "▾" : "▸"}</span>
+        </button>`;
+  }
+
+  function renderHomeMacroGrid() {
+    const grid = document.getElementById("homeGroupGrid");
+    if (!grid) return;
+    grid.classList.remove("is-hidden", "home-cat-grid", "home-group-grid", "home-cat-sections");
+    grid.classList.add("home-macro-wrap");
+    const cats = CATEGORIES || [];
+    if (!cats.length) {
+      grid.classList.add("is-loading");
+      grid.innerHTML =
+        `<div class="home-macro-grid">` +
+        [0, 1, 2, 3]
+          .map(() => `<div class="home-macro-card" aria-hidden="true"><span class="hmc-emoji">·</span></div>`)
+          .join("") +
+        `</div>`;
+      return;
+    }
+    grid.classList.remove("is-loading");
+    const sections = MACRO_SECTIONS.map((sec) => ({
+      sec,
+      list: cats.filter((c) => macroOfCat(c) === sec.key),
+    })).filter((x) => x.list.length);
+    const cards = sections
+      .map(({ sec, list }) => macroCardHtml(sec, list, homeMacroOpen === sec.key))
+      .join("");
+    let panel = "";
+    const openEntry = sections.find((x) => x.sec.key === homeMacroOpen);
+    if (openEntry) {
+      const subBtns = openEntry.list.map((c, i) => catBtnHtml(c, i)).join("");
+      panel = `
+        <div class="home-macro-panel" style="--macro:${openEntry.sec.color}">
+          <div class="home-macro-panel-head">
+            <span class="hmp-title">${openEntry.sec.emoji} ${openEntry.sec.title}</span>
+            <span class="hmp-hint">세부 종목을 눌러보세요</span>
+          </div>
+          <div class="home-cat-grid-sec">${subBtns}</div>
+        </div>`;
+    }
+    grid.innerHTML = `<div class="home-macro-grid">${cards}</div>${panel}`;
+  }
+
+  function toggleMacro(key) {
+    homeMacroOpen = homeMacroOpen === key ? null : key;
+    renderHomeMacroGrid();
+  }
+
   function renderHomeHome() {
     homeMode = "home";
     flatCategoryMode = false;
@@ -263,34 +324,7 @@
     const sortSec = document.getElementById("homeSortSec");
     if (listWrap) listWrap.classList.add("is-hidden");
     if (sortSec) sortSec.classList.add("is-hidden");
-    if (grid) {
-      grid.classList.remove("is-hidden");
-      const cats = CATEGORIES || [];
-      if (!cats.length) {
-        grid.classList.remove("home-cat-sections");
-        grid.classList.add("home-group-grid", "home-cat-grid", "is-loading");
-        grid.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7]
-          .map(() => `<button type="button" class="home-cat-btn" tabindex="-1" aria-hidden="true"><span class="home-cat-ico">·</span><span class="home-cat-name">·</span></button>`)
-          .join("");
-      } else {
-        grid.classList.remove("home-group-grid", "home-cat-grid", "is-loading");
-        grid.classList.add("home-cat-sections");
-        grid.innerHTML = MACRO_SECTIONS.map((sec) => {
-          const list = cats.filter((c) => macroOfCat(c) === sec.key);
-          if (!list.length) return "";
-          const btns = list.map((c, i) => catBtnHtml(c, i)).join("");
-          return `
-        <section class="home-cat-section" data-macro="${sec.key}">
-          <div class="home-cat-sec-head" style="--macro:${sec.color}">
-            <span class="hcs-dot" aria-hidden="true"></span>
-            <span class="hcs-title">${sec.title}</span>
-            <span class="hcs-count">${list.length}</span>
-          </div>
-          <div class="home-cat-grid-sec">${btns}</div>
-        </section>`;
-        }).join("");
-      }
-    }
+    renderHomeMacroGrid();
     if (season) {
       season.classList.remove("is-hidden");
       const spots = getSeasonNowSpots(10);
@@ -1054,6 +1088,7 @@
     openSpotOnMap,
     onHomeSearch,
     toggleHomeCats,
+    toggleMacro,
   };
 
   function openSpotOnMap(spotId) {

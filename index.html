@@ -578,50 +578,138 @@
       color: #ddd
     }
 
-    /* UX010 home — 4 macro category sections */
-    .home-cat-sections {
+    /* UX010 home — 4 big macro buttons + accordion */
+    .home-macro-wrap {
       display: flex;
       flex-direction: column;
-      gap: 28px;
-      padding: 8px 12px 12px
+      gap: 14px;
+      padding: 10px 12px 12px
     }
 
-    .home-cat-section {
-      display: flex;
-      flex-direction: column;
-      gap: 14px
+    .home-macro-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px
     }
 
-    .home-cat-sec-head {
+    @media (min-width: 760px) {
+      .home-macro-grid {
+        grid-template-columns: repeat(4, 1fr)
+      }
+    }
+
+    .home-macro-card {
       display: flex;
       align-items: center;
-      gap: 9px;
-      padding: 0 2px
+      gap: 12px;
+      min-height: 92px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(150deg, #17181a, #0f0f10);
+      border: 1px solid #262626;
+      box-shadow: inset 3px 0 0 var(--macro, var(--neon));
+      color: #f0f0f0;
+      font-family: 'Noto Sans KR', sans-serif;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .15s ease, border-color .2s ease, box-shadow .2s ease
     }
 
-    .home-cat-sec-head .hcs-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--macro, var(--neon));
-      box-shadow: 0 0 10px -1px var(--macro, var(--neon))
+    .home-macro-card:hover {
+      border-color: var(--macro, var(--neon))
     }
 
-    .home-cat-sec-head .hcs-title {
+    .home-macro-card:active {
+      transform: scale(.985)
+    }
+
+    .home-macro-card.is-open {
+      border-color: var(--macro, var(--neon));
+      box-shadow: inset 3px 0 0 var(--macro, var(--neon)), 0 0 20px -6px var(--macro, var(--neon))
+    }
+
+    .home-macro-card .hmc-emoji {
+      flex: none;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      line-height: 1;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .07)
+    }
+
+    .home-macro-card .hmc-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0
+    }
+
+    .home-macro-card .hmc-title {
       font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -.3px;
+      white-space: nowrap
+    }
+
+    .home-macro-card .hmc-meta {
+      font-size: 11px;
+      font-weight: 600;
+      color: #8a8a8a
+    }
+
+    .home-macro-card .hmc-caret {
+      margin-left: auto;
+      flex: none;
+      font-size: 12px;
+      color: var(--macro, var(--neon))
+    }
+
+    .home-macro-panel {
+      border: 1px solid #232323;
+      border-radius: 16px;
+      background: #101011;
+      padding: 14px 12px 8px;
+      animation: macroPanelIn .22s ease
+    }
+
+    @keyframes macroPanelIn {
+      from { opacity: 0; transform: translateY(-4px) }
+      to { opacity: 1; transform: none }
+    }
+
+    .home-macro-panel-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 0 4px 12px
+    }
+
+    .home-macro-panel-head .hmp-title {
+      font-size: 14px;
       font-weight: 800;
       color: var(--macro, #fff);
       letter-spacing: -.3px
     }
 
-    .home-cat-sec-head .hcs-count {
+    .home-macro-panel-head .hmp-hint {
       font-size: 11px;
-      font-weight: 700;
-      color: #999;
-      background: #161616;
-      border: 1px solid #262626;
-      border-radius: 999px;
-      padding: 1px 8px
+      color: #777
+    }
+
+    .home-macro-wrap.is-loading .home-macro-card {
+      background: linear-gradient(90deg, #141414 25%, #1c1c1c 50%, #141414 75%);
+      background-size: 200% 100%;
+      animation: skel 1.2s ease-in-out infinite;
+      border-color: #222;
+      box-shadow: none;
+      color: transparent;
+      pointer-events: none
     }
 
     .home-cat-grid-sec {
