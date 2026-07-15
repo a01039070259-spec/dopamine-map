@@ -255,16 +255,20 @@
   // 홈: 24개 아이콘 대신 4개 대형 카테고리 버튼 + 아코디언(세부 종목)
   let homeMacroOpen = null;
 
-  function macroCardHtml(sec, list, open) {
+  function macroCardHtml(sec, list, open, loading) {
     const total = list.reduce((n, c) => n + (Number(c.spotCount) || 0), 0);
+    const meta = loading
+      ? `<span class="hmc-meta hmc-meta-loading">불러오는 중…</span>`
+      : `<span class="hmc-meta">${list.length}종 · ${total}곳</span>`;
+    const caret = loading ? "" : open ? "▾" : "▸";
     return `
-        <button type="button" class="home-macro-card${open ? " is-open" : ""}" style="--macro:${sec.color}" aria-expanded="${open}" onclick="Ux010.toggleMacro('${sec.key}')">
+        <button type="button" class="home-macro-card${open ? " is-open" : ""}" style="--macro:${sec.color}" aria-expanded="${open ? "true" : "false"}" onclick="Ux010.toggleMacro('${sec.key}')">
           <span class="hmc-emoji" aria-hidden="true">${sec.emoji}</span>
           <span class="hmc-text">
             <span class="hmc-title">${sec.title}</span>
-            <span class="hmc-meta">${list.length}종 · ${total}곳</span>
+            ${meta}
           </span>
-          <span class="hmc-caret" aria-hidden="true">${open ? "▾" : "▸"}</span>
+          <span class="hmc-caret" aria-hidden="true">${caret}</span>
         </button>`;
   }
 
@@ -274,29 +278,22 @@
     grid.classList.remove("is-hidden", "home-cat-grid", "home-group-grid", "home-cat-sections");
     grid.classList.add("home-macro-wrap");
     const cats = CATEGORIES || [];
-    if (!cats.length) {
-      grid.classList.add("is-loading");
-      grid.innerHTML =
-        `<div class="home-macro-grid">` +
-        [0, 1, 2, 3]
-          .map(() => `<div class="home-macro-card" aria-hidden="true"><span class="hmc-emoji">·</span></div>`)
-          .join("") +
-        `</div>`;
-      return;
-    }
-    grid.classList.remove("is-loading");
+    const loading = !cats.length;
+    grid.classList.toggle("is-loading", loading);
+    // 카테고리 로드 전에도 4개 고정 버튼은 즉시 렌더 (개수·세부목록만 이후 채움)
     const sections = MACRO_SECTIONS.map((sec) => ({
       sec,
       list: cats.filter((c) => macroOfCat(c) === sec.key),
-    })).filter((x) => x.list.length);
+    })).filter((x) => loading || x.list.length);
     const cards = sections
-      .map(({ sec, list }) => macroCardHtml(sec, list, homeMacroOpen === sec.key))
+      .map(({ sec, list }) => macroCardHtml(sec, list, !loading && homeMacroOpen === sec.key, loading))
       .join("");
     let panel = "";
-    const openEntry = sections.find((x) => x.sec.key === homeMacroOpen);
-    if (openEntry) {
-      const subBtns = openEntry.list.map((c, i) => catBtnHtml(c, i)).join("");
-      panel = `
+    if (!loading) {
+      const openEntry = sections.find((x) => x.sec.key === homeMacroOpen);
+      if (openEntry) {
+        const subBtns = openEntry.list.map((c, i) => catBtnHtml(c, i)).join("");
+        panel = `
         <div class="home-macro-panel" style="--macro:${openEntry.sec.color}">
           <div class="home-macro-panel-head">
             <span class="hmp-title">${openEntry.sec.emoji} ${openEntry.sec.title}</span>
@@ -304,6 +301,7 @@
           </div>
           <div class="home-cat-grid-sec">${subBtns}</div>
         </div>`;
+      }
     }
     grid.innerHTML = `<div class="home-macro-grid">${cards}</div>${panel}`;
   }

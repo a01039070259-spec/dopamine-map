@@ -702,14 +702,14 @@
       color: #777
     }
 
-    .home-macro-wrap.is-loading .home-macro-card {
-      background: linear-gradient(90deg, #141414 25%, #1c1c1c 50%, #141414 75%);
-      background-size: 200% 100%;
-      animation: skel 1.2s ease-in-out infinite;
-      border-color: #222;
-      box-shadow: none;
-      color: transparent;
-      pointer-events: none
+    .home-macro-card .hmc-meta-loading {
+      color: #666;
+      animation: hmcPulse 1.1s ease-in-out infinite
+    }
+
+    @keyframes hmcPulse {
+      0%, 100% { opacity: .45 }
+      50% { opacity: 1 }
     }
 
     .home-cat-grid-sec {
@@ -6363,15 +6363,24 @@
     ═══════════════════════════════════════ */
     async function bootApp() {
       migrateLegacyDiagnosisStorage();
+
+      const onboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
+
+      // 카테고리 로드를 스팟/베뉴와 병렬로 시작 (마지막 순차 대기 → 병렬)
+      const categoriesLoad = (window.Ux010 && typeof Ux010.loadCategoryGroups === 'function')
+        ? Ux010.loadCategoryGroups()
+        : Promise.resolve();
+
+      // 데이터 대기 전에 홈 4개 버튼을 즉시 렌더 (지연 체감 제거; 개수·세부목록은 이후 채움)
+      if (onboardingDone && window.Ux010) {
+        Ux010.renderHomeHome();
+      }
+
       // 스팟을 먼저 로드해야 venue enrich / publishable 필터가 빈 목록이 되지 않음
       await reloadSpots();
       await reloadVenues();
+      await categoriesLoad;
 
-      if (window.Ux010) {
-        await Ux010.loadCategoryGroups();
-      }
-
-      const onboardingDone = localStorage.getItem(LS_ONBOARDING_DONE) === 'true';
       if (!onboardingDone) {
         startOnboardingFlow();
       } else if (window.Ux010) {
