@@ -191,6 +191,34 @@
     return CAT_ICON_BY_SLUG[c.slug] || c.icon || "📍";
   }
 
+  /** 홈 4대 카테고리 섹션 — 클릭 없이 그룹별로 한눈에 */
+  const MACRO_SECTIONS = [
+    { key: "thrill", title: "스릴/익스트림", color: "#ff4d4d" },
+    { key: "riding", title: "탈것/라이딩", color: "#ff9124" },
+    { key: "water", title: "수상 레저", color: "#3aa0ff" },
+    { key: "adventure", title: "어드벤처/탐험", color: "#37d67a" },
+  ];
+  const CAT_MACRO_BY_SLUG = {
+    // 스릴/익스트림 — 고소·공중·낙하 계열
+    paragliding: "thrill", bungee: "thrill", zipline: "thrill", "indoor-skydiving": "thrill",
+    balloon: "thrill", "big-swing": "thrill", "light-aircraft": "thrill", "hang-glider": "thrill",
+    "alpine-coaster": "thrill", slide: "thrill",
+    // 탈것/라이딩 — 운전·탑승·페달
+    kart: "riding", atv: "riding", offroad: "riding", "suv-offroad": "riding", amphibious: "riding",
+    luge: "riding", skybike: "riding", railbike: "riding", "animal-riding": "riding",
+    // 수상 레저 — 물놀이 계열
+    jetboat: "water", "whitewater-kayak": "water", seawalk: "water", rafting: "water", parasailing: "water",
+    // 어드벤처/탐험 — 체험·탐험 계열
+    monorail: "adventure", "rock-climbing": "adventure", "high-ropes": "adventure",
+    "survival-game": "adventure", shooting: "adventure", skywalk: "adventure",
+    "cave-explore": "adventure", "cave-boat": "adventure",
+  };
+  const GROUP_MACRO_FALLBACK = { sky: "thrill", speed: "riding", water: "water", land: "adventure" };
+  function macroOfCat(c) {
+    if (!c) return "adventure";
+    return CAT_MACRO_BY_SLUG[c.slug] || GROUP_MACRO_FALLBACK[c.groupSlug] || "adventure";
+  }
+
   function isSeasonOpenLocal(spot, month) {
     if (typeof isSeasonOpen === "function") return isSeasonOpen(spot, month);
     return true;
@@ -237,30 +265,30 @@
     if (sortSec) sortSec.classList.add("is-hidden");
     if (grid) {
       grid.classList.remove("is-hidden");
-      grid.classList.add("home-cat-grid");
       const cats = CATEGORIES || [];
       if (!cats.length) {
-        grid.classList.add("is-loading");
+        grid.classList.remove("home-cat-sections");
+        grid.classList.add("home-group-grid", "home-cat-grid", "is-loading");
         grid.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7]
           .map(() => `<button type="button" class="home-cat-btn" tabindex="-1" aria-hidden="true"><span class="home-cat-ico">·</span><span class="home-cat-name">·</span></button>`)
           .join("");
       } else {
-        grid.classList.remove("is-loading");
-        const primary = cats.slice(0, HOME_CAT_PRIMARY);
-        const extra = cats.slice(HOME_CAT_PRIMARY);
-        let html = primary.map((c, i) => catBtnHtml(c, i)).join("");
-        if (extra.length) {
-          html += `
-          <div class="home-cat-more-wrap" style="grid-column:1/-1">
-            <button type="button" class="home-cat-more-btn" id="homeCatMoreBtn" onclick="Ux010.toggleHomeCats()">
-              ${homeCatsExpanded ? "인기 카테고리만 보기 ↑" : `전체 카테고리 ${extra.length}개 더보기 ↓`}
-            </button>
-            <div class="home-cat-extra ${homeCatsExpanded ? "" : "is-collapsed"}" id="homeCatExtra">
-              ${extra.map((c, i) => catBtnHtml(c, i + HOME_CAT_PRIMARY)).join("")}
-            </div>
-          </div>`;
-        }
-        grid.innerHTML = html;
+        grid.classList.remove("home-group-grid", "home-cat-grid", "is-loading");
+        grid.classList.add("home-cat-sections");
+        grid.innerHTML = MACRO_SECTIONS.map((sec) => {
+          const list = cats.filter((c) => macroOfCat(c) === sec.key);
+          if (!list.length) return "";
+          const btns = list.map((c, i) => catBtnHtml(c, i)).join("");
+          return `
+        <section class="home-cat-section" data-macro="${sec.key}">
+          <div class="home-cat-sec-head" style="--macro:${sec.color}">
+            <span class="hcs-dot" aria-hidden="true"></span>
+            <span class="hcs-title">${sec.title}</span>
+            <span class="hcs-count">${list.length}</span>
+          </div>
+          <div class="home-cat-grid-sec">${btns}</div>
+        </section>`;
+        }).join("");
       }
     }
     if (season) {

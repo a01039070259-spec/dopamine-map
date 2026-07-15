@@ -578,6 +578,70 @@
       color: #ddd
     }
 
+    /* UX010 home — 4 macro category sections */
+    .home-cat-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding: 8px 12px 12px
+    }
+
+    .home-cat-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .home-cat-sec-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 2px
+    }
+
+    .home-cat-sec-head .hcs-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--macro, var(--neon));
+      box-shadow: 0 0 10px -1px var(--macro, var(--neon))
+    }
+
+    .home-cat-sec-head .hcs-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--macro, #fff);
+      letter-spacing: -.3px
+    }
+
+    .home-cat-sec-head .hcs-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: #999;
+      background: #161616;
+      border: 1px solid #262626;
+      border-radius: 999px;
+      padding: 1px 8px
+    }
+
+    .home-cat-grid-sec {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px 6px
+    }
+
+    @media (min-width: 720px) {
+      .home-cat-grid-sec {
+        grid-template-columns: repeat(6, 1fr)
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .home-cat-grid-sec {
+        grid-template-columns: repeat(8, 1fr)
+      }
+    }
+
     .home-search-empty {
       padding: 28px 18px;
       text-align: center;
@@ -1864,45 +1928,6 @@
 
     .m-search:focus {
       border-color: var(--neon)
-    }
-
-    .m-search-row {
-      display: flex;
-      align-items: stretch;
-      gap: 8px;
-      margin-top: 10px
-    }
-
-    .m-search-row .m-search-wrap {
-      flex: 1;
-      min-width: 0;
-      margin-top: 0
-    }
-
-    .m-activities-btn {
-      flex: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 0 14px;
-      background: var(--bg3);
-      border: 1px solid var(--border2);
-      border-radius: 10px;
-      color: var(--neon);
-      font-size: 18px;
-      line-height: 1;
-      font-family: 'Noto Sans KR', sans-serif;
-      text-decoration: none;
-      cursor: pointer;
-      transition: border-color .2s, box-shadow .2s, color .2s
-    }
-
-    .m-activities-btn:hover,
-    .m-activities-btn:focus-visible {
-      border-color: var(--neon);
-      box-shadow: 0 0 14px -4px var(--neon);
-      outline: none
     }
 
     .m-filter-sec {
@@ -3533,14 +3558,9 @@
             <button type="button" class="m-login-nudge-later" onclick="dismissLoginNudge()">나중에</button>
           </div>
         </div>
-        <div class="m-search-row">
-          <div class="m-search-wrap">
-            <span class="m-si">🔍</span>
-            <input class="m-search" type="text" id="searchInput" placeholder="지역 · 장소 · 액티비티 검색 (예: 청도, 짚라인)" />
-          </div>
-          <a class="m-activities-btn" href="/activities.html" aria-label="액티비티 카테고리별 검색" title="액티비티 카테고리별 검색">
-            <span aria-hidden="true">🧭</span>
-          </a>
+        <div class="m-search-wrap">
+          <span class="m-si">🔍</span>
+          <input class="m-search" type="text" id="searchInput" placeholder="지역 · 장소 · 액티비티 검색 (예: 청도, 짚라인)" />
         </div>
       </header>
 
