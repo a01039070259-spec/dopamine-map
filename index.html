@@ -3805,7 +3805,6 @@
 
       <div class="map-stage">
         <div id="kakaoMap"></div>
-        <button type="button" class="map-research-btn is-hidden" id="mapResearchBtn" onclick="Ux010.researchThisArea()">이 지역에서 재검색</button>
 
         <!-- 지도 로딩 실패 — 사용자용 폴백 (개발자 진단은 console.error) -->
         <div class="map-fallback" id="mapFallback" style="display:none">
@@ -3876,7 +3875,7 @@
   </div><!-- /app -->
 
   <script src="js/spots-store.js"></script>
-  <script src="js/ux010.js"></script>
+  <script src="js/ux010.js?v=20260716a"></script>
   <script>
     /* ═══════════════════════════════════════
        📍 장소 데이터 (관리자 등록 → SQLite DB /api/spots)
@@ -4362,11 +4361,16 @@
     }
 
     function getVenueMemberSpots(v) {
-      if (v.spotCount === 1 && v.primarySpotId) {
-        const spot = getSpot(v.primarySpotId);
+      if (!v) return [];
+      // 가상 venue(단독 스팟) — id가 음수이거나 virtual 플래그
+      if (v.virtual || Number(v.id) < 0) {
+        const pid = v.primarySpotId != null ? v.primarySpotId : -Number(v.id);
+        const spot = getSpot(pid);
         return spot ? [spot] : [];
       }
-      return SPOTS.filter((s) => s.venueId === v.id);
+      // 실제 복합체험장 — venueId 숫자 비교로 멤버 수집 (타입 불일치 방지)
+      const vid = Number(v.id);
+      return SPOTS.filter((s) => s.venueId != null && Number(s.venueId) === vid);
     }
 
     function matchVenueSearch(v, query) {
@@ -4916,27 +4920,29 @@
 
     /** VenueCard — 메인 리스트용 */
     function renderVenueCardHtml(v) {
-      const spot = v.primarySpotId ? getSpot(v.primarySpotId) : null;
+      const members = getVenueMemberSpots(v);
+      const isComposite = !v.virtual && (members.length > 1 || Number(v.spotCount) > 1);
+      const spot = v.primarySpotId ? getSpot(v.primarySpotId) : (members[0] || null);
       const bg = (spot && spot.bg) ? spot.bg : (v.bg || '#1a0a2e');
-      const badge = v.spotCount > 1
-        ? `<div class="mc-venue-badge">${v.spotCount}개 체험</div>`
+      const badge = isComposite
+        ? `<div class="mc-venue-badge">${Math.max(members.length, Number(v.spotCount) || 0)}개 체험</div>`
         : '';
       const userGrade = getEffectiveUserGrade();
       const levelBadge = gradeLevelBadgeHtml(getSpotGradeBadgeKind(v._thrillPct, userGrade));
-      const tl = v.spotCount > 1
+      const tl = isComposite
         ? '복합 체험장'
         : ((spot && (spot.categoryName || spot.tl)) ? (spot.categoryName || spot.tl) : (v.tl || '액티비티'));
       const chip = spot ? chipClass(spot) : 't-custom';
-      const ts = (spot && v.spotCount === 1) ? (spot.ts || v.ts || '') : '';
-      const rank = (spot && v.spotCount === 1) ? (spot.rank || v.rank || '') : '';
+      const ts = (!isComposite && spot) ? (spot.ts || v.ts || '') : '';
+      const rank = (!isComposite && spot) ? (spot.rank || v.rank || '') : '';
       const th = v._th || (spot ? spot.th : 3);
-      const desc = v.spotCount === 1
+      const desc = !isComposite
         ? ((spot && spot.br) || v.description || '')
-        : (v.description || '');
+        : (v.description || members.map((s) => s.categoryName || s.tl).filter(Boolean).join(' · '));
       const cap = desc
         ? `<div class="mc-img-cap"><div class="mc-img-cap-tl">이곳은?</div><div class="mc-img-cap-tx">${desc}</div></div>`
         : '';
-      const memberSpots = getVenueMemberSpots(v);
+      const memberSpots = members;
       const tagList = [];
       if (memberSpots.length) {
         memberSpots.forEach((s) => {
@@ -4950,9 +4956,10 @@
         });
       }
       const tags = tagList.map((t) => `<span class="mc-tag">${t}</span>`).join('');
-      const clickAction = v.virtual && v.primarySpotId
+      const clickAction = (!isComposite && v.virtual && v.primarySpotId)
         ? `goDetail(${v.primarySpotId})`
         : `goVenue(${v.id})`;
+      const experienceCount = Math.max(members.length, Number(v.spotCount) || 0);
       return `
     <div class="mc" onclick="${clickAction}">
       <div class="mc-img" style="background:${bg}">
@@ -4967,7 +4974,7 @@
       <div class="mc-body">
         <div class="mc-chip-row">
           <span class="chip ${chip}">${tl}</span>
-          ${v.spotCount === 1 ? thrillGradeBadgeHtml(spot && spot.thrillGrade) : ''}
+          ${!isComposite ? thrillGradeBadgeHtml(spot && spot.thrillGrade) : ''}
         </div>
         <p class="mc-name">${v.name}</p>
         <p class="mc-addr">📍 ${v.address || (spot ? spot.addr : '')}</p>
@@ -4976,10 +4983,10 @@
         <p class="mc-review">${desc}</p>
         <div class="mc-footer">
           <div>
-            <p class="mc-tl">${v.spotCount > 1 ? '체험 수' : '스릴 지수'}</p>
-            <p style="font-size:13px">${v.spotCount > 1 ? `${v.spotCount}개` : fireStars(th)}</p>
+            <p class="mc-tl">${isComposite ? '체험 수' : '스릴 지수'}</p>
+            <p style="font-size:13px">${isComposite ? `${experienceCount}개` : fireStars(th)}</p>
           </div>
-          <button type="button" class="mc-dbtn">${v.spotCount > 1 ? '체험 보기 →' : detailButtonLabel()}</button>
+          <button type="button" class="mc-dbtn">${isComposite ? '체험 보기 →' : detailButtonLabel()}</button>
         </div>
       </div>
     </div>`;
@@ -5036,8 +5043,18 @@
     function goVenue(id) {
       const v = getVenue(id);
       if (!v) return;
+      // 복합체험장(멤버 2+)은 항상 venue 상세로 — spotCount 표시값에만 의존하지 않음
+      const members = getVenueMemberSpots(v);
+      if (!v.virtual && members.length > 1) {
+        openVenueDetail(id);
+        return;
+      }
       if (v.spotCount === 1 && v.primarySpotId) {
         goDetail(v.primarySpotId);
+        return;
+      }
+      if (members.length === 1 && members[0].id) {
+        goDetail(members[0].id);
         return;
       }
       openVenueDetail(id);
@@ -6224,7 +6241,6 @@
 
           kakao.maps.event.addListener(kakaoMap, 'zoom_changed', () => {
             renderKakaoMarkers(currentFilter || 'all');
-            if (window.Ux010) Ux010.onMapIdleForResearch();
           });
 
           kakao.maps.event.addListener(kakaoMap, 'click', () => {
@@ -6232,7 +6248,7 @@
           });
 
           kakao.maps.event.addListener(kakaoMap, 'dragend', () => {
-            if (window.Ux010) Ux010.onMapIdleForResearch();
+            // 이동 후에도 마커는 카테고리 필터 기준으로 유지 (재검색 버튼 없음)
           });
 
           if (window.Ux010) {

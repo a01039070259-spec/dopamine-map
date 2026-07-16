@@ -63,6 +63,7 @@ TYPE_TO_SLUG = {
     "whitewaterKayak": "whitewater-kayak",
     "jetboat": "jetboat",
     "speedboat": "jetboat",
+    "parasailing": "parasailing",
     "seawalk": "seawalk",
     "luge": "luge",
     "coaster": "alpine-coaster",

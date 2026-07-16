@@ -19,6 +19,7 @@ MIGRATION_008_KAKAO_PLACE_ID_SQL = MIGRATIONS_DIR / "008_add_kakao_place_id.sql"
 MIGRATION_009_THRILL_SEASON_SQL = MIGRATIONS_DIR / "009_add_thrill_grade_season.sql"
 MIGRATION_010_CATEGORIES_SQL = MIGRATIONS_DIR / "010_categories.sql"
 MIGRATION_011_LEGACY_SQL = MIGRATIONS_DIR / "011_add_legacy_spots.sql"
+MIGRATION_012_PARA_WATER_SQL = MIGRATIONS_DIR / "012_parasailing_water_venues.sql"
 VENUE_GROUPS_003_JSON = MIGRATIONS_DIR / "venue_groups_003.json"
 VENUE_GROUPS_004_JSON = MIGRATIONS_DIR / "venue_groups_004.json"
 BACKUP_SUFFIX_001 = ".backup_pre_venues"
@@ -33,7 +34,16 @@ BACKUP_SUFFIX_008 = ".backup_pre_kakao_place_id"
 BACKUP_SUFFIX_009 = ".backup_pre_thrill_season"
 BACKUP_SUFFIX_010 = ".backup_pre_categories"
 BACKUP_SUFFIX_011 = ".backup_pre_legacy"
+BACKUP_SUFFIX_012 = ".backup_pre_para_water_venues"
 VENUE_006_NAME = "부산 스카이라인루지(기장해안로)"
+VENUE_012_NAMES = (
+    "가평 캠프통포레스트 수상레저",
+    "양양 서피비치 수상레저",
+    "통영 도남 수상레저",
+    "거제 옥포 수상레저",
+    "서귀포 수상레저",
+    "제주 함덕 수상레저",
+)
 VENUE_006_NAME_NEW = "부산 스카이라인 루지 & 하이플라이"
 MIGRATION_002_VENUE_NAMES = (
     "인제엑스게임리조트",
@@ -998,6 +1008,71 @@ def sync_category_seed_labels(db_path: Path) -> None:
         conn.close()
 
 
+def apply_012_parasailing_water_venues(db_path: Path) -> None:
+    """Group parasailing + jetboat/jetski/yacht siblings into composite venues."""
+    migration_name = "012_parasailing_water_venues"
+
+    if not db_path.is_file():
+        logger.info("migration %s: skip (database file not found: %s)", migration_name, db_path)
+        return
+
+    if not MIGRATION_012_PARA_WATER_SQL.is_file():
+        raise RuntimeError(
+            f"migration {migration_name}: SQL file missing at {MIGRATION_012_PARA_WATER_SQL}"
+        )
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if not _table_exists(conn, "venues"):
+            logger.info(
+                "migration %s: skip (venues table missing; run 001 first)",
+                migration_name,
+            )
+            return
+        placeholders = ",".join("?" for _ in VENUE_012_NAMES)
+        existing_count = conn.execute(
+            f"SELECT COUNT(*) FROM venues WHERE name IN ({placeholders})",
+            VENUE_012_NAMES,
+        ).fetchone()[0]
+        if existing_count >= len(VENUE_012_NAMES):
+            logger.info(
+                "migration %s: skip (already applied; venues=%s)",
+                migration_name,
+                existing_count,
+            )
+            return
+
+        backup = Path(str(db_path) + BACKUP_SUFFIX_012)
+        if not backup.is_file():
+            shutil.copy2(db_path, backup)
+            logger.info("migration %s: backup -> %s", migration_name, backup)
+
+        sql = MIGRATION_012_PARA_WATER_SQL.read_text(encoding="utf-8")
+        conn.executescript(sql)
+
+        linked = conn.execute(
+            f"""
+            SELECT COUNT(*) FROM spots
+            WHERE venue_id IN (
+              SELECT id FROM venues WHERE name IN ({placeholders})
+            )
+            """,
+            VENUE_012_NAMES,
+        ).fetchone()[0]
+        venues_now = conn.execute(
+            f"SELECT COUNT(*) FROM venues WHERE name IN ({placeholders})",
+            VENUE_012_NAMES,
+        ).fetchone()[0]
+        logger.info(
+            "migration %s: applied (venues=%s linked_spots=%s)",
+            migration_name,
+            venues_now,
+            linked,
+        )
+    finally:
+        conn.close()
+
+
 def apply_pending_migrations(db_path: Path) -> None:
     apply_001_add_venues(db_path)
     apply_002_map_venues(db_path)
@@ -1012,3 +1087,4 @@ def apply_pending_migrations(db_path: Path) -> None:
     apply_010_categories(db_path)
     sync_category_seed_labels(db_path)
     apply_011_add_legacy_spots(db_path)
+    apply_012_parasailing_water_venues(db_path)

@@ -14,10 +14,10 @@
   let selectedCategoryId = null; // null = all in group
   let groupSortMode = "region"; // region | thrill
   let flatCategoryMode = false;
-  let mapBoundsFilter = null; // {swLat,swLng,neLat,neLng} or null
   let mapClusterOverlays = [];
   let mapPinOverlays = [];
   let mapMiniClusters = [];
+  let mapRenderGen = 0; // async render 레이스 방지
 
   function spotLabel(s) {
     if (!s) return "액티비티";
@@ -83,14 +83,6 @@
       );
     }
     return true;
-  }
-
-  function venueInMapBounds(v) {
-    if (!mapBoundsFilter) return true;
-    const c = getVenueMapCoords(v);
-    if (!c) return false;
-    const b = mapBoundsFilter;
-    return c.lat >= b.swLat && c.lat <= b.neLat && c.lng >= b.swLng && c.lng <= b.neLng;
   }
 
   let categoriesReady = false;
@@ -604,12 +596,13 @@
     const el = ensureBottomSheet();
     const body = document.getElementById("mbsBody");
     const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
-    const isComposite = v.spotCount > 1 && !v.virtual;
+    const isComposite = !v.virtual && (members.length > 1 || Number(v.spotCount) > 1);
+    const experienceCount = Math.max(members.length, Number(v.spotCount) || 0);
 
     if (isComposite) {
       body.innerHTML = `
         <p class="mbs-title">${v.name}</p>
-        <p class="mbs-sub">${v.spotCount}개 체험 · 항목을 고르세요</p>
+        <p class="mbs-sub">${experienceCount}개 체험 · 항목을 고르세요</p>
         <div class="mbs-list">
           ${members
             .map(
@@ -739,9 +732,10 @@
   }
 
   /** 고배율: 격자 클러스터 끄고, 동일좌표만 펼침.
-   * 줌아웃할수록 셀이 커져 2→5→15처럼 숫자가 합쳐짐. */
+   * 줌아웃할수록 셀이 커져 2→5→15처럼 숫자가 합쳐짐.
+   * level <= 5 부터 개별 핀 (1~2번 확대만 해도 스팟이 보이게). */
   function buildPinItems(venues, level) {
-    if (level <= 3) {
+    if (level <= 5) {
       const buckets = new Map();
       venues.forEach((v) => {
         const c = getVenueMapCoords(v);
@@ -758,11 +752,10 @@
     }
     // Kakao level 작을수록 확대. 확대로 갈수록 셀을 줄여 숫자 클러스터가 풀리게.
     const cell =
-      level <= 4 ? 0.0018 :
-      level <= 5 ? 0.004 :
-      level <= 6 ? 0.01 :
-      level <= 7 ? 0.022 :
-      0.04;
+      level <= 6 ? 0.008 :
+      level <= 7 ? 0.018 :
+      level <= 8 ? 0.03 :
+      0.05;
     return clusterNearby(venues, cell);
   }
 
@@ -823,12 +816,13 @@
       typeof getMapVisibleVenues === "function"
         ? getMapVisibleVenues(filter || "all")
         : VENUES || [];
-    visible = visible.filter(venueMatchesCategoryFilters).filter(venueInMapBounds);
-    return visible;
+    // bounds 재검색 필터 없음 — 확대/이동해도 카테고리 조건만으로 항상 표시
+    return visible.filter(venueMatchesCategoryFilters);
   }
 
   async function renderKakaoMarkersUx(filter) {
     if (!kakaoMap || typeof kakao === "undefined") return;
+    const gen = ++mapRenderGen;
     clearMapOverlays();
     const level = mapLevel();
     const counter = document.getElementById("mapCounter");
@@ -836,6 +830,8 @@
     // 멀리: 도/광역시 묶음 — 숫자만 (용인 4 X → 4)
     if (level >= MAP_LEVEL_L1) {
       const clusters = await fetchRegionClusters();
+      if (gen !== mapRenderGen) return; // 줌 변경으로 이전 요청 폐기
+      clearMapOverlays();
       clusters.forEach((cl) => {
         const overlay = new kakao.maps.CustomOverlay({
           position: new kakao.maps.LatLng(cl.lat, cl.lng),
@@ -853,6 +849,7 @@
       return;
     }
 
+    if (gen !== mapRenderGen) return;
     const visible = getFilteredMapVenues(filter);
     if (counter) counter.innerHTML = `<b>${visible.length}</b> 장소`;
 
@@ -913,7 +910,7 @@
     const cl = mapMiniClusters[idx];
     const level = mapLevel();
     // 이미 크게 확대됐으면 숫자 대신 목록
-    if (level <= 4 && cl && cl.venues && cl.venues.length) {
+    if (level <= 6 && cl && cl.venues && cl.venues.length) {
       openClusterVenueSheet(cl.venues);
       return;
     }
@@ -926,7 +923,7 @@
       const still = (mapMiniClusters || []).find(
         (c) => Math.abs(c.lat - lat) < 0.0008 && Math.abs(c.lng - lng) < 0.0008
       );
-      if (still && still.venues && still.venues.length && mapLevel() <= 3) {
+      if (still && still.venues && still.venues.length && mapLevel() <= 5) {
         openClusterVenueSheet(still.venues);
       }
     }, 240);
@@ -949,7 +946,7 @@
       kakaoMap.panTo(new kakao.maps.LatLng(coords.lat, coords.lng));
     }
     const members = typeof getVenueMemberSpots === "function" ? getVenueMemberSpots(v) : [];
-    const isComposite = v.spotCount > 1 && !v.virtual;
+    const isComposite = !v.virtual && (members.length > 1 || Number(v.spotCount) > 1);
     if (!isComposite) {
       const s = members[0] || (v.primarySpotId ? getSpot(v.primarySpotId) : null);
       if (s && s.id) {
@@ -963,29 +960,13 @@
     openMapBottomSheet(venueId);
   }
 
+  /** @deprecated 재검색 버튼 제거됨 — 확대/이동 시 마커가 항상 다시 그려짐 */
   function researchThisArea() {
-    if (!kakaoMap) return;
-    const b = kakaoMap.getBounds();
-    const sw = b.getSouthWest();
-    const ne = b.getNorthEast();
-    mapBoundsFilter = {
-      swLat: sw.getLat(),
-      swLng: sw.getLng(),
-      neLat: ne.getLat(),
-      neLng: ne.getLng(),
-    };
-    const btn = document.getElementById("mapResearchBtn");
-    if (btn) btn.classList.add("is-hidden");
     renderKakaoMarkersUx(currentFilter || "all");
   }
 
   function onMapIdleForResearch() {
-    const btn = document.getElementById("mapResearchBtn");
-    if (btn) btn.classList.remove("is-hidden");
-  }
-
-  function clearBoundsFilter() {
-    mapBoundsFilter = null;
+    // no-op: 재검색 버튼 제거. zoom_changed에서 이미 마커 갱신.
   }
 
   function startMapAtUserLocation() {
@@ -1005,9 +986,8 @@
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         kakaoMap.setCenter(new kakao.maps.LatLng(lat, lng));
-        // 멀리서 도 단위부터 보이도록 (확대하면 시→숫자→사진)
+        // 멀리서 도 단위부터 보이도록 (확대하면 숫자→개별 핀)
         kakaoMap.setLevel(Math.max(MAP_LEVEL_L1, 11));
-        clearBoundsFilter();
         renderKakaoMarkersUx(currentFilter || "all");
       },
       () => fallback(),
@@ -1104,15 +1084,12 @@
         setTimeout(tryFocus, 200);
         return;
       }
-      mapBoundsFilter = null;
       kakaoMap.setLevel(MAP_LEVEL_L3);
       kakaoMap.setCenter(new kakao.maps.LatLng(lat, lng));
       selectedMapVenueId = venueId;
       if (spot.id) currentId = spot.id;
       renderKakaoMarkersUx(currentFilter || "all");
       openMapBottomSheet(venueId);
-      const btn = document.getElementById("mapResearchBtn");
-      if (btn) btn.classList.remove("is-hidden");
     };
     setTimeout(tryFocus, 250);
   }
