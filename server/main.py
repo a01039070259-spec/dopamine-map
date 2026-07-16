@@ -22,8 +22,10 @@ from server.auth import (
 )
 from server.seo import (
     build_robots_txt,
+    build_rss_xml,
     build_sitemap_xml,
     build_spot_page_html,
+    build_spots_index_html,
     inject_home_seo,
 )
 from server.database import (
@@ -588,6 +590,21 @@ def sitemap_xml():
         build_sitemap_xml(APP_BASE_URL, spots),
         media_type="application/xml; charset=utf-8",
     )
+
+
+@app.get("/rss.xml", response_class=PlainTextResponse)
+def rss_xml():
+    spots = list_spots()
+    return PlainTextResponse(
+        build_rss_xml(APP_BASE_URL, spots),
+        media_type="application/rss+xml; charset=utf-8",
+    )
+
+
+@app.get("/spots", response_class=HTMLResponse)
+def spots_index():
+    spots = list_spots()
+    return HTMLResponse(build_spots_index_html(APP_BASE_URL, spots))
 
 
 @app.get("/spot/{spot_id}", response_class=HTMLResponse)

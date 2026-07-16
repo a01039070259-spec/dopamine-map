@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import html
 import json
 from datetime import datetime, timezone
@@ -18,6 +19,37 @@ def _today() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
+def publishable_spots(spots: list[dict]) -> list[dict]:
+    """Same rule as sitemap / app exposure."""
+    out = []
+    for spot in spots:
+        if not spot.get("approved", True):
+            continue
+        if not (spot.get("coordVerified") or spot.get("legacy")):
+            continue
+        if spot.get("id") is None:
+            continue
+        out.append(spot)
+    return out
+
+
+def _spot_label(spot: dict) -> str:
+    return spot.get("categoryName") or spot.get("tl") or spot.get("type") or "액티비티"
+
+
+def _rss_pub_date(spot: dict) -> str:
+    raw = spot.get("updatedAt") or spot.get("createdAt") or ""
+    if not raw:
+        return datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+    try:
+        dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.strftime("%a, %d %b %Y %H:%M:%S +0000")
+    except ValueError:
+        return datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+
+
 def build_robots_txt(base_url: str) -> str:
     base = base_url.rstrip("/")
     return (
@@ -36,18 +68,11 @@ def build_sitemap_xml(base_url: str, spots: list[dict]) -> str:
     urls = [
         (f"{base}/", "daily", "1.0"),
         (f"{base}/index.html", "daily", "1.0"),
+        (f"{base}/spots", "daily", "0.9"),
         (f"{base}/diagnosis.html", "monthly", "0.6"),
     ]
-    for spot in spots:
-        if not spot.get("approved", True):
-            continue
-        # Publish = coordVerified OR legacy (same as app exposure)
-        if not (spot.get("coordVerified") or spot.get("legacy")):
-            continue
-        sid = spot.get("id")
-        if not sid:
-            continue
-        urls.append((f"{base}/spot/{sid}", "weekly", "0.8"))
+    for spot in publishable_spots(spots):
+        urls.append((f"{base}/spot/{spot['id']}", "weekly", "0.8"))
 
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -67,6 +92,122 @@ def build_sitemap_xml(base_url: str, spots: list[dict]) -> str:
         )
     lines.append("</urlset>")
     return "\n".join(lines) + "\n"
+
+
+def build_rss_xml(base_url: str, spots: list[dict], *, limit: int = 200) -> str:
+    """RSS 2.0 — 네이버 서치어드바이저 RSS 제출용."""
+    base = base_url.rstrip("/")
+    items = sorted(
+        publishable_spots(spots),
+        key=lambda s: int(s.get("id") or 0),
+        reverse=True,
+    )[:limit]
+    now = _rss_pub_date({})
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+        "  <channel>",
+        f"    <title>{escape(SITE_NAME)}</title>",
+        f"    <link>{escape(base + '/')}</link>",
+        f"    <description>{escape(DEFAULT_DESCRIPTION)}</description>",
+        "    <language>ko</language>",
+        f"    <lastBuildDate>{now}</lastBuildDate>",
+        f'    <atom:link href="{escape(base + "/rss.xml")}" rel="self" type="application/rss+xml"/>',
+    ]
+    for spot in items:
+        sid = spot["id"]
+        name = spot.get("name") or "액티비티 스팟"
+        tl = _spot_label(spot)
+        addr = spot.get("addr") or ""
+        br = spot.get("br") or f"{addr} — {tl}"
+        link = f"{base}/spot/{sid}"
+        title = f"{name} · {tl}"
+        desc = html.escape((br or title)[:300])
+        lines.extend(
+            [
+                "    <item>",
+                f"      <title>{escape(title)}</title>",
+                f"      <link>{escape(link)}</link>",
+                f"      <guid isPermaLink=\"true\">{escape(link)}</guid>",
+                f"      <description>{desc}</description>",
+                f"      <pubDate>{_rss_pub_date(spot)}</pubDate>",
+                "    </item>",
+            ]
+        )
+    lines.extend(["  </channel>", "</rss>", ""])
+    return "\n".join(lines)
+
+
+def build_spots_index_html(base_url: str, spots: list[dict]) -> str:
+    """크롤러용 정적 HTML — 네이버·구글 봇이 JS 없이 스팟 링크를 읽도록."""
+    base = base_url.rstrip("/")
+    items = sorted(
+        publishable_spots(spots),
+        key=lambda s: (
+            str(s.get("categoryName") or s.get("tl") or ""),
+            str(s.get("name") or ""),
+        ),
+    )
+    by_cat: dict[str, list[dict]] = {}
+    for spot in items:
+        cat = _spot_label(spot)
+        by_cat.setdefault(cat, []).append(spot)
+
+    sections = []
+    for cat in sorted(by_cat.keys(), key=lambda x: x):
+        links = []
+        for spot in by_cat[cat]:
+            sid = spot["id"]
+            name = spot.get("name") or "스팟"
+            addr = spot.get("addr") or ""
+            links.append(
+                f'<li><a href="{html.escape(base + "/spot/" + str(sid))}">'
+                f"{html.escape(name)}</a>"
+                f' <span class="addr">{html.escape(addr)}</span></li>'
+            )
+        sections.append(
+            f"<section><h2>{html.escape(cat)}</h2><ul>{''.join(links)}</ul></section>"
+        )
+
+    body = "\n".join(sections)
+    return f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>전국 액티비티 스팟 목록 | {html.escape(SITE_NAME)}</title>
+<meta name="description" content="{html.escape(DEFAULT_DESCRIPTION)}"/>
+<meta name="robots" content="index,follow"/>
+<link rel="canonical" href="{html.escape(base + "/spots")}"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{min-height:100vh;background:#0a0a0a;color:#f0f0f0;font-family:'Noto Sans KR',sans-serif;line-height:1.65}}
+.wrap{{max-width:900px;margin:0 auto;padding:28px 20px 48px}}
+h1{{font-size:24px;font-weight:900;color:#39ff14;margin-bottom:8px}}
+.lead{{font-size:14px;color:#aaa;margin-bottom:24px}}
+section{{margin-bottom:28px}}
+h2{{font-size:16px;font-weight:800;color:#39ff14;margin-bottom:10px;border-bottom:1px solid #2a2a2a;padding-bottom:6px}}
+ul{{list-style:none}}
+li{{margin:8px 0;font-size:14px}}
+a{{color:#f0f0f0;text-decoration:none;font-weight:700}}
+a:hover{{color:#39ff14}}
+.addr{{display:block;font-size:12px;color:#888;font-weight:400;margin-top:2px}}
+footer{{margin-top:32px;font-size:12px;color:#666}}
+footer a{{color:#39ff14}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>{html.escape(SITE_NAME)} — 전국 스팟 목록</h1>
+  <p class="lead">짚라인·번지·패러세일링·제트보트·루지·동굴탐험 등 {len(items)}곳. 각 링크에서 스릴 지수·생존 가이드를 확인할 수 있습니다.</p>
+  {body}
+  <footer>
+    <p><a href="{html.escape(base + '/')}">← 홈으로</a> · <a href="{html.escape(base + '/sitemap.xml')}">사이트맵</a> · <a href="{html.escape(base + '/rss.xml')}">RSS</a></p>
+  </footer>
+</div>
+</body>
+</html>"""
 
 
 def build_spot_page_html(spot: dict, base_url: str) -> str:
@@ -107,6 +248,7 @@ def build_spot_page_html(spot: dict, base_url: str) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>{html.escape(title)}</title>
 <meta name="description" content="{html.escape(desc)}"/>
+<meta name="robots" content="index,follow"/>
 <meta name="keywords" content="{html.escape(keywords)}"/>
 <link rel="canonical" href="{html.escape(page_url)}"/>
 <meta property="og:type" content="website"/>
@@ -173,9 +315,11 @@ def inject_home_seo(html_text: str, base_url: str, google_verification: str = ""
         )
     block = "\n".join(
         [
+            '<meta name="robots" content="index,follow,max-image-preview:large"/>',
             f'<meta name="description" content="{html.escape(DEFAULT_DESCRIPTION)}"/>',
             f'<meta name="keywords" content="{html.escape(DEFAULT_KEYWORDS)}"/>',
             f'<link rel="canonical" href="{html.escape(base + "/")}"/>',
+            f'<link rel="alternate" type="application/rss+xml" title="{html.escape(SITE_NAME)}" href="{html.escape(base + "/rss.xml")}"/>',
             '<meta property="og:type" content="website"/>',
             f'<meta property="og:site_name" content="{html.escape(SITE_NAME)}"/>',
             f'<meta property="og:title" content="{html.escape(SITE_NAME)} ⚡"/>',
