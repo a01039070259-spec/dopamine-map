@@ -583,7 +583,7 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      padding: 10px 12px 12px
+      padding: 12px 12px 8px
     }
 
     .home-macro-grid {
@@ -761,13 +761,33 @@
 
     .home-group-count { font-size: 12px; color: #888 }
 
-    .home-season-sec { padding: 0 0 12px }
+    .home-season-sec {
+      margin: 8px 0 4px;
+      padding: 14px 0 12px;
+      border-top: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(57, 255, 20, .04) 0%, transparent 48%)
+    }
 
     .home-season-lbl {
-      font-size: 13px;
-      font-weight: 700;
-      color: #ccc;
-      padding: 0 16px 8px
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #e8e8e8;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 0 16px 10px
+    }
+
+    .home-season-lbl::before {
+      content: '';
+      width: 3px;
+      height: 14px;
+      border-radius: 2px;
+      background: var(--neon);
+      box-shadow: 0 0 10px rgba(57, 255, 20, .45);
+      flex-shrink: 0
     }
 
     .home-season-track {
@@ -811,29 +831,47 @@
     .home-season-empty { color: #666; font-size: 12px; padding: 8px 16px }
 
     .home-quiz-banner {
-      margin: 4px 16px 12px;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: 1px solid #3b2a10;
-      background: linear-gradient(90deg, #1a1208, #0e0e0e);
-      color: #f5e6c8;
-      font-size: 14px;
-      font-weight: 600;
+      margin: 4px 16px 10px;
+      padding: 13px 16px;
+      border-radius: 14px;
+      border: 1px solid #3d3018;
+      background: linear-gradient(135deg, rgba(42, 32, 14, .95), rgba(14, 14, 14, .98));
+      color: #f0dcc0;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'Noto Sans KR', sans-serif;
       cursor: pointer;
       width: calc(100% - 32px);
-      text-align: left
+      text-align: left;
+      letter-spacing: -.2px;
+      transition: border-color .15s, transform .12s
+    }
+
+    .home-quiz-banner:active {
+      transform: scale(.99);
+      border-color: #5a4520
     }
 
     .home-nearby-btn {
-      margin: 0 16px 20px;
+      margin: 0 16px 24px;
       width: calc(100% - 32px);
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid #1a4a2a;
-      background: #0a1a10;
-      color: var(--neon);
-      font-weight: 700;
-      cursor: pointer
+      padding: 15px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(57, 255, 20, .55);
+      background: linear-gradient(135deg, #1a3d12 0%, #0d1f0a 45%, #0a1408 100%);
+      color: #e8ffe8;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: 'Noto Sans KR', sans-serif;
+      letter-spacing: -.3px;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(57, 255, 20, .12), inset 0 1px 0 rgba(255, 255, 255, .06);
+      transition: transform .12s, box-shadow .15s, border-color .15s
+    }
+
+    .home-nearby-btn:active {
+      transform: scale(.99);
+      box-shadow: 0 2px 16px rgba(57, 255, 20, .18)
     }
 
     .home-group-head {
@@ -1810,9 +1848,10 @@
    ② MAIN
 ══════════════════════════════ */
     .m-header {
-      background: var(--bg);
-      padding: 20px clamp(16px, 4vw, 48px) 14px;
+      background: linear-gradient(180deg, #0e120e 0%, var(--bg) 42%);
+      padding: 18px clamp(16px, 4vw, 48px) 16px;
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 0 rgba(57, 255, 20, .06);
       position: sticky;
       top: 0;
       z-index: 50
@@ -1949,36 +1988,74 @@
     .m-logo-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px
+      gap: 10px;
+      margin-bottom: 10px
+    }
+
+    .m-brand-mark {
+      flex: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      line-height: 1;
+      background: linear-gradient(145deg, #1a2e14, #0a1208);
+      border: 1px solid rgba(57, 255, 20, .35);
+      box-shadow: 0 0 18px rgba(57, 255, 20, .15), inset 0 1px 0 rgba(255, 255, 255, .08)
+    }
+
+    .m-brand-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      min-width: 0
     }
 
     .m-badge {
       background: var(--neon);
       color: #0a0a0a;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 900;
-      padding: 3px 7px;
+      padding: 2px 6px;
       border-radius: 4px;
-      letter-spacing: .5px
+      letter-spacing: .08em;
+      line-height: 1.2
+    }
+
+    .m-brand-name {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      color: #f2f2f2;
+      text-shadow: 0 0 20px rgba(57, 255, 20, .12);
+      line-height: 1.1
     }
 
     .m-title {
-      font-size: clamp(1.4rem, 3vw, 1.75rem);
+      font-size: clamp(1.55rem, 4.2vw, 1.95rem);
       font-weight: 900;
       color: #fff;
-      letter-spacing: -.5px
+      letter-spacing: -.6px;
+      line-height: 1.15;
+      margin-top: 2px
     }
 
     .m-title em {
       color: var(--neon);
-      font-style: normal
+      font-style: normal;
+      filter: drop-shadow(0 0 8px rgba(57, 255, 20, .45))
     }
 
     .m-sub {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px
+      font-size: 13px;
+      color: #9a9a9a;
+      margin-top: 6px;
+      line-height: 1.45;
+      max-width: 28em
     }
 
     .m-search-wrap {
@@ -3625,8 +3702,11 @@
       <header class="m-header">
         <div class="m-header-top">
           <div class="m-logo-row">
-            <span class="m-badge">BETA</span>
-            <span style="font-size:11px;color:#444;letter-spacing:1px">DOPAMINE MAP</span>
+            <span class="m-brand-mark" aria-hidden="true">⚡</span>
+            <div class="m-brand-text">
+              <span class="m-badge">BETA</span>
+              <span class="m-brand-name">DOPAMINE MAP</span>
+            </div>
           </div>
           <button type="button" class="app-menu-btn" onclick="openAppMenu()" aria-label="메뉴 열기">
             <span></span><span></span><span></span>
@@ -5931,6 +6011,14 @@
       clearMapVenueSelection();
       let toId = mapReturnScreen || prevScreen || 'mainScreen';
       if (toId === 'mapScreen') toId = 'mainScreen';
+
+      // 무한 루프 방지:
+      // "detailScreen(원래 map에서 열린 상세)" → "mapScreen(상세에서 다시 지도 열기)" → back → detailScreen
+      // 이때 detailReturnScreen이 계속 mapScreen이면 다시 back할 때 mapScreen으로 되돌아가 루프가 발생합니다.
+      // map에서 detail로 돌아갈 때 detailReturnScreen을 mainScreen으로 고정해 루프를 끊습니다.
+      if (toId === 'detailScreen' && detailReturnScreen === 'mapScreen') {
+        detailReturnScreen = 'mainScreen';
+      }
 
       const map = document.getElementById('mapScreen');
       if (map) {
